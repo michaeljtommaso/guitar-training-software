@@ -117,14 +117,14 @@ Concise, ADR-style records of the load-bearing technology decisions behind the O
 
 ---
 
-## ADR-010 — Data layer: local-first IndexedDB (Dexie); optional Supabase sync later
+## ADR-010 — Data layer: local-first IndexedDB (Dexie); optional Firebase sync later
 
-- **Status:** Accepted (MVP local-only). Cloud sync Deferred → opt-in.
+- **Status:** Accepted (MVP local-only). Cloud sync Deferred → opt-in. **Amended 2026-07-03: Firebase selected over Supabase for the opt-in sync/auth layer (owner decision).**
 - **Context:** The data is biometric home video/audio; the app is single-user first. Privacy and object-heavy clip storage drive the choice.
-- **Decision:** **Local-first.** **IndexedDB via Dexie** for sessions, calibration profiles, telemetry, and drafts. **Zod** validates at every write/read boundary (write gate + normalize at read). Chord library = **UCI Guitar Chords Finger Positions** (2,633 defs) + hand-authored lessons as static JSON. Optional **Supabase (Postgres + object storage, RLS per user)** for opt-in cross-device sync and clip upload **later**.
-- **Alternatives:** *Firebase/Firestore* — great for multi-tenant SaaS and reuses McCallos infra, but this app is single-user, local-first, and clip storage is object-heavy → Supabase/Postgres + object storage is a cleaner fit and keeps VPS self-hosting open (Firestore recorded as a valid fallback if reusing McCallos infra wholesale).
+- **Decision:** **Local-first.** **IndexedDB via Dexie** for sessions, calibration profiles, telemetry, and drafts. **Zod** validates at every write/read boundary (write gate + normalize at read). Chord library = **UCI Guitar Chords Finger Positions** (2,633 defs) + hand-authored lessons as static JSON. **Amended 2026-07-03:** when accounts/sync arrive, the opt-in layer is **Firebase** — Firebase Auth for users, Firestore for sessions/progress, Cloud Storage for clips, per-user security rules — chosen for Michael's deep Firebase experience (McCallos rules/cost-control patterns port directly) and best-in-class auth for the "as people use it" path. The FastAPI proxy stays as-is (not rebuilt as a Cloud Function); local-first remains the default and Local-only mode never syncs.
+- **Alternatives:** *Supabase (Postgres + object storage, RLS)* — the original recommendation for Postgres purity and VPS self-hosting; superseded 2026-07-03 by the owner's familiarity/velocity call. Remains the fallback if relational queries or self-hosting become hard requirements.
 - **Consequences:** No cross-device sync in MVP; clip upload is strictly opt-in.
-- **Reopen trigger:** Multi-device or multi-user need arrives → stand up the Supabase sync layer (or Firestore if reusing McCallos infra).
+- **Reopen trigger:** Relational/reporting queries or self-hosting become real requirements → revisit Supabase/Postgres.
 
 ---
 
@@ -169,7 +169,7 @@ Concise, ADR-style records of the load-bearing technology decisions behind the O
 | 007 | Fusion | Deterministic TS state machine, confidence-weighted | Accepted |
 | 008 | Coaching model | Frontier multimodal, slow path only | Accepted |
 | 009 | Backend | Thin FastAPI (Python); client-only core loop | Accepted |
-| 010 | Data | Local-first IndexedDB (Dexie); Supabase sync later | Accepted |
+| 010 | Data | Local-first IndexedDB (Dexie); Firebase sync/auth later (amended 2026-07-03) | Accepted |
 | 011 | Model/proxy + license | Capability-contract binding + license firewall | Accepted / Provisional |
 | 012 | Deploy/eval/privacy | Static + Docker; CI eval gates; local-first privacy | Accepted |
 </content>

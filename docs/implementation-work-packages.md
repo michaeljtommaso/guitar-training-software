@@ -142,7 +142,7 @@ Traceability: each WP references the governing ADRs in [technology-decision-reco
 - **Scope:** Take the proven web MVP toward a robust Beta for serious users.
 - **Deliverables:**
   - **Tauri desktop** target for low-latency native audio and long-session stability (ADR-001).
-  - Opt-in **Supabase** sync (Postgres + object storage, RLS per user) for cross-device sessions and clip upload.
+  - Opt-in **Firebase** sync (Auth + Firestore + Cloud Storage, per-user security rules) for cross-device sessions and clip upload *(amended 2026-07-03 — was Supabase; see ADR-010)*.
   - **Sentry** privacy-first: PII scrub, **masked** on-error replay (video/audio masked/omitted), source maps, no-leak ErrorBoundary; latency histograms + false-feedback-complaint metric.
   - Full model-eval smoke as a **CI gate** across all layers; documented reference-hardware target.
 - **Verification gate:** All §16 acceptance metrics hold on both web and Tauri; Sentry replays contain **no** un-masked biometric media; opt-in sync round-trips without leaking data in Local-only mode; CI fails on any eval/latency regression.

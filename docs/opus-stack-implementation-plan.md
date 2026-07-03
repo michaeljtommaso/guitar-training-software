@@ -22,7 +22,7 @@ The wedge is an **open-chord coach**: constrained seated setup, standard tuning,
 7. **Fusion engine** — deterministic **TypeScript** state machine + confidence-weighted event fusion; typed event schema; **lessons-as-data** (YAML/JSON); feedback policy = one correction / 1–2 s, confidence-gated, false-positive-averse.
 8. **Coaching model** — frontier multimodal model (**"Fable 5 Clubs" = placeholder**) on the **slow path only** (explanations, session summaries, ambiguity resolution) over structured events + sparse keyframes; never the correctness loop. Fallback = template/rules coach.
 9. **Backend** — thin **FastAPI (Python)**; **core loop needs no backend**. Backend hosts the model proxy (key-hidden, injection-defended, token-capped — per the McCallos `fn-claude-proxy` pattern), clip/session storage, content service. WebSocket only for the coaching stream.
-10. **Data** — **local-first**: **IndexedDB (Dexie)** for sessions/calibration/telemetry; optional **Supabase (Postgres + object storage)** for opt-in sync/clip upload later. Chord library from UCI fingering data + hand-authored lessons.
+10. **Data** — **local-first**: **IndexedDB (Dexie)** for sessions/calibration/telemetry; optional **Firebase (Auth + Firestore + Cloud Storage)** for opt-in sync/clip upload later *(amended 2026-07-03 — was Supabase; see ADR-010)*. Chord library from UCI fingering data + hand-authored lessons.
 11. **DevOps** — Vite static build on Michael's **VPS** (or Vercel/Netlify); FastAPI in **Docker**; **GitHub Actions** CI (typecheck/lint/unit/model-eval smoke); **Sentry** privacy-first with masked replay; hard cost cap on the model proxy.
 12. **License posture** — **MIT/Apache-2.0-clean core** (MediaPipe, Basic Pitch, ONNX Runtime, OpenCV). Madmom (CC BY-NC-SA models), Essentia.js (AGPLv3), and Ultralytics YOLO/RT-DETR (AGPL-3.0, travels with weights) are **offline-experiment-only** — do not ship them.
 
@@ -283,12 +283,12 @@ Lessons are content, not code — authored/edited without redeploying the engine
 | Concern | Recommendation (MVP) | Later |
 |---|---|---|
 | On-device store | **IndexedDB via Dexie** — sessions, calibration profiles, telemetry, drafts | same |
-| Cross-device sync / clips | none in MVP (local only) | **Supabase (Postgres + Storage)** opt-in; object storage for clips; RLS per user |
+| Cross-device sync / clips | none in MVP (local only) | **Firebase (Auth + Firestore + Cloud Storage)** opt-in; per-user security rules *(amended 2026-07-03 — was Supabase; ADR-010)* |
 | Chord/fingering library | **UCI Guitar Chords Finger Positions** (2,633 defs) + hand-authored, shipped as static JSON | authored lesson graph |
 | Training/annotation data | Parquet/JSON + JAMS (music) + COCO-style keypoints (vision) in the research lane | active-learning store |
 | Schemas | **Zod** at every write/read boundary (Michael's house rule: Zod as the write gate, normalize at the read boundary) | same |
 
-**Why not Firebase/Firestore here:** great for his multi-tenant SaaS, but this app is single-user, local-first, and clip storage is object-heavy — Supabase/Postgres + object storage is a cleaner fit and keeps the option of self-hosting on the VPS. Firestore stays a valid alternative if he wants to reuse McCallos infra wholesale (ADR-010).
+**Why not Firebase/Firestore here:** great for his multi-tenant SaaS, but this app is single-user, local-first, and clip storage is object-heavy — Supabase/Postgres + object storage is a cleaner fit and keeps the option of self-hosting on the VPS. Firestore stays a valid alternative if he wants to reuse McCallos infra wholesale (ADR-010). *(Superseded 2026-07-03: the owner chose Firebase for the future sync/auth layer — familiarity and auth features outweigh Postgres purity for a one-developer product. See the amended ADR-010.)*
 
 ---
 
