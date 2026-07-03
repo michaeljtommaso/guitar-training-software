@@ -6,9 +6,6 @@ import { useSyncExternalStore } from "react";
 import { subscribe, getSnapshot } from "../perception/perceptionStore";
 import { midiName } from "../perception/audio/dsp/pitch";
 
-// String label for the tuner readout (1-based → name).
-const STRING_NAMES = ["E2", "A2", "D3", "G3", "B3", "E4"];
-
 function centsClass(cents: number): string {
   const a = Math.abs(cents);
   if (a <= 5) return "in-tune";
@@ -55,9 +52,7 @@ export function AudioDebugPanel() {
       <div className="audio-row">
         <span className="audio-label">Tuner</span>
         <span className="audio-value">
-          {tuning
-            ? `${STRING_NAMES[tuning.string - 1] ?? tuning.name} · ${tuning.f0.toFixed(1)} Hz`
-            : "—"}
+          {tuning ? `${tuning.name} · ${tuning.f0.toFixed(1)} Hz` : "—"}
         </span>
         {tuning && (
           <span className={`cents ${centsClass(tuning.cents)}`}>

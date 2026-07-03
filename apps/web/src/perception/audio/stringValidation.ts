@@ -9,7 +9,7 @@
 import { midiToPitchClass } from "./dsp/pitch";
 
 export interface ExpectedString {
-  /** 1-based string number (1 = low E … 6 = high E). */
+  /** 1-based string number, standard convention (1 = high e … 6 = low E). */
   string: number;
   /** Expected MIDI note for that fretted/open string. */
   midi: number;

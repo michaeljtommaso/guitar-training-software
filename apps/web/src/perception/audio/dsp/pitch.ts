@@ -40,8 +40,10 @@ export function centsBetween(hz: number, targetHz: number): number {
 
 /**
  * Nearest standard-tuning open string to a detected f0, by absolute cents
- * distance. Returns the 1-based string number (1 = low E, 6 = high E — the
- * AudioEvent `string` field), the note name, and the signed cents offset.
+ * distance. Returns the 1-based string number in the STANDARD guitar convention
+ * (1 = high e … 6 = low E — the AudioEvent `string` field), the note name, and
+ * the signed cents offset. The tuning arrays are ordered low→high (index 0 =
+ * low E), so the string number is `length − best` to flip into the convention.
  */
 export function nearestString(hz: number): { string: number; name: string; cents: number } {
   let best = 0;
@@ -54,7 +56,7 @@ export function nearestString(hz: number): { string: number; name: string; cents
     }
   }
   return {
-    string: best + 1,
+    string: STANDARD_TUNING_HZ.length - best, // index 0 (low E) → 6, index 5 (high e) → 1
     name: STANDARD_TUNING_NAMES[best],
     cents: centsBetween(hz, STANDARD_TUNING_HZ[best]),
   };

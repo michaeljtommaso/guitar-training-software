@@ -90,7 +90,7 @@ export function detectF0Yin(
 
 export interface TuningReading {
   f0: number;
-  /** 1-based standard-tuning string (1 = low E … 6 = high E). */
+  /** 1-based standard-tuning string, standard convention (1 = high e … 6 = low E). */
   string: number;
   name: string;
   cents: number;
