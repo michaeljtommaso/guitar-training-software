@@ -252,8 +252,8 @@ id: open_chords_c_major
 target: { chord: C_major }
 accepted_fingerings:
   - { index: {string:2,fret:1}, middle:{string:4,fret:2}, ring:{string:5,fret:3} }
-expected_strings: [2,3,4,5,6]
-avoid_strings: [1]
+expected_strings: [1,2,3,4,5]
+avoid_strings: [6]   # standard numbering: 1 = high e … 6 = low E (C major avoids low E)
 success_criteria: { hold_time_ms:1200, min_audio_conf:0.8, max_muted_strings:0 }
 feedback_priority: [wrong_fret, accidental_muting, missing_string, late_strum]
 ```
