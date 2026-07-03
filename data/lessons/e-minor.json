@@ -1,0 +1,43 @@
+{
+  "id": "open_chords_e_minor",
+  "title": "E minor (open)",
+  "steps": [
+    {
+      "chord": "Em",
+      "accepted_fingerings": [
+        {
+          "middle": {
+            "string": 5,
+            "fret": 2
+          },
+          "ring": {
+            "string": 4,
+            "fret": 2
+          }
+        }
+      ],
+      "expected_strings": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "avoid_strings": [],
+      "success_criteria": {
+        "hold_time_ms": 1200,
+        "min_audio_conf": 0.6,
+        "max_muted_strings": 0
+      },
+      "feedback_priority": [
+        "wrong_fret",
+        "muted_string",
+        "missing_note",
+        "wrong_string",
+        "behind_fret",
+        "late_strum"
+      ]
+    }
+  ]
+}

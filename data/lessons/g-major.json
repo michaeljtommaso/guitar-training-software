@@ -1,0 +1,47 @@
+{
+  "id": "open_chords_g_major",
+  "title": "G major (open)",
+  "steps": [
+    {
+      "chord": "G",
+      "accepted_fingerings": [
+        {
+          "index": {
+            "string": 5,
+            "fret": 2
+          },
+          "middle": {
+            "string": 6,
+            "fret": 3
+          },
+          "ring": {
+            "string": 1,
+            "fret": 3
+          }
+        }
+      ],
+      "expected_strings": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "avoid_strings": [],
+      "success_criteria": {
+        "hold_time_ms": 1200,
+        "min_audio_conf": 0.6,
+        "max_muted_strings": 0
+      },
+      "feedback_priority": [
+        "wrong_fret",
+        "muted_string",
+        "missing_note",
+        "wrong_string",
+        "behind_fret",
+        "late_strum"
+      ]
+    }
+  ]
+}

@@ -20,6 +20,7 @@ import {
 } from "../perception/perceptionStore";
 import type { NotesEvent } from "../perception/audio/notes/NoteSource";
 import type { VisionEvent } from "../fusion/events/visionEvents";
+import { fusionIngest } from "../fusion/fusionStore";
 import { solveHomography, type Point } from "../perception/vision/homography";
 import type { HandDetection } from "../perception/vision/handLandmarker";
 import captureProcessorUrl from "../perception/audio/capture-processor.ts?worker&url";
@@ -111,7 +112,11 @@ export async function startCapture(
     notesWorker.postMessage({ type: "init", modelUrl: "/models/basic-pitch/model.json" });
     notesWorker.onmessage = (e: MessageEvent) => {
       const msg = e.data as { type: "notes"; events: NotesEvent[] } | { type: string };
-      if (msg.type === "notes") for (const ev of (msg as { events: NotesEvent[] }).events) recordNotes(ev);
+      if (msg.type === "notes") {
+        const events = (msg as { events: NotesEvent[] }).events;
+        for (const ev of events) recordNotes(ev);
+        fusionIngest(events, "audio"); // WP-4: notes evidence into the fusion engine
+      }
     };
   }
 
@@ -128,6 +133,7 @@ export async function startCapture(
       });
     } else if (msg.type === "audioEvents") {
       recordAudioEvents(msg.events);
+      fusionIngest(msg.events, "audio"); // WP-4: worker→fusion ingest boundary
     } else if (msg.type === "audioState") {
       setPerception({ audioAnalysis: msg.state });
     } else if (msg.type === "notesChunk") {
@@ -173,7 +179,10 @@ export async function startCapture(
       if (window.__visionDebug) window.__visionDebug.status = `error: ${msg.message}`;
       readyResolve(); // don't hang; overlay just won't get hands
     }
-    else if (msg.type === "visionFrame") applyVisionFrame(msg.events);
+    else if (msg.type === "visionFrame") {
+      applyVisionFrame(msg.events);
+      fusionIngest(msg.events, "vision"); // WP-4: worker→fusion ingest boundary
+    }
     else if (msg.type === "detectResult") pendingDetections.get(msg.id)?.(msg.hands);
   };
 

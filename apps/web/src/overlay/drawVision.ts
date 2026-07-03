@@ -11,6 +11,7 @@ import { MAX_FRET, fretLineX, stringY } from "../perception/vision/fretboard";
 import { FINGERTIP_LANDMARKS } from "../perception/vision/fingerMapping";
 import { perStringStatus } from "../perception/vision/demoTarget";
 import { decayConfidence, overlayOpacity } from "../perception/vision/degradation";
+import { fusionHot } from "../fusion/fusionStore";
 
 export function drawVision(
   ctx: CanvasRenderingContext2D,
@@ -34,7 +35,23 @@ export function drawVision(
   }
   drawHalos(ctx, w, h, vh, palette);
   drawStringBars(ctx, w, vh, palette);
+  drawHintLine(ctx, w, h, palette);
 
+  ctx.restore();
+}
+
+/** WP-4: the current one-line fusion hint, drawn along the bottom edge. */
+function drawHintLine(ctx: CanvasRenderingContext2D, w: number, h: number, palette: StatusPalette): void {
+  if (!fusionHot.active || !fusionHot.hintText) return;
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.font = "20px 'IBM Plex Mono', monospace";
+  ctx.textBaseline = "bottom";
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
+  const metrics = ctx.measureText(fusionHot.hintText);
+  ctx.fillRect(8, h - 40, Math.min(w - 16, metrics.width + 16), 32);
+  ctx.fillStyle = palette.warn;
+  ctx.fillText(fusionHot.hintText, 16, h - 14, w - 32);
   ctx.restore();
 }
 
@@ -100,7 +117,10 @@ function drawStringBars(
   vh: VisionHot,
   palette: StatusPalette,
 ): void {
-  const status = perStringStatus(vh.assigns);
+  // WP-4: when a lesson is running, the FUSED audio+vision status owns the
+  // bars; the vision-only demo target remains the no-lesson fallback.
+  const status =
+    fusionHot.active && fusionHot.stringStatus ? fusionHot.stringStatus : perStringStatus(vh.assigns);
   const barW = 14;
   const gap = 6;
   const x0 = w - (barW + gap) * 6 - 12;

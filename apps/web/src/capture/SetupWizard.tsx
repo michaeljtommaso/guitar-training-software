@@ -10,6 +10,7 @@ import type { Point } from "../perception/vision/homography";
 import { OverlayCanvas } from "../overlay/OverlayCanvas";
 import { DebugPanel } from "./DebugPanel";
 import { AudioDebugPanel } from "./AudioDebugPanel";
+import { LessonPanel } from "../fusion/LessonPanel";
 
 export function SetupWizard() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -178,6 +179,7 @@ export function SetupWizard() {
         <video ref={videoRef} muted playsInline autoPlay />
         {videoEl && <OverlayCanvas video={videoEl} />}
       </div>
+      <LessonPanel />
       <DebugPanel />
       <AudioDebugPanel />
     </section>

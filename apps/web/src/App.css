@@ -204,3 +204,61 @@
   text-align: right;
   color: var(--text-muted);
 }
+
+/* ---- WP-4 lesson panel (fusion) ---- */
+.lesson-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 720px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+}
+
+.lesson-panel h3 {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.string-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.string-chip {
+  font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.35rem;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.string-chip.correct {
+  border-color: var(--correct);
+  color: var(--correct);
+}
+.string-chip.warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.string-chip.error {
+  border-color: var(--error);
+  color: var(--error);
+}
+.string-chip.uncertain {
+  border-color: var(--uncertain);
+  color: var(--uncertain);
+}
+
+.hint-line {
+  color: var(--warn);
+}

@@ -1,6 +1,7 @@
-// Placeholder — deterministic fusion engine and lessons-as-data loader land in
-// WP-4. The typed, confidence-carrying event schema (§9.1) lives under ./events,
-// one union per perception leg so the legs don't collide on merge.
+// Fusion module (WP-4): §9.1 event schema (./events), Diagnosis + Zod
+// boundaries (./diagnosis), the deterministic engine (./engine), the
+// trust-preserving feedback policy (./feedbackPolicy), lessons-as-data
+// (./lessons + /data/lessons/*.json), and the Dexie session log (./sessionLog).
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // STRING NUMBERING everywhere: 1 = high e (thinnest) … 6 = low E (thickest).
@@ -22,3 +23,9 @@
 export * from "./events/visionEvents";
 // ── WP-2 (audio) ──
 export * from "./events/audioEvents";
+// ── WP-4 (fusion) ──
+export * from "./diagnosis";
+export * from "./engine";
+export * from "./feedbackPolicy";
+export * from "./lessons";
+export * from "./sessionLog";

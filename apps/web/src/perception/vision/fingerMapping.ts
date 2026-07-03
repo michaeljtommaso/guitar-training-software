@@ -97,9 +97,16 @@ export function mapFingertips(landmarks: Landmark[], H: Homography, opts: MapOpt
   return out;
 }
 
-/** Strip rich readings to the exact §9.1 FingerAssign shape for the event. */
+/** Strip rich readings to the §9.1 FingerAssign shape for the event
+ *  (+ behindFretDist, the WP-4 additive field fusion needs for behind_fret). */
 export function toAssigns(readings: FingerReading[]): FingerAssign[] {
-  return readings.map(({ finger, string, fret, conf }) => ({ finger, string, fret, conf }));
+  return readings.map(({ finger, string, fret, conf, behindFretDist }) => ({
+    finger,
+    string,
+    fret,
+    conf,
+    behindFretDist,
+  }));
 }
 
 function clamp01(n: number): number {

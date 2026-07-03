@@ -26,6 +26,10 @@ export interface FingerAssign {
   string: number;
   fret: number;
   conf: number;
+  /** WP-4 additive field: normalized distance BEHIND the leading fret line —
+   *  the fusion engine needs it for the §9.1 `behind_fret` diagnosis. Optional
+   *  so older producers/fixtures remain valid. */
+  behindFretDist?: number;
 }
 
 export type StrumDir = "down" | "up" | "none";

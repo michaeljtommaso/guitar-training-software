@@ -86,13 +86,14 @@ describe("fingertip → string/fret [synthetic, identity homography]", () => {
     expect(r.index.conf).toBeLessThanOrEqual(0.3);
   });
 
-  it("toAssigns strips readings to the exact §9.1 FingerAssign shape", () => {
+  it("toAssigns strips readings to the §9.1 FingerAssign shape (+ behindFretDist, WP-4)", () => {
     const readings = mapFingertips(hand({ 8: cell(2, 1) }), IDENTITY_HOMOGRAPHY, { homographyConf: 1 });
     expect(toAssigns(readings)[0]).toEqual({
       finger: "index",
       string: 2,
       fret: 1,
       conf: expect.any(Number),
+      behindFretDist: expect.any(Number),
     });
   });
 });
