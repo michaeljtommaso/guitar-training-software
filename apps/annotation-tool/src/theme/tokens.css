@@ -1,0 +1,62 @@
+/*
+ * COPY of apps/web/src/theme/tokens.css (WP-6, internal tool — reuse the
+ * design tokens rather than reinvent a palette). If the web app's tokens
+ * change, re-sync this file by hand; there is no shared package.
+ *
+ * Two-layer design tokens.
+ *
+ * Layer 1 (--raw-*): the raw palette. Never referenced directly from
+ * component styles.
+ *
+ * Layer 2 (semantic tokens, e.g. --bg / --text / --correct): what
+ * components actually use. [data-theme="dark"] fully re-declares layer 2
+ * against the same raw palette, so dark mode is one attribute flip on
+ * <html> with zero per-component theme branches.
+ */
+
+:root {
+  /* ---- layer 1: raw palette ---- */
+  --raw-white: #ffffff;
+  --raw-gray-50: #f8fafc;
+  --raw-gray-100: #f1f5f9;
+  --raw-gray-200: #e2e8f0;
+  --raw-gray-400: #94a3b8;
+  --raw-gray-600: #475569;
+  --raw-gray-800: #1e293b;
+  --raw-gray-900: #0f172a;
+
+  --raw-green-400: #4ade80;
+  --raw-green-500: #22c55e;
+  --raw-amber-400: #fbbf24;
+  --raw-amber-500: #f59e0b;
+  --raw-red-400: #f87171;
+  --raw-red-500: #ef4444;
+  --raw-slate-300: #cbd5e1;
+  --raw-slate-400: #94a3b8;
+
+  /* ---- layer 2: semantic tokens (light, default) ---- */
+  --bg: var(--raw-white);
+  --surface: var(--raw-gray-50);
+  --text: var(--raw-gray-900);
+  --text-muted: var(--raw-gray-600);
+  --border: var(--raw-gray-200);
+
+  --correct: var(--raw-green-500);
+  --warn: var(--raw-amber-500);
+  --error: var(--raw-red-500);
+  --uncertain: var(--raw-slate-400);
+}
+
+[data-theme="dark"] {
+  /* ---- layer 2: semantic tokens (dark) ---- */
+  --bg: var(--raw-gray-900);
+  --surface: var(--raw-gray-800);
+  --text: var(--raw-gray-50);
+  --text-muted: var(--raw-gray-400);
+  --border: var(--raw-gray-600);
+
+  --correct: var(--raw-green-400);
+  --warn: var(--raw-amber-400);
+  --error: var(--raw-red-400);
+  --uncertain: var(--raw-slate-300);
+}
