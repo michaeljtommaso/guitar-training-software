@@ -27,7 +27,7 @@ self.onmessage = async (e: MessageEvent) => {
     framesReceived++;
     ctx?.drawImage(msg.bitmap, 0, 0);
     msg.bitmap.close();
-    if (framesReceived % 60 === 0) {
+    if (framesReceived === 1 || framesReceived % 60 === 0) {
       postMessage({ type: "visionStats", framesReceived });
     }
   }

@@ -47,6 +47,16 @@ test("capture shell smoke with fake devices", async ({ page }) => {
   const backend = await page.evaluate(() => window.__captureDebug!.snapshot().backend);
   const frameDriver = await page.evaluate(() => window.__captureDebug!.snapshot().frameDriver);
 
+  // Vision worker frame pump: rVFC → createImageBitmap → vision worker is
+  // actually alive (not just the rVFC tick counter, which fires independent
+  // of whether frames ever reach the worker).
+  await expect
+    .poll(() => page.evaluate(() => window.__captureDebug!.snapshot().visionFrames), {
+      timeout: 15_000,
+    })
+    .toBeGreaterThan(0);
+  const visionFrames = await page.evaluate(() => window.__captureDebug!.snapshot().visionFrames);
+
   // Overlay canvas is non-blank: the test grid / readout put ink in the
   // top-left 300x100 region.
   const nonBlank = await page.evaluate(() => {
@@ -63,6 +73,6 @@ test("capture shell smoke with fake devices", async ({ page }) => {
     `[capture-smoke] rvfcTicks/2s=${ticks} videoWidth=${videoWidth} ` +
       `framesRead=${audio.framesRead} samplesConsumed=${audio.samplesConsumed} ` +
       `dropped=${audio.dropped} glassToWorkerLatencyMs=${audio.latencyMs.toFixed(2)} ` +
-      `backend=${backend} frameDriver=${frameDriver}`,
+      `backend=${backend} frameDriver=${frameDriver} visionFrames=${visionFrames}`,
   );
 });
