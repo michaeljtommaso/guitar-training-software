@@ -1,6 +1,8 @@
 // FeedbackPolicy unit tests: rate limit under flood, false-positive-averse
 // confidence gates, and the exact §9.3 ranking order via constructed ties.
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { FeedbackPolicy, type Hint } from "./feedbackPolicy";
 import type { Diagnosis, DiagnosisCode } from "./diagnosis";
 
@@ -130,5 +132,16 @@ describe("FeedbackPolicy — §9.3 ranking (confidence → importance → benefi
         ["wrong_fret"],
       ),
     ).toBe("muted_string");
+  });
+});
+
+describe("FeedbackPolicy — purity guard", () => {
+  it("policy source contains no wall-clock, timer, or randomness tokens", () => {
+    // The policy is deterministic: time comes only from diagnosis timestamps.
+    // Same guard as engine.ts (engine.test.ts) — the reviewer flagged the policy
+    // as equally pure but previously unguarded.
+    // vitest root = apps/web (import.meta.url is not a file: URL under jsdom).
+    const src = readFileSync(resolve(process.cwd(), "src/fusion/feedbackPolicy.ts"), "utf8");
+    expect(src).not.toMatch(/Date\.now|Math\.random|performance\.|setTimeout|setInterval|requestAnimationFrame/);
   });
 });

@@ -133,7 +133,9 @@ export async function startCapture(
       });
     } else if (msg.type === "audioEvents") {
       recordAudioEvents(msg.events);
-      fusionIngest(msg.events, "audio"); // WP-4: worker→fusion ingest boundary
+      // WP-4: worker→fusion ingest boundary. The (audio,wall) anchor rides along
+      // so fusion can bridge the vision leg's clock (see fusionStore.ts).
+      fusionIngest(msg.events, "audio", { wallMs: msg.clockWallMs, audioMs: msg.clockAudioMs });
     } else if (msg.type === "audioState") {
       setPerception({ audioAnalysis: msg.state });
     } else if (msg.type === "notesChunk") {
@@ -167,7 +169,7 @@ export async function startCapture(
       | { type: "visionStats"; framesReceived: number }
       | { type: "visionReady" }
       | { type: "visionError"; message: string }
-      | { type: "visionFrame"; events: VisionEvent[] }
+      | { type: "visionFrame"; events: VisionEvent[]; wallMs: number }
       | { type: "detectResult"; id: number; hands: HandDetection[] };
     if (msg.type === "capability") setPerception({ backend: msg.backend });
     else if (msg.type === "visionStats") setPerception({ visionFrames: msg.framesReceived });
@@ -181,7 +183,9 @@ export async function startCapture(
     }
     else if (msg.type === "visionFrame") {
       applyVisionFrame(msg.events);
-      fusionIngest(msg.events, "vision"); // WP-4: worker→fusion ingest boundary
+      // WP-4: worker→fusion ingest boundary. wallMs (Date.now() at detection
+      // completion) rebases these worker-clock events onto the audio clock.
+      fusionIngest(msg.events, "vision", { wallMs: msg.wallMs });
     }
     else if (msg.type === "detectResult") pendingDetections.get(msg.id)?.(msg.hands);
   };

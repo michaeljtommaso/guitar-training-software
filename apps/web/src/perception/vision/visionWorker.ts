@@ -32,9 +32,12 @@ function post(msg: unknown, transfer?: Transferable[]) {
   (postMessage as (m: unknown, t?: Transferable[]) => void)(msg, transfer);
 }
 /** Post the frame's §9.1 VisionEvents in one message (staleness-safe: an empty
- *  array when no hands are present tells the overlay to clear). */
+ *  array when no hands are present tells the overlay to clear). Each batch also
+ *  carries a Date.now() wall stamp (the one clock every agent shares) taken at
+ *  detection completion, so fusion can rebase these worker-clock event times
+ *  onto the audio clock without third-origin arithmetic (see fusionStore.ts). */
 function emitFrame(events: VisionEvent[]) {
-  post({ type: "visionFrame", events });
+  post({ type: "visionFrame", events, wallMs: Date.now() });
 }
 /** Monotonic timestamp for MediaPipe VIDEO mode (must strictly increase). */
 function nextTs(): number {

@@ -38,6 +38,36 @@ test("fusion lesson: diagnoses flow, hints are rate-limited, session log lands i
     })
     .toBeGreaterThan(0);
 
+  // (i.b) CROSS-LEG PROOF. The fake camera yields no live hand detections, so
+  // the audio leg alone can't prove cross-leg fusion. We inject a SYNTHETIC (and
+  // clearly-labeled) calib + fingerAssign stream through the SAME runtime ingest
+  // path the vision worker uses (fusionIngest, via the debug hook — NOT a bypass
+  // into the engine), stamped with a skewed worker-style performance.now() `t`
+  // AND a real Date.now() wall stamp, so the FIXED clock bridging is exercised
+  // (the skewed worker `t` must be ignored). Fake-mic audio flows throughout.
+  // We then require a diagnosis whose evidence cites BOTH legs.
+  await expect
+    .poll(() => page.evaluate(() => window.__fusionDebug!.clockReady()), { timeout: 15_000 })
+    .toBe(true); // the audio leg must have established the wall↔audio anchor first
+  for (let i = 0; i < 20; i++) {
+    await page.evaluate(() => window.__fusionDebug!.injectSyntheticVision());
+    await page.waitForTimeout(120);
+  }
+  await expect
+    .poll(() => page.evaluate(() => window.__fusionDebug!.crossLegDiagnoses().length), {
+      timeout: 20_000,
+    })
+    .toBeGreaterThan(0);
+  const crossLeg = await page.evaluate(() => window.__fusionDebug!.crossLegDiagnoses());
+  const xl = crossLeg[crossLeg.length - 1];
+  console.log(
+    `[fusion-e2e] SYNTHETIC vision injected (worker-clock t ignored, wall stamp used) → ` +
+      `cross-leg diagnoses=${crossLeg.length} | sample: code=${xl.code} conf=${xl.conf} ` +
+      `audio="${xl.evidence.audio}" vision="${xl.evidence.vision}"`,
+  );
+  expect(xl.evidence.audio).toBeTruthy();
+  expect(xl.evidence.vision).toBeTruthy();
+
   // (ii) Wait for at least two hints, then verify the 1.5 s rate limit on the
   // audio-clock hint timestamps.
   await expect

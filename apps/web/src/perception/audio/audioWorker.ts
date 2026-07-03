@@ -32,6 +32,12 @@ export interface AudioWorkerStats {
 export interface AudioEventsMsg {
   type: "audioEvents";
   events: AudioEvent[];
+  // Clock anchor: the last drained frame's audio-clock and wall-clock stamps —
+  // sampled TOGETHER in the worklet (ringBuffer dual stamps). Lets the main
+  // thread map wall↔audio to bridge the vision leg's clock without a third
+  // origin (see fusionStore.ts CLOCK BRIDGING).
+  clockAudioMs: number;
+  clockWallMs: number;
 }
 
 export interface AudioStateMsg {
@@ -55,6 +61,10 @@ let sampleRate = 48000;
 let framesRead = 0;
 let samplesConsumed = 0;
 let latencyMs = NaN; // EMA of per-frame glass-to-worker latency
+// Last drained frame's together-sampled (audio-clock, wall-clock) stamps —
+// the wall↔audio anchor forwarded with each audioEvents batch (clock bridging).
+let lastFrameStampMs = NaN;
+let lastFrameWallMs = NaN;
 const scratch = new Float32Array(FRAME_SAMPLES);
 
 // Hop windowing: a rolling FFT-sized window advanced one render quantum at a
@@ -84,6 +94,8 @@ function drain(): void {
     if (frame === null) break;
     framesRead++;
     samplesConsumed += FRAME_SAMPLES;
+    lastFrameStampMs = frame.stampMs;
+    lastFrameWallMs = frame.wallMs;
     const lat = Date.now() - frame.wallMs;
     latencyMs = Number.isFinite(latencyMs) ? latencyMs + 0.2 * (lat - latencyMs) : lat;
 
@@ -107,7 +119,14 @@ function drain(): void {
   }
 
   if (pendingEvents.length) {
-    post({ type: "audioEvents", events: pendingEvents });
+    // pendingEvents only accrue while draining frames, so the anchor stamps
+    // (set in the loop above) are finite here.
+    post({
+      type: "audioEvents",
+      events: pendingEvents,
+      clockAudioMs: lastFrameStampMs,
+      clockWallMs: lastFrameWallMs,
+    });
     pendingEvents = [];
   }
   const now = Date.now();

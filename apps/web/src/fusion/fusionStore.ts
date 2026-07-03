@@ -147,30 +147,64 @@ export function setStep(stepIndex: number): void {
   notify({ stepIndex: idx, targetChord: lesson.steps[idx].chord, hint: null });
 }
 
-// CLOCK NORMALIZATION: audio events are stamped on the audio clock, vision
-// events on the worker's performance.now(). The engine assumes ONE clock, so
-// vision timestamps are mapped into the audio domain here using the arrival
-// skew of the latest audio batch. Approximate (transport jitter ~tens of ms)
-// but plenty for the engine's freshness windows; the engine stays pure.
-let visionToAudioOffset: number | null = null; // performance.now() − audio t
+// CLOCK BRIDGING (WP-4). The engine assumes ONE clock (audio-clock ms). The two
+// perception legs are stamped on THREE different origins:
+//   • audio events → audio clock (AudioContext currentTime, origin = ctx start)
+//   • vision events → the vision WORKER's performance.now() (origin = worker
+//     spawn ≈ capture start) — a different origin, meaningless in the audio domain
+//   • main thread performance.now() → origin = page load (navigationStart)
+// The one clock EVERY agent shares directly is Date.now() (wall). We bridge
+// through it, exactly like the WP-1 ring buffer solved glass-to-worker latency:
+//   • the audio leg carries a (audioMs, wallMs) pair sampled TOGETHER in the
+//     worklet (ringBuffer dual stamps) → offset = wallMs − audioMs
+//   • the vision worker stamps each frame batch with Date.now() at detection
+//     completion → audioT = batchWallMs − offset
+// Every conversion is between clocks actually sampled together somewhere; there
+// is NO third-origin arithmetic (the old code derived the offset from the main
+// thread's performance.now() and applied it to WORKER-origin timestamps, adding
+// a constant page-load→capture bias of seconds — vision then aged past
+// assignsTtlMs and fusion silently collapsed to audio-only).
+// Residual bias is bounded to ~tens of ms: the vision wall stamp is taken at
+// detection completion (not frame capture), so it lags the frame content by the
+// detect+transport latency; audio↔wall drift between anchor refreshes is ppm.
+// Re-anchored on every audio batch — the calibration knob for real-clock drift.
+let wallToAudioOffset: number | null = null; // wallMs − audioMs (one instant)
+
+/** Clock stamps carried alongside a worker→fusion batch (see CLOCK BRIDGING). */
+export interface IngestClock {
+  /** Date.now() wall-clock stamp for this batch (the shared clock). */
+  wallMs: number;
+  /** Audio-clock stamp sampled TOGETHER with wallMs — audio leg only. */
+  audioMs?: number;
+}
 
 /**
  * Ingest a batch of raw perception events (worker → fusion boundary; the
  * engine Zod-validates each and drops+counts malformed ones). Called from the
- * capture controller for every audioEvents / visionFrame message.
+ * capture controller for every audioEvents / visionFrame message. `clock`
+ * carries the batch's wall stamp (+ audio anchor for the audio leg) so vision
+ * timestamps can be rebased onto the audio clock (see CLOCK BRIDGING above).
  */
-export function fusionIngest(events: unknown[], leg: "audio" | "vision"): void {
+export function fusionIngest(events: unknown[], leg: "audio" | "vision", clock?: IngestClock): void {
   if (!engine || !policy || !record) return;
+  // Refresh the wall↔audio anchor from the audio leg's together-sampled pair.
+  if (leg === "audio" && clock && typeof clock.audioMs === "number") {
+    wallToAudioOffset = clock.wallMs - clock.audioMs;
+  }
+  // Rebase the whole vision batch onto the audio clock via the shared wall
+  // stamp. Before the first audio anchor lands we can't place vision on the
+  // timeline — skip it (audio flows from capture start, so this only ever skips
+  // the earliest pre-calibration frames).
+  let visionAudioT: number | null = null;
+  if (leg === "vision") {
+    if (wallToAudioOffset === null || !clock) return;
+    visionAudioT = clock.wallMs - wallToAudioOffset;
+  }
   const t0 = performance.now();
   let hint: Hint | null = null;
   let last: Diagnosis | null = null;
   for (let raw of events) {
-    const rawT = (raw as { t?: number }).t;
-    if (leg === "audio" && typeof rawT === "number" && Number.isFinite(rawT)) {
-      visionToAudioOffset = performance.now() - rawT;
-    } else if (leg === "vision" && typeof rawT === "number" && Number.isFinite(rawT)) {
-      raw = { ...(raw as object), t: visionToAudioOffset === null ? 0 : rawT - visionToAudioOffset };
-    }
+    if (leg === "vision") raw = { ...(raw as object), t: visionAudioT };
     const diagnoses = engine.ingest(raw, leg);
     const et = (raw as { t?: number }).t;
     if (typeof et === "number" && Number.isFinite(et)) lastEventT = Math.max(lastEventT, et);
@@ -244,6 +278,19 @@ declare global {
       hintTimes(): number[];
       /** Reads sessions back from IndexedDB and Zod-validates every record. */
       validateStoredSessions(): Promise<{ count: number; allValid: boolean }>;
+      /** True once the audio leg has established the wall↔audio clock anchor. */
+      clockReady(): boolean;
+      /** Diagnoses this session whose evidence cites BOTH legs (cross-leg proof). */
+      crossLegDiagnoses(): Diagnosis[];
+      /**
+       * e2e ONLY — inject a SYNTHETIC (honestly-labeled) calib + fingerAssign
+       * batch through the REAL vision ingest path (fusionIngest, not a bypass
+       * into the engine). The event `t` is a skewed worker-style performance.now()
+       * so the fixed clock bridging is exercised: it must be IGNORED and the real
+       * Date.now() wall stamp used instead. Returns the audio-clock time the batch
+       * normalized to (or null if the clock anchor isn't ready yet).
+       */
+      injectSyntheticVision(): number | null;
     };
   }
 }
@@ -258,6 +305,31 @@ if (typeof window !== "undefined") {
         count: recs.length,
         allValid: recs.every((r) => SessionRecordSchema.safeParse(r).success),
       };
+    },
+    clockReady: () => wallToAudioOffset !== null,
+    crossLegDiagnoses: () =>
+      (record?.diagnoses ?? []).filter((d) => d.evidence.audio && d.evidence.vision),
+    injectSyntheticVision() {
+      if (wallToAudioOffset === null) return null;
+      // Skewed worker-origin stamp (~+9 s vs the audio clock): the fix MUST
+      // ignore this and use the real Date.now() wall stamp below.
+      const skewedWorkerT = performance.now() + 9000;
+      const wallMs = Date.now();
+      const events = [
+        { t: skewedWorkerT, kind: "calib", homographyConf: 0.9 },
+        {
+          t: skewedWorkerT,
+          kind: "fingerAssign",
+          // Canonical open-C shape — SYNTHETIC, no accuracy claim.
+          assigns: [
+            { finger: "index", string: 2, fret: 1, conf: 0.9 },
+            { finger: "middle", string: 4, fret: 2, conf: 0.9 },
+            { finger: "ring", string: 5, fret: 3, conf: 0.9 },
+          ],
+        },
+      ];
+      fusionIngest(events, "vision", { wallMs });
+      return wallMs - wallToAudioOffset;
     },
   };
 }
