@@ -4,7 +4,7 @@ Run started 2026-07-03 with Fable 5 orchestrating Opus/Sonnet subagents.
 
 | WP | Name | Status | Commit | Notes |
 | --- | --- | --- | --- | --- |
-| WP-0 | Foundation & license firewall | not started | | |
+| WP-0 | Foundation & license firewall | done (review PASS) | 32815c3 + d128324 | License firewall proven fail-closed on real AGPL pkgs (name-denylist + license-expression paths). All gates re-run by independent reviewer. |
 | WP-1 | Capture shell | not started | | |
 | WP-2 | Audio open-chord loop | not started | | |
 | WP-3 | Vision + marker calibration | not started | | |
