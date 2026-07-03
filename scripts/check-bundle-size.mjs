@@ -35,6 +35,17 @@ const gz = (file) => gzipSync(readFileSync(join(ASSETS_DIR, file))).length;
 const initial = files.filter((f) => !DEFERRED.test(f));
 const deferred = files.filter((f) => DEFERRED.test(f));
 
+// Fail-closed guard: a real Vite build always emits an entry chunk (index-*.js)
+// on the initial path. Zero initial chunks means the DEFERRED classifier
+// swallowed everything (or the build produced no entry) — never a silent pass.
+if (initial.length === 0) {
+  console.error(
+    `bundle-size: FAIL — no initial (non-deferred) JS chunk found among ${files.length} file(s); ` +
+      `the initial-payload budget cannot be verified. Check the DEFERRED classifier / build output.`,
+  );
+  process.exit(1);
+}
+
 const initialKb = initial.reduce((s, f) => s + gz(f), 0) / 1024;
 const deferredKb = deferred.reduce((s, f) => s + gz(f), 0) / 1024;
 

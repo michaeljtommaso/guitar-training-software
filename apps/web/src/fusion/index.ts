@@ -4,4 +4,5 @@
 
 // ── WP-3 (vision) ──
 export * from "./events/visionEvents";
-// ── WP-2 (audio) adds `export * from "./events/audioEvents";` here ──
+// ── WP-2 (audio) ──
+export * from "./events/audioEvents";

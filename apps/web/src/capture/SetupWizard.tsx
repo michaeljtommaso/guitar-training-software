@@ -9,6 +9,7 @@ import { startCapture, MANUAL_TAP_ORDER, type CaptureHandles } from "./controlle
 import type { Point } from "../perception/vision/homography";
 import { OverlayCanvas } from "../overlay/OverlayCanvas";
 import { DebugPanel } from "./DebugPanel";
+import { AudioDebugPanel } from "./AudioDebugPanel";
 
 export function SetupWizard() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -178,6 +179,7 @@ export function SetupWizard() {
         {videoEl && <OverlayCanvas video={videoEl} />}
       </div>
       <DebugPanel />
+      <AudioDebugPanel />
     </section>
   );
 }
