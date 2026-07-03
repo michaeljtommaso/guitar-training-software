@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { SetupWizard } from "./capture/SetupWizard";
+import { CoachPanel } from "./coach";
 import "./App.css";
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
         {isDark ? "Switch to light mode" : "Switch to dark mode"}
       </button>
       <SetupWizard />
+      <CoachPanel />
     </main>
   );
 }

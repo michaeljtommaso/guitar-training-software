@@ -9,3 +9,5 @@ apps/web/public/models/mediapipe/wasm/
 __pycache__/
 *.pyc
 .DS_Store
+# WP-5: opt-in clip/session uploads + persisted cost-cap budget (local only).
+services/backend/storage/
