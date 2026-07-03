@@ -1,0 +1,14 @@
+{
+  "name": "guitar-tutor",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r run test",
+    "build": "pnpm -r run build",
+    "bundle-size": "node scripts/check-bundle-size.mjs",
+    "license-check": "node scripts/check-licenses.mjs"
+  }
+}
