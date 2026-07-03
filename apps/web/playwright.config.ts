@@ -29,9 +29,14 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: "pnpm dev --port 5199 --strictPort",
+    // Serve the PRODUCTION build (vite preview), not dev: MediaPipe's
+    // HandLandmarker import()s its wasm loader from /models, and vite's DEV
+    // server refuses to serve /public files as modules. Preview serves /public
+    // raw — the real shippable behavior. `pnpm build` also runs the
+    // copy-vision-assets prebuild.
+    command: "pnpm build && pnpm exec vite preview --port 5199 --strictPort",
     url: "http://localhost:5199",
     reuseExistingServer: false,
-    timeout: 60_000,
+    timeout: 120_000,
   },
 });

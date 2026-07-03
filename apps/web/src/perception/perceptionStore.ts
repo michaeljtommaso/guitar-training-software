@@ -19,6 +19,40 @@ export interface PerceptionSnapshot {
 /** Per-frame hot state — mutated directly, never notifies React. */
 export const hot = { rvfcTicks: 0, fps: 0 };
 
+// ── WP-3 vision hot state ────────────────────────────────────────────────────
+// Written by the vision worker's events (via the controller), read by the
+// overlay inside its rVFC callback. Never flows through React.
+import type { FingerAssign, Handedness, Landmark, StrumDir } from "../fusion/events/visionEvents";
+import type { Homography } from "./vision/homography";
+
+export interface VisionHot {
+  hands: { landmarks: Landmark[]; handed: Handedness }[];
+  assigns: FingerAssign[];
+  /** Current image→fretboard homography (null until calibrated). */
+  H: Homography | null;
+  /** Confidence at the last confirmed calibration. */
+  calibConf: number;
+  /** performance.now() when H was last confirmed (for decay/dimming, §7). */
+  calibSeenAt: number;
+  strum: { dir: StrumDir; conf: number };
+}
+
+export const visionHot: VisionHot = {
+  hands: [],
+  assigns: [],
+  H: null,
+  calibConf: 0,
+  calibSeenAt: 0,
+  strum: { dir: "none", conf: 0 },
+};
+
+/** Set/replace the calibration homography (from ChArUco or manual tap). */
+export function setCalibration(H: Homography | null, conf: number): void {
+  visionHot.H = H;
+  visionHot.calibConf = conf;
+  visionHot.calibSeenAt = performance.now();
+}
+
 let snapshot: PerceptionSnapshot = {
   audio: null,
   backend: null,
@@ -45,9 +79,9 @@ export function subscribe(listener: () => void): () => void {
 // without threading state through the DOM.
 declare global {
   interface Window {
-    __captureDebug?: { snapshot(): PerceptionSnapshot; hot: typeof hot };
+    __captureDebug?: { snapshot(): PerceptionSnapshot; hot: typeof hot; visionHot: VisionHot };
   }
 }
 if (typeof window !== "undefined") {
-  window.__captureDebug = { snapshot: getSnapshot, hot };
+  window.__captureDebug = { snapshot: getSnapshot, hot, visionHot };
 }

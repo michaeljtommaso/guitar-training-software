@@ -2,6 +2,9 @@ node_modules/
 dist/
 test-results/
 playwright-report/
+# MediaPipe WASM is copied from node_modules at predev/prebuild (copy-vision-assets.mjs);
+# the hand_landmarker.task model is committed (not re-derivable offline).
+apps/web/public/models/mediapipe/wasm/
 .venv/
 __pycache__/
 *.pyc

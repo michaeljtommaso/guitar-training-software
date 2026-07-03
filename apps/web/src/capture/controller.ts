@@ -6,12 +6,45 @@ import { buildConstraints, type DeviceSelection } from "./buildConstraints";
 import { startVideoFrameLoop } from "./videoFrameLoop";
 import { ringBufferByteLength, RING_CAPACITY } from "../perception/audio/ringBuffer";
 import type { AudioWorkerStats } from "../perception/audio/audioWorker";
-import { setPerception } from "../perception/perceptionStore";
+import { setPerception, setCalibration, visionHot } from "../perception/perceptionStore";
+import type { VisionEvent } from "../fusion/events/visionEvents";
+import { solveHomography, type Point } from "../perception/vision/homography";
+import type { HandDetection } from "../perception/vision/handLandmarker";
 import captureProcessorUrl from "../perception/audio/capture-processor.ts?worker&url";
+
+// Manual-tap destination corners in normalized fretboard space, in the order the
+// user is asked to tap them: (nut,lowE) (nut,highE) (fret5,highE) (fret5,lowE).
+// Convention: x=0 nut → x=1 fret5; y=0 string6(low E) → y=1 string1(high e).
+export const MANUAL_TAP_ORDER = [
+  { label: "nut · low E (6th)", dst: { x: 0, y: 0 } },
+  { label: "nut · high e (1st)", dst: { x: 0, y: 1 } },
+  { label: "5th fret · high e (1st)", dst: { x: 1, y: 1 } },
+  { label: "5th fret · low E (6th)", dst: { x: 1, y: 0 } },
+] as const;
+
+declare global {
+  interface Window {
+    /** e2e/debug hook — set while capture is running; proves the real
+     *  HandLandmarker runs in-browser on a still image. */
+    __visionDebug?: {
+      ready: Promise<void>;
+      status?: string;
+      detectImageUrl(url: string): Promise<HandDetection[]>;
+    };
+  }
+}
 
 export interface CaptureHandles {
   stream: MediaStream;
   stop(): void;
+  /** Manual 4-corner tap calibration (image-normalized taps, MANUAL_TAP_ORDER).
+   *  Primary calibration path; uses the pure-TS DLT homography. */
+  setManualCalibration(taps: Point[]): void;
+  /** ChArUco calibration from the current video frame (real opencv.js). Returns
+   *  the number of detected corners, or 0 if no board was found. */
+  calibrateCharuco(): Promise<number>;
+  /** Drop the current calibration (overlay dims, mapping stops). */
+  clearCalibration(): void;
 }
 
 export async function startCapture(
@@ -63,18 +96,79 @@ export async function startCapture(
   };
 
   // --- vision worker topology ----------------------------------------------
+  // CLASSIC worker (not module): MediaPipe's HandLandmarker loads its wasm
+  // runtime via importScripts, which only exists in classic workers — in a
+  // module worker it fails with "ModuleFactory not set." Vite still bundles the
+  // worker's ESM imports into a classic script at build time.
   const visionWorker = new Worker(
     new URL("../perception/vision/visionWorker.ts", import.meta.url),
-    { type: "module" },
+    { type: "classic" },
   );
   const offscreen = new OffscreenCanvas(1280, 720);
   visionWorker.postMessage({ type: "init", canvas: offscreen }, [offscreen]);
+
+  let readyResolve: () => void;
+  const visionReady = new Promise<void>((r) => (readyResolve = r));
+  const pendingDetections = new Map<number, (hands: HandDetection[]) => void>();
+  let detectId = 0;
+
   visionWorker.onmessage = (e: MessageEvent) => {
     const msg = e.data as
       | { type: "capability"; backend: "webgpu" | "wasm" }
-      | { type: "visionStats"; framesReceived: number };
+      | { type: "visionStats"; framesReceived: number }
+      | { type: "visionReady" }
+      | { type: "visionError"; message: string }
+      | { type: "visionFrame"; events: VisionEvent[] }
+      | { type: "detectResult"; id: number; hands: HandDetection[] };
     if (msg.type === "capability") setPerception({ backend: msg.backend });
     else if (msg.type === "visionStats") setPerception({ visionFrames: msg.framesReceived });
+    else if (msg.type === "visionReady") {
+      if (window.__visionDebug) window.__visionDebug.status = "ready";
+      readyResolve();
+    } else if (msg.type === "visionError") {
+      console.error(`[vision] HandLandmarker init failed: ${msg.message}`);
+      if (window.__visionDebug) window.__visionDebug.status = `error: ${msg.message}`;
+      readyResolve(); // don't hang; overlay just won't get hands
+    }
+    else if (msg.type === "visionFrame") applyVisionFrame(msg.events);
+    else if (msg.type === "detectResult") pendingDetections.get(msg.id)?.(msg.hands);
+  };
+
+  // Reduce a frame's §9.1 VisionEvents into the overlay hot state. Calibration
+  // echoes are ignored here (calibration is set authoritatively on the main
+  // thread via setCalibration); every detection frame — including an empty one —
+  // refreshes hands + assigns so stale halos never linger.
+  function applyVisionFrame(events: VisionEvent[]) {
+    if (events.length > 0 && events.every((e) => e.kind === "calib")) return;
+    const hands: typeof visionHot.hands = [];
+    let assigns: typeof visionHot.assigns = [];
+    for (const ev of events) {
+      if (ev.kind === "hand") hands.push({ landmarks: ev.landmarks, handed: ev.handed });
+      else if (ev.kind === "fingerAssign") assigns = ev.assigns;
+      else if (ev.kind === "strum") visionHot.strum = { dir: ev.dir, conf: ev.conf };
+    }
+    visionHot.hands = hands;
+    visionHot.assigns = assigns;
+  }
+
+  const detectImage = (bitmap: ImageBitmap): Promise<HandDetection[]> =>
+    new Promise((resolve) => {
+      const id = ++detectId;
+      pendingDetections.set(id, (hands) => {
+        pendingDetections.delete(id);
+        resolve(hands);
+      });
+      visionWorker.postMessage({ type: "detectOnce", bitmap, id }, [bitmap]);
+    });
+
+  // e2e / debug hook: prove the real model runs on a still image in-browser.
+  window.__visionDebug = {
+    ready: visionReady,
+    status: "pending",
+    async detectImageUrl(url: string): Promise<HandDetection[]> {
+      const bmp = await createImageBitmap(await (await fetch(url)).blob());
+      return detectImage(bmp);
+    },
   };
 
   // Frame pump: rVFC-aligned ImageBitmaps (topology proof; ROI path is WP-3).
@@ -90,8 +184,51 @@ export async function startCapture(
       });
   });
 
+  function applyCalibration(H: number[], conf: number) {
+    setCalibration(H, conf);
+    visionWorker.postMessage({ type: "setCalib", H, conf });
+  }
+
   return {
     stream,
+    setManualCalibration(taps: Point[]) {
+      if (taps.length !== 4) throw new Error("manual calibration needs 4 taps");
+      const dst = MANUAL_TAP_ORDER.map((c) => c.dst);
+      // Pure-TS DLT (identical to cv.getPerspectiveTransform, cross-checked in
+      // opencvCalib.test.ts) — no need to load 13 MB of WASM for a 4-point solve.
+      applyCalibration(solveHomography(taps, dst), 1);
+    },
+    async calibrateCharuco(): Promise<number> {
+      const w = video.videoWidth || 1280;
+      const h = video.videoHeight || 720;
+      const off = new OffscreenCanvas(w, h);
+      const cctx = off.getContext("2d");
+      if (!cctx) return 0;
+      cctx.drawImage(video, 0, 0, w, h);
+      const imageData = cctx.getImageData(0, 0, w, h);
+      const { loadOpenCv, detectCharuco, charucoCornerTarget, findHomographyCv, CHARUCO_BOARD } =
+        await import("../perception/vision/opencvCalib");
+      const cv = await loadOpenCv();
+      const mat = cv.matFromImageData(imageData);
+      try {
+        const det = detectCharuco(cv, mat);
+        if (det.imageCorners.length < 4) return 0;
+        // Normalize pixel corners to image space [0..1] so the homography matches
+        // MediaPipe's normalized landmark coords.
+        const src = det.imageCorners.map((c) => ({ x: c.x / w, y: c.y / h }));
+        const targets = det.ids.map(charucoCornerTarget);
+        const H = findHomographyCv(cv, src, targets);
+        const total = CHARUCO_BOARD.cornersX * CHARUCO_BOARD.cornersY;
+        applyCalibration(H, Math.min(1, det.imageCorners.length / total));
+        return det.imageCorners.length;
+      } finally {
+        (mat as unknown as { delete(): void }).delete();
+      }
+    },
+    clearCalibration() {
+      setCalibration(null, 0);
+      visionWorker.postMessage({ type: "setCalib", H: null, conf: 0 });
+    },
     stop() {
       pumpLoop.stop();
       stream.getTracks().forEach((t) => t.stop());
@@ -100,6 +237,7 @@ export async function startCapture(
       void audioContext.close();
       audioWorker.terminate();
       visionWorker.terminate();
+      delete window.__visionDebug;
       video.srcObject = null;
     },
   };
