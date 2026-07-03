@@ -32,10 +32,18 @@ const record = (startedAt = 1000): SessionRecord => ({
   steps: [{ step: 0, chord: "C", t: 0 }],
   diagnoses: [diag(100), diag(400)],
   hints: [{ t: 400, code: "missing_note", text: "Shape close — let the high e ring", hedged: false, conf: 0.6, severity: 0.5 }],
-  stats: { diagnoses: 2, byCode: { missing_note: 2 }, hints: 1, droppedEvents: 0, evaluations: 5 },
+  stats: { diagnoses: 2, byCode: { missing_note: 2 }, hints: 1, droppedEvents: 0, evaluations: 5, complaints: 1 },
 });
 
 describe("sessionLog — Zod as the write gate (§11)", () => {
+  it("additive complaints field defaults to 0 for older records (backward-compat)", () => {
+    // A record persisted before WP-7 has no stats.complaints — the default fills
+    // it so old rows still validate.
+    const legacyStats = { diagnoses: 2, byCode: {}, hints: 1, droppedEvents: 0, evaluations: 5 };
+    const parsed = SessionRecordSchema.parse({ ...record(), stats: legacyStats });
+    expect(parsed.stats.complaints).toBe(0);
+  });
+
   it("round-trips a valid record; the stored shape re-validates", async () => {
     const db = freshDB();
     const id = await saveSession(db, record());

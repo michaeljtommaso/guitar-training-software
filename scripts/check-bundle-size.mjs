@@ -8,7 +8,8 @@
 //     run off the main thread.
 //   • AudioWorklet processors (capture-processor) — load into the audio thread.
 //   • LAZY dynamic-import chunks — opencv.js (loaded only when the user runs
-//     ChArUco calibration), and any other on-demand vendor split.
+//     ChArUco calibration), and sentry (loaded only when a DSN is configured;
+//     WP-7 §15), and any other on-demand vendor split.
 // These carry the large, license-clean perception libs (MediaPipe, OpenCV, and
 // later ONNX Runtime) the stack MUST ship; budgeting them as initial load would
 // be meaningless. Their sizes are still reported for visibility.
@@ -21,7 +22,7 @@ const ASSETS_DIR = join("apps", "web", "dist", "assets");
 
 // A chunk is DEFERRED (off the initial path) if its name marks it as a worker,
 // an audio worklet, or a lazily-imported vendor split.
-const DEFERRED = /(worker|processor|opencv)/i;
+const DEFERRED = /(worker|processor|opencv|sentry)/i;
 
 let files;
 try {

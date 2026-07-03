@@ -4,6 +4,7 @@
 import { useSyncExternalStore } from "react";
 import { subscribe, getSnapshot } from "../perception/perceptionStore";
 import { useCaptureStore } from "./captureStore";
+import { audioGlassToWorkerHistogram as glass } from "../observability/latencyHistogram";
 
 export function DebugPanel() {
   const snap = useSyncExternalStore(subscribe, getSnapshot);
@@ -30,6 +31,12 @@ export function DebugPanel() {
       <dd>{a?.dropped ?? 0}</dd>
       <dt>Glass-to-worker latency</dt>
       <dd>{a && Number.isFinite(a.latencyMs) ? `${a.latencyMs.toFixed(2)} ms` : "-"}</dd>
+      <dt>Glass-to-worker p50 / p95</dt>
+      <dd data-testid="glass-histogram">
+        {glass.count > 0
+          ? `${glass.p50.toFixed(2)} / ${glass.p95.toFixed(2)} ms (n ${glass.count})`
+          : "-"}
+      </dd>
       <dt>Vision frames</dt>
       <dd>{snap.visionFrames}</dd>
     </dl>

@@ -33,6 +33,9 @@ export const SessionRecordSchema = z.object({
     hints: z.number().int().min(0),
     droppedEvents: z.number().int().min(0),
     evaluations: z.number().int().min(0),
+    // Additive (WP-7): "Tip was wrong" complaints → §16 false-feedback metric.
+    // Defaulted so older records without the field still validate.
+    complaints: z.number().int().min(0).default(0),
   }),
 });
 export type SessionRecord = z.infer<typeof SessionRecordSchema>;

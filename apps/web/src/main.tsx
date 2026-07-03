@@ -6,9 +6,16 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "./theme/tokens.css";
 import "./index.css";
 import App from "./App";
+import { ErrorBoundary } from "./observability/ErrorBoundary";
+import { initSentry } from "./observability/sentry";
+
+// DSN-gated: a no-op (no import, no network) unless VITE_SENTRY_DSN is set.
+void initSentry();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );

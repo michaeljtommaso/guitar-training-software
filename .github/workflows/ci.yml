@@ -20,6 +20,8 @@ jobs:
       - run: node --test scripts/license-rules.test.mjs
       - run: node scripts/check-licenses.mjs
 
+  # `pnpm typecheck|lint|test|build` are all `pnpm -r` (recursive), so this one
+  # job covers BOTH workspace apps — apps/web AND apps/annotation-tool.
   web:
     runs-on: ubuntu-latest
     needs: license-check
@@ -37,6 +39,46 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm bundle-size
+
+  # Synthetic-fixture regression gate (WP-7 §16): the committed fixtures through
+  # the real code paths. FAILS the build on any accuracy/latency regression. NOT
+  # the §16 real-hardware accuracy gates (those need real captures — see BLOCKERS).
+  eval-smoke:
+    runs-on: ubuntu-latest
+    needs: license-check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm eval-smoke
+
+  # Fake-device capture smoke (WP-1). NON-BLOCKING for now: it needs a Chromium
+  # + system deps install and has not been exercised on a GitHub runner yet, so a
+  # green here is informational, not a merge gate. Promote to a required check
+  # once it's confirmed stable on ubuntu-latest.
+  e2e:
+    runs-on: ubuntu-latest
+    needs: license-check
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - run: pnpm install --frozen-lockfile
+      # Playwright needs the browser binary + its system libs on the runner.
+      - run: pnpm --filter ./apps/web exec playwright install --with-deps chromium
+      # The e2e webServer runs `pnpm build && vite preview` with fake camera/mic
+      # (see apps/web/playwright.config.ts launch args).
+      - run: pnpm --filter ./apps/web e2e
 
   backend:
     runs-on: ubuntu-latest

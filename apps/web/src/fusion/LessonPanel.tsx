@@ -9,10 +9,14 @@ import {
   startLesson,
   stopLesson,
   setStep,
+  flagTipWrong,
 } from "./fusionStore";
 import { lessons, getLesson } from "./lessons";
 import { stringName } from "./engine";
+import { fusionHintHistogram } from "../observability/latencyHistogram";
 import type { StatusKey } from "../theme/statusColors";
+
+const ms = (v: number) => (Number.isFinite(v) ? `${v.toFixed(1)} ms` : "-");
 
 const STATUS_LABEL: Record<StatusKey, string> = {
   correct: "ok",
@@ -101,6 +105,15 @@ export function LessonPanel() {
             <span className="audio-value hint-line" data-testid="hint-text">
               {snap.hint ? snap.hint.text : "—"}
             </span>
+            <button
+              type="button"
+              data-testid="tip-wrong"
+              disabled={!snap.hint}
+              onClick={flagTipWrong}
+              title="Report this tip as wrong (false-feedback metric)"
+            >
+              Tip was wrong
+            </button>
           </div>
           <div className="audio-row">
             <span className="audio-label">Fusion</span>
@@ -108,6 +121,15 @@ export function LessonPanel() {
               diag {snap.counts.diagnoses} · hints {snap.counts.hints} · dropped{" "}
               {snap.counts.dropped} · last{" "}
               {snap.lastDiagnosis ? `${snap.lastDiagnosis.code} ${(snap.lastDiagnosis.conf * 100).toFixed(0)}%` : "—"}
+            </span>
+          </div>
+          <div className="audio-row">
+            <span className="audio-label">Latency</span>
+            <span className="audio-count" data-testid="fusion-latency">
+              hint p50 {ms(fusionHintHistogram.p50)} · p95 {ms(fusionHintHistogram.p95)} (n{" "}
+              {fusionHintHistogram.count}) · complaints {snap.counts.complaints}/{snap.counts.hints}
+              {snap.counts.hints > 0 &&
+                ` (${((snap.counts.complaints / snap.counts.hints) * 100).toFixed(0)}%)`}
             </span>
           </div>
         </>

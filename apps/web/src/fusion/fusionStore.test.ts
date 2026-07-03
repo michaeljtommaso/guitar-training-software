@@ -6,7 +6,7 @@
 import "fake-indexeddb/auto";
 import { afterEach, describe, expect, it } from "vitest";
 import { DEFAULT_ENGINE_CONFIG } from "./engine";
-import { fusionIngest, getFusionSnapshot, startLesson, stopLesson } from "./fusionStore";
+import { flagTipWrong, fusionIngest, getFusionSnapshot, startLesson, stopLesson } from "./fusionStore";
 
 const TTL = DEFAULT_ENGINE_CONFIG.assignsTtlMs; // 2000 ms
 
@@ -99,5 +99,23 @@ describe("clock bridging — cross-leg diagnosis through the REAL ingest path", 
     expect(d.evidence.audio).toContain("high e");
     expect(d.evidence.vision).toContain("shape matches C");
     expect(d.conf).toBeGreaterThan(0.5); // both legs → confident, not a single-leg cap
+  });
+});
+
+describe("false-feedback complaint metric (WP-7, §16)", () => {
+  afterEach(() => stopLesson());
+
+  it("counts 'Tip was wrong' presses into the session snapshot", () => {
+    expect(startLesson("open_chords_c_major")).toBe(true);
+    expect(getFusionSnapshot().counts.complaints).toBe(0);
+    flagTipWrong();
+    flagTipWrong();
+    expect(getFusionSnapshot().counts.complaints).toBe(2);
+  });
+
+  it("is a no-op with no active session", () => {
+    stopLesson();
+    flagTipWrong(); // must not throw
+    expect(getFusionSnapshot().counts.complaints).toBe(0);
   });
 });

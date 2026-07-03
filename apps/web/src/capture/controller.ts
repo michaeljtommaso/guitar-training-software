@@ -21,6 +21,7 @@ import {
 import type { NotesEvent } from "../perception/audio/notes/NoteSource";
 import type { VisionEvent } from "../fusion/events/visionEvents";
 import { fusionIngest } from "../fusion/fusionStore";
+import { audioGlassToWorkerHistogram } from "../observability/latencyHistogram";
 import { solveHomography, type Point } from "../perception/vision/homography";
 import type { HandDetection } from "../perception/vision/handLandmarker";
 import captureProcessorUrl from "../perception/audio/capture-processor.ts?worker&url";
@@ -123,6 +124,7 @@ export async function startCapture(
   audioWorker.onmessage = (e: MessageEvent) => {
     const msg = e.data as AudioWorkerStats | AudioEventsMsg | AudioStateMsg | NotesChunkMsg;
     if (msg.type === "audioStats") {
+      audioGlassToWorkerHistogram.record(msg.latencyMs); // §16 latency readout
       setPerception({
         audio: {
           framesRead: msg.framesRead,

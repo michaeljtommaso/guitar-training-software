@@ -12,6 +12,16 @@ export default defineConfig({
   plugins: [react()],
   server: { headers: crossOriginIsolationHeaders },
   preview: { headers: crossOriginIsolationHeaders },
+  build: {
+    rollupOptions: {
+      output: {
+        // Keep Sentry in its own lazily-loaded chunk: it is imported only when a
+        // DSN is configured (WP-7, §15), so it must stay OFF the initial payload.
+        // The bundle-size gate treats `sentry` chunks as deferred (like opencv).
+        manualChunks: (id) => (id.includes("@sentry") ? "sentry" : undefined),
+      },
+    },
+  },
   test: {
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",

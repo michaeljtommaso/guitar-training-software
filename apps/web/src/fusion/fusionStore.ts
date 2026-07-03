@@ -16,6 +16,7 @@ import {
 } from "./sessionLog";
 import type { Diagnosis } from "./diagnosis";
 import type { StatusKey } from "../theme/statusColors";
+import { fusionHintHistogram } from "../observability/latencyHistogram";
 
 const FLUSH_MS = 2000;
 const LATENCY_SAMPLES_MAX = 200;
@@ -36,7 +37,7 @@ export interface FusionSnapshot {
   hint: Hint | null;
   lastDiagnosis: Diagnosis | null;
   stringStatus: Record<number, StatusKey> | null;
-  counts: { diagnoses: number; hints: number; dropped: number; evaluations: number };
+  counts: { diagnoses: number; hints: number; dropped: number; evaluations: number; complaints: number };
   /** ingest-batch → hint-emit latency (ms, main-thread) for batches that produced a hint. */
   hintLatencyMs: number[];
   /** ingest-batch → evaluation-complete latency (ms, main-thread), all batches. */
@@ -52,7 +53,7 @@ const emptySnapshot = (): FusionSnapshot => ({
   hint: null,
   lastDiagnosis: null,
   stringStatus: null,
-  counts: { diagnoses: 0, hints: 0, dropped: 0, evaluations: 0 },
+  counts: { diagnoses: 0, hints: 0, dropped: 0, evaluations: 0, complaints: 0 },
   hintLatencyMs: [],
   evalLatencyMs: [],
 });
@@ -96,7 +97,7 @@ export function startLesson(lessonId: string): boolean {
     steps: [{ step: 0, chord: lesson.steps[0].chord, t: 0 }],
     diagnoses: [],
     hints: [],
-    stats: { diagnoses: 0, byCode: {}, hints: 0, droppedEvents: 0, evaluations: 0 },
+    stats: { diagnoses: 0, byCode: {}, hints: 0, droppedEvents: 0, evaluations: 0, complaints: 0 },
   };
   hintLatencyMs.length = 0;
   evalLatencyMs.length = 0;
@@ -145,6 +146,18 @@ export function setStep(stepIndex: number): void {
   record.steps.push({ step: idx, chord: lesson.steps[idx].chord, t: lastEventT });
   dirty = true;
   notify({ stepIndex: idx, targetChord: lesson.steps[idx].chord, hint: null });
+}
+
+/**
+ * User pressed "Tip was wrong" (WP-7, §16 false-feedback-complaint metric).
+ * Increments the session complaint counter, persisted in the Dexie log. No-op
+ * without an active session. Idempotent per press — one call, one complaint.
+ */
+export function flagTipWrong(): void {
+  if (!record) return;
+  record.stats.complaints++;
+  dirty = true;
+  notify({ counts: { ...snapshot.counts, complaints: record.stats.complaints } });
 }
 
 // CLOCK BRIDGING (WP-4). The engine assumes ONE clock (audio-clock ms). The two
@@ -223,7 +236,10 @@ export function fusionIngest(events: unknown[], leg: "audio" | "vision", clock?:
   }
   const dt = performance.now() - t0;
   pushCapped(evalLatencyMs, dt);
-  if (hint) pushCapped(hintLatencyMs, dt);
+  if (hint) {
+    pushCapped(hintLatencyMs, dt);
+    fusionHintHistogram.record(dt); // §16 latency readout (module-level)
+  }
   record.stats.droppedEvents = engine.stats.dropped;
   record.stats.evaluations = engine.stats.evaluations;
   // In-memory ring caps mirror the write-gate caps (sessionLog).
@@ -245,6 +261,7 @@ export function fusionIngest(events: unknown[], leg: "audio" | "vision", clock?:
         hints: record.stats.hints,
         dropped: engine.stats.dropped,
         evaluations: engine.stats.evaluations,
+        complaints: record.stats.complaints,
       },
       hintLatencyMs: [...hintLatencyMs],
       evalLatencyMs: [...evalLatencyMs],
