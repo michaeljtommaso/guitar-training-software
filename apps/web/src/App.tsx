@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { SetupWizard } from "./capture/SetupWizard";
 import "./App.css";
 
 function App() {
@@ -24,7 +25,7 @@ function App() {
         {isDark ? <Sun size={16} /> : <Moon size={16} />}
         {isDark ? "Switch to light mode" : "Switch to dark mode"}
       </button>
-      <p className="numeral-sample">48000 Hz</p>
+      <SetupWizard />
     </main>
   );
 }

@@ -11,7 +11,7 @@ describe("App", () => {
   it("flips data-theme on <html> when the toggle is clicked", () => {
     document.documentElement.removeAttribute("data-theme");
     render(<App />);
-    const toggle = screen.getByRole("button");
+    const toggle = screen.getByRole("button", { name: /switch to/i });
 
     fireEvent.click(toggle);
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
