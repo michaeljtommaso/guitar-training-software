@@ -5,8 +5,14 @@
 import { buildConstraints, type DeviceSelection } from "./buildConstraints";
 import { startVideoFrameLoop } from "./videoFrameLoop";
 import { ringBufferByteLength, RING_CAPACITY } from "../perception/audio/ringBuffer";
-import type { AudioWorkerStats } from "../perception/audio/audioWorker";
-import { setPerception } from "../perception/perceptionStore";
+import type {
+  AudioWorkerStats,
+  AudioEventsMsg,
+  AudioStateMsg,
+  NotesChunkMsg,
+} from "../perception/audio/audioWorker";
+import { setPerception, recordAudioEvents, recordNotes } from "../perception/perceptionStore";
+import type { NotesEvent } from "../perception/audio/notes/NoteSource";
 import captureProcessorUrl from "../perception/audio/capture-processor.ts?worker&url";
 
 export interface CaptureHandles {
@@ -14,9 +20,14 @@ export interface CaptureHandles {
   stop(): void;
 }
 
+export interface CaptureOptions extends DeviceSelection {
+  /** Run Basic Pitch polyphonic notes in a worker (TF.js). Default true. */
+  enableNotes?: boolean;
+}
+
 export async function startCapture(
   video: HTMLVideoElement,
-  sel: DeviceSelection = {},
+  sel: CaptureOptions = {},
 ): Promise<CaptureHandles> {
   if (typeof SharedArrayBuffer === "undefined") {
     throw new Error(
@@ -47,9 +58,26 @@ export async function startCapture(
   const audioWorker = new Worker(new URL("../perception/audio/audioWorker.ts", import.meta.url), {
     type: "module",
   });
-  audioWorker.postMessage({ type: "init", sab });
+  audioWorker.postMessage({ type: "init", sab, sampleRate: audioContext.sampleRate });
+
+  // Basic Pitch notes run off the hot path in their own worker (TF.js is
+  // heavy). Optional and fully contained — a notes failure never disturbs the
+  // onset/chord/tuner loop.
+  const enableNotes = sel.enableNotes ?? true;
+  let notesWorker: Worker | null = null;
+  if (enableNotes) {
+    notesWorker = new Worker(new URL("../perception/audio/notes/notesWorker.ts", import.meta.url), {
+      type: "module",
+    });
+    notesWorker.postMessage({ type: "init", modelUrl: "/models/basic-pitch/model.json" });
+    notesWorker.onmessage = (e: MessageEvent) => {
+      const msg = e.data as { type: "notes"; events: NotesEvent[] } | { type: string };
+      if (msg.type === "notes") for (const ev of (msg as { events: NotesEvent[] }).events) recordNotes(ev);
+    };
+  }
+
   audioWorker.onmessage = (e: MessageEvent) => {
-    const msg = e.data as AudioWorkerStats;
+    const msg = e.data as AudioWorkerStats | AudioEventsMsg | AudioStateMsg | NotesChunkMsg;
     if (msg.type === "audioStats") {
       setPerception({
         audio: {
@@ -59,6 +87,15 @@ export async function startCapture(
           latencyMs: msg.latencyMs,
         },
       });
+    } else if (msg.type === "audioEvents") {
+      recordAudioEvents(msg.events);
+    } else if (msg.type === "audioState") {
+      setPerception({ audioAnalysis: msg.state });
+    } else if (msg.type === "notesChunk") {
+      notesWorker?.postMessage(
+        { type: "chunk", samples: msg.samples, sampleRate: msg.sampleRate, startTimeMs: msg.startTimeMs },
+        [msg.samples.buffer],
+      );
     }
   };
 
@@ -99,6 +136,7 @@ export async function startCapture(
       workletNode.disconnect();
       void audioContext.close();
       audioWorker.terminate();
+      notesWorker?.terminate();
       visionWorker.terminate();
       video.srcObject = null;
     },

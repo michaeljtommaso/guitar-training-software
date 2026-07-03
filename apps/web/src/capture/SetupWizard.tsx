@@ -8,6 +8,7 @@ import { listCaptureDevices } from "./devices";
 import { startCapture, type CaptureHandles } from "./controller";
 import { OverlayCanvas } from "../overlay/OverlayCanvas";
 import { DebugPanel } from "./DebugPanel";
+import { AudioDebugPanel } from "./AudioDebugPanel";
 
 export function SetupWizard() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -107,6 +108,7 @@ export function SetupWizard() {
         {videoEl && <OverlayCanvas video={videoEl} />}
       </div>
       <DebugPanel />
+      <AudioDebugPanel />
     </section>
   );
 }

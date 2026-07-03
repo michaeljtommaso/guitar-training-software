@@ -1,4 +1,8 @@
 packages:
   - "apps/*"
 allowBuilds:
+  # core-js/protobufjs (transitive via @spotify/basic-pitch) don't need their
+  # postinstall scripts to run — deny them (WP-2).
+  core-js: false
   esbuild: true
+  protobufjs: false
