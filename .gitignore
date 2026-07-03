@@ -11,3 +11,6 @@ __pycache__/
 .DS_Store
 # WP-5: opt-in clip/session uploads + persisted cost-cap budget (local only).
 services/backend/storage/
+# WP-6 public-data bootstrap (scripts/fetch-eval-data.mjs) — redownloadable,
+# not committed; the manifest it writes documents provenance/license/sha256.
+data/eval/

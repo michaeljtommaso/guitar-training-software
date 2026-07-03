@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guitar-tutor.local/schemas/jams.schema.json",
+  "title": "JAMS-style music annotation file",
+  "$comment": "Canonical source of truth is the Zod schema at apps/annotation-tool/src/schemas/jams.ts (WP-6, §13 of the stack plan). Hand-written mirror, kept in sync by hand — regenerate/re-check after editing jams.ts.",
+  "type": "object",
+  "required": ["file_metadata", "annotations"],
+  "additionalProperties": false,
+  "properties": {
+    "file_metadata": {
+      "type": "object",
+      "required": ["clipId", "duration"],
+      "additionalProperties": false,
+      "properties": {
+        "clipId": { "type": "string", "minLength": 1 },
+        "duration": { "type": "number", "minimum": 0 }
+      }
+    },
+    "annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["namespace", "data"],
+        "additionalProperties": false,
+        "properties": {
+          "namespace": { "type": "string", "minLength": 1, "description": "e.g. chord, onset, note_midi, pitch_class" },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["time", "duration", "value", "confidence"],
+              "additionalProperties": false,
+              "properties": {
+                "time": { "type": "number", "minimum": 0 },
+                "duration": { "type": "number", "minimum": 0 },
+                "value": {},
+                "confidence": {
+                  "anyOf": [
+                    { "type": "number", "minimum": 0, "maximum": 1 },
+                    { "type": "null" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

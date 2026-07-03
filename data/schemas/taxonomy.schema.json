@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guitar-tutor.local/schemas/taxonomy.schema.json",
+  "title": "Structured mistake-taxonomy annotation file (also the tool's per-clip session file)",
+  "$comment": "Canonical source of truth is the Zod schema at apps/annotation-tool/src/schemas/taxonomy.ts (WP-6, §13 of the stack plan). Diagnosis codes mirror apps/web/src/fusion/diagnosis.ts DIAGNOSIS_CODES exactly. Hand-written mirror, kept in sync by hand.",
+  "type": "object",
+  "required": ["clipId", "annotator", "createdAt", "consent", "quad", "fingerAssignments", "tags"],
+  "additionalProperties": false,
+  "properties": {
+    "clipId": { "type": "string", "minLength": 1 },
+    "annotator": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "minLength": 1, "description": "ISO 8601 timestamp" },
+    "consent": {
+      "type": "object",
+      "required": ["given", "scope", "date"],
+      "additionalProperties": false,
+      "properties": {
+        "given": { "type": "boolean" },
+        "scope": { "type": "string", "minLength": 1 },
+        "date": { "type": "string", "minLength": 1 }
+      }
+    },
+    "quad": {
+      "anyOf": [
+        {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "number" }
+          },
+          "description": "[topLeft, topRight, bottomRight, bottomLeft], video pixel space"
+        },
+        { "type": "null" }
+      ]
+    },
+    "fingerAssignments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["frame", "t", "finger", "string", "fret"],
+        "additionalProperties": false,
+        "properties": {
+          "frame": { "type": "integer", "minimum": 0 },
+          "t": { "type": "number", "minimum": 0 },
+          "finger": { "enum": ["thumb", "index", "middle", "ring", "pinky"] },
+          "string": { "type": "integer", "minimum": 1, "maximum": 6, "description": "1 = high e ... 6 = low E" },
+          "fret": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["start", "end", "code"],
+        "additionalProperties": false,
+        "properties": {
+          "start": { "type": "number", "minimum": 0 },
+          "end": { "type": "number", "minimum": 0 },
+          "code": {
+            "enum": ["wrong_fret", "wrong_string", "muted_string", "behind_fret", "missing_note", "late_strum", "ok"]
+          },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,191 @@
+/* Lean layout CSS using the copied design tokens (theme/tokens.css) — an
+ * internal tool, so this favors function over polish. */
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+}
+
+.app-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.internal-note {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.stage-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.video-wrap {
+  position: relative;
+  flex: 2;
+  min-width: 320px;
+}
+
+.video-stage-el {
+  width: 100%;
+  display: block;
+  background: #000;
+}
+
+.video-stage-hint {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.quad-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+}
+
+.quad-overlay .grid-line {
+  stroke: var(--correct);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.quad-overlay .quad-handle {
+  fill: var(--warn);
+  stroke: var(--bg);
+  stroke-width: 2;
+  cursor: grab;
+}
+
+.side-panels {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface);
+}
+
+.panel h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.finger-picker {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.finger-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.finger-btn.selected {
+  background: var(--correct);
+  color: #04210f;
+  border-color: var(--correct);
+}
+
+.panel-hint {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.assign-list,
+.tag-list,
+.queue-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.assign-list li,
+.tag-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.assign-list .empty,
+.tag-list .empty,
+.queue-list .empty {
+  color: var(--text-muted);
+}
+
+.tag-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+
+.tag-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  gap: 2px;
+}
+
+.fps-control {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.danger {
+  background: var(--error);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 8px;
+}
+
+.strip-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.export-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.import-btn {
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.import-btn input {
+  display: none;
+}
