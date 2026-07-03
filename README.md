@@ -34,6 +34,17 @@ Their reports should be saved under [`research/agent-reports/`](research/agent-r
 | `research/agent-reports/` | Saved agent research outputs |
 | `research/source-index.md` | Source and link index to maintain during research |
 
+## Planning & architecture
+
+The Opus-stack planning deliverable defines the full stack, decisions, build order, and open risks — architecture only, no application code yet.
+
+| Doc | Purpose |
+|---|---|
+| [`docs/opus-stack-implementation-plan.md`](docs/opus-stack-implementation-plan.md) | Front-to-back stack & architecture: research sanity-check, per-layer recommendations with alternatives, and how the system works end to end |
+| [`docs/technology-decision-records.md`](docs/technology-decision-records.md) | ADR-style records of the load-bearing decisions (platform, frontend, overlay, capture, audio, vision, fusion, backend, data, model/proxy, license firewall, deploy/eval) with alternatives and reopen triggers |
+| [`docs/implementation-work-packages.md`](docs/implementation-work-packages.md) | Ordered build work packages (WP-0 → WP-7) with scope, deliverables, verification gates, dependencies, and explicit non-goals |
+| [`docs/open-questions-and-research-gaps.md`](docs/open-questions-and-research-gaps.md) | Unresolved risks/questions with why each matters, validation method, owner lane, and decision trigger |
+
 ## Working name ideas
 
 - Guitar Training Software
