@@ -22,6 +22,14 @@ class Config:
         self.api_base = os.getenv("ANTHROPIC_API_BASE", "https://api.anthropic.com")
         self.max_output_tokens = int(os.getenv("COACH_MAX_OUTPUT_TOKENS", "1024"))
 
+        # Subscription mode (COACH_PROVIDER=claude_cli): coach turns run through
+        # the local authenticated Claude Code CLI — no API key, billed to the
+        # owner's subscription. Model defaults to the CLI's own default.
+        self.cli_bin = os.getenv("COACH_CLI_BIN", "claude")
+        self.cli_model = os.getenv("COACH_CLI_MODEL")  # None → CLI default
+        self.cli_timeout = float(os.getenv("COACH_CLI_TIMEOUT", "60"))
+        self.cli_est_tokens = int(os.getenv("COACH_CLI_EST_TOKENS", "2000"))
+
         # Hard cost-cap kill-switch (§15: "an alert is not a cap"). Persisted.
         self.budget_db = os.getenv("COACH_BUDGET_DB", str(STORAGE_DIR / "budget.sqlite"))
         self.daily_token_cap = int(os.getenv("COACH_DAILY_TOKEN_CAP", "2000000"))
