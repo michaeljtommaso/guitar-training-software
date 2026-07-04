@@ -20,3 +20,17 @@ WP-5/6 merged: 191 web+tool tests, 42 backend tests, 6/6 e2e scenarios, reviewer
 **Standing note:** All ML accuracy gates (≥90% chord, ≥85% fingertip→fret/string, <5% false-critical, >75% teacher agreement) are **deferred — needs real capture data**. No accuracy number may be claimed from tonight's run.
 
 RUN COMPLETE 2026-07-03: all 8 WPs done-for-the-night and independently review-passed. Final state: 218 web/tool tests + 42 backend tests green, 6/6 e2e scenarios, bundle 114.6 KB gz initial / 250 budget, license gate 94 pkgs clean, eval-smoke regression gate proven. All §16 ML-accuracy gates remain DEFERRED — need real capture data; none were claimed.
+
+---
+
+## Day 2 (2026-07-03 → 07-04) — post-MVP increments
+
+| Item | Status | Commit | Notes |
+| --- | --- | --- | --- |
+| GuitarSet real-audio chord eval | done (review PASS) | 35ae378 (merge a2e4712) | **First real-data number: 75.1% top-1** on 678 in-scope strummed (comp) segments, real production matcher, true 44.1 kHz. Dev players 00-03: 80.3%; held-out 04-05: 64.6%. Top confusions C→Em, Em→E, E→D (shared chord tones in binary chroma). Solos 36.0% (expected — melodic lines, reported separately). Reviewer reproduced the numbers exactly. This is Q-04 evidence, NOT the §16 home-setup gate (still unclaimed): templates are viable but short of 90% → root/bass weighting is the next cheap lever before a CRNN. Report: `models/audio/guitarset-eval-report.md`; rerun: `node scripts/eval-guitarset.mjs`. |
+| Overlay target dots + wrong-play flash | done (review PASS) | 3729e97 (merge ecc2f5b) | The core UX moment: lesson fingering projected onto the live video as labeled dots (I/M/R/P at the teaching position 70% into the fret cell; open/avoid markers at the nut), tinted by fused per-string status. Confidence-gated flash: red edge glow on confident wrong, green pulse on confident ok, NOTHING below the gate (ADR-007) — thresholds imported from feedbackPolicy, never duplicated. No calibration → no dots (never fabricated) + a "calibrate" nudge. 11 new unit tests + a new e2e (7/7 total). |
+| Claude-subscription coach provider | done (review PASS + live-proven twice) | 363dac2 (merge f52dae0) | `COACH_PROVIDER=claude_cli`: coaching runs off the owner's Claude subscription via the local authenticated Claude Code CLI — no API key. Hardened: arg-list subprocess (never shell), env allowlist (API keys excluded, test-proven), tools disabled + strict-mcp-config (hermetic), neutral cwd, hard timeout with tree-kill; output through the same taxonomy validation; real token usage recorded so the kill-switch binds on call volume. Live smoke passed on the worktree AND re-run on merged main (11.9s, validated reply). API-key mode (`anthropic`) remains the multi-user path. 14 new backend tests (56 total). |
+| ADR-010 amended: Firebase | decided | 2a966ce | Owner decision 2026-07-03: Firebase (Auth + Firestore + Cloud Storage) replaces Supabase for the future opt-in sync/accounts layer. Local-first stays default; FastAPI proxy stays. |
+| docs §9.4 string-numbering fix | done | 62cda31 | Lesson example corrected to standard convention (expected [1-5], avoid [6]). |
+
+Day-2 final state @ ecc2f5b: 229 web/tool tests + 56 backend tests green, 7/7 e2e, bundle 115.65 KB gz initial / 250 budget, license 94 pkgs clean, live subscription coaching proven.
