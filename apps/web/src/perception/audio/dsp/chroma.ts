@@ -7,7 +7,13 @@ export interface ChromaOptions {
   /** Lowest frequency folded into chroma (Hz). Below open low-E's fundamental
    *  omits DC/rumble; default 70 keeps E2 (82 Hz). */
   fMin?: number;
-  /** Highest frequency folded into chroma (Hz). */
+  /** Highest frequency folded into chroma (Hz). Default 800 band-limits out the
+   *  3rd+ harmonics (a note's 3rd harmonic lands on its fifth, its 5th on its
+   *  major third) that smear open chords into their neighbours — the dominant
+   *  GuitarSet confusions (C→Em via leaked B, Em→E via leaked G#). Fundamentals
+   *  (max open-chord fundamental G4≈392 Hz) and their 2nd harmonic (an octave =
+   *  same pitch class, harmless) stay in band. Measured +2.7 pts on GuitarSet
+   *  dev; see models/audio/guitarset-eval-report.md. */
   fMax?: number;
 }
 
@@ -19,7 +25,7 @@ export function computeChroma(
   opts: ChromaOptions = {},
 ): Float32Array {
   const fMin = opts.fMin ?? 70;
-  const fMax = opts.fMax ?? 2000;
+  const fMax = opts.fMax ?? 800;
   const binHz = sampleRate / fftSize;
   const chroma = new Float32Array(12);
   for (let k = 1; k < mag.length; k++) {
