@@ -106,3 +106,73 @@ test("fusion lesson: diagnoses flow, hints are rate-limited, session log lands i
   );
   expect(snap.evalLatencyMs.length).toBeGreaterThan(0);
 });
+
+// Overlay UX: the lesson's target finger dots draw over the live video via the
+// inverse calibration homography, and a CONFIDENT diagnosis latches the overlay
+// flash hot-state. We read the overlay's own draw-time debug hook (__overlayDebug)
+// rather than pixel-peeping the canvas, so the asserts are robust to headless
+// timing. Calibration is a SYNTHETIC identity homography (clearly labeled, no
+// accuracy claim) set exactly where a real calibration writes it.
+test("overlay: lesson target dots draw over video + a confident diagnosis flashes", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start capture" }).click();
+  await page.waitForFunction(() => window.__captureDebug !== undefined && window.__overlayDebug !== undefined);
+
+  // Audio alive → the wall↔audio clock anchor can form (needed to rebase vision).
+  await expect
+    .poll(() => page.evaluate(() => window.__captureDebug!.snapshot().audio?.framesRead ?? 0), {
+      timeout: 15_000,
+    })
+    .toBeGreaterThan(0);
+
+  // Start the C-major lesson.
+  await page.getByTestId("lesson-select").selectOption("open_chords_c_major");
+  await page.getByTestId("lesson-start").click();
+  await page.waitForFunction(() => window.__fusionDebug !== undefined);
+  await expect(page.getByTestId("lesson-target")).toHaveText("C");
+
+  // Active but NOT calibrated → the overlay shows the nudge and draws NO dots
+  // (never fake positions without a homography).
+  await expect
+    .poll(() => page.evaluate(() => window.__overlayDebug!.nudge), { timeout: 10_000 })
+    .toBe(true);
+  expect(await page.evaluate(() => window.__overlayDebug!.targetDotCount)).toBe(0);
+
+  // Inject a SYNTHETIC identity calibration into the overlay's vision hot-state —
+  // exactly what setCalibration writes; the frame pump never overwrites it.
+  await page.evaluate(() => {
+    const vh = window.__captureDebug!.visionHot;
+    vh.H = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    vh.calibConf = 0.9;
+    vh.calibSeenAt = performance.now();
+  });
+
+  // (1) Target dots now draw for the active lesson: 3 fingered + 2 open + 1 avoid.
+  await expect
+    .poll(() => page.evaluate(() => window.__overlayDebug!.targetDotCount), { timeout: 10_000 })
+    .toBeGreaterThanOrEqual(6);
+  expect(await page.evaluate(() => window.__overlayDebug!.nudge)).toBe(false);
+
+  // (2) Confident wrong/right flash. Fake non-C audio vs the injected canonical C
+  // shape yields a CONFIDENT diagnosis; keep injecting until the overlay flash
+  // hot-state latches a triad color (below-gate diagnoses would never set it).
+  await expect
+    .poll(() => page.evaluate(() => window.__fusionDebug!.clockReady()), { timeout: 15_000 })
+    .toBe(true);
+  await expect
+    .poll(
+      async () => {
+        await page.evaluate(() => window.__fusionDebug!.injectSyntheticVision());
+        return page.evaluate(() => window.__fusionDebug!.hot.flash?.color ?? null);
+      },
+      { timeout: 30_000, intervals: [150] },
+    )
+    .not.toBeNull();
+  const flash = await page.evaluate(() => window.__fusionDebug!.hot.flash);
+  const dotCount = await page.evaluate(() => window.__overlayDebug!.targetDotCount);
+  console.log(`[overlay-e2e] target dots drawn=${dotCount} | confident flash color=${flash?.color}`);
+  expect(flash).not.toBeNull();
+  expect(["error", "correct"]).toContain(flash!.color);
+
+  await page.getByTestId("lesson-stop").click();
+});
