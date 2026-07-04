@@ -5,7 +5,9 @@
 // All timers/wall-clock live HERE — the engine and policy stay deterministic.
 import { FusionEngine } from "./engine";
 import { FeedbackPolicy, type Hint } from "./feedbackPolicy";
-import { getLesson } from "./lessons";
+import { getLesson, type LessonStep } from "./lessons";
+import { flashFor, type Flash } from "../overlay/flash";
+import type { FusionTarget } from "../overlay/targetDots";
 import {
   MAX_DIAGNOSES_PER_SESSION,
   MAX_HINTS_PER_SESSION,
@@ -26,7 +28,23 @@ export const fusionHot: {
   active: boolean;
   stringStatus: Record<number, StatusKey> | null;
   hintText: string;
-} = { active: false, stringStatus: null, hintText: "" };
+  /** Current step's target fingering — drives the overlay finger dots. */
+  target: FusionTarget | null;
+  /** Latest confidence-gated flash (null until one fires this session). */
+  flash: Flash | null;
+} = { active: false, stringStatus: null, hintText: "", target: null, flash: null };
+
+/** The overlay-facing target for a lesson step (canonical fingering + strings). */
+function targetFor(step: LessonStep): FusionTarget {
+  return {
+    fingering: step.accepted_fingerings[0],
+    expectedStrings: step.expected_strings,
+    avoidStrings: step.avoid_strings,
+  };
+}
+
+/** Event-time of the last flash — the rate-limit key (see overlay/flash.ts). */
+let lastFlashT = -Infinity;
 
 export interface FusionSnapshot {
   lessonId: string | null;
@@ -104,6 +122,9 @@ export function startLesson(lessonId: string): boolean {
   fusionHot.active = true;
   fusionHot.stringStatus = engine.stringStatus;
   fusionHot.hintText = "";
+  fusionHot.target = targetFor(lesson.steps[0]);
+  fusionHot.flash = null;
+  lastFlashT = -Infinity;
   flushTimer = setInterval(() => void flush(), FLUSH_MS);
   notify({
     ...emptySnapshot(),
@@ -133,6 +154,8 @@ export function stopLesson(): void {
   fusionHot.active = false;
   fusionHot.stringStatus = null;
   fusionHot.hintText = "";
+  fusionHot.target = null;
+  fusionHot.flash = null;
   notify(emptySnapshot());
 }
 
@@ -144,6 +167,7 @@ export function setStep(stepIndex: number): void {
   engine.beginStep(idx, lastEventT);
   policy.setPriority(lesson.steps[idx].feedback_priority);
   record.steps.push({ step: idx, chord: lesson.steps[idx].chord, t: lastEventT });
+  fusionHot.target = targetFor(lesson.steps[idx]);
   dirty = true;
   notify({ stepIndex: idx, targetChord: lesson.steps[idx].chord, hint: null });
 }
@@ -223,6 +247,14 @@ export function fusionIngest(events: unknown[], leg: "audio" | "vision", clock?:
     if (typeof et === "number" && Number.isFinite(et)) lastEventT = Math.max(lastEventT, et);
     for (const d of diagnoses) {
       last = d;
+      // Confidence-gated wrong/right flash (rate-limited on event time). The
+      // overlay reads fusionHot.flash in its frame callback and time-boxes the
+      // DISPLAY on its own clock (overlay/flash.ts + drawVision.ts).
+      const f = flashFor(d, lastFlashT);
+      if (f) {
+        lastFlashT = f.t;
+        fusionHot.flash = f;
+      }
       record.diagnoses.push(d);
       record.stats.diagnoses++;
       record.stats.byCode[d.code] = (record.stats.byCode[d.code] ?? 0) + 1;
