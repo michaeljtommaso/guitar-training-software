@@ -33,4 +33,6 @@ RUN COMPLETE 2026-07-03: all 8 WPs done-for-the-night and independently review-p
 | ADR-010 amended: Firebase | decided | 2a966ce | Owner decision 2026-07-03: Firebase (Auth + Firestore + Cloud Storage) replaces Supabase for the future opt-in sync/accounts layer. Local-first stays default; FastAPI proxy stays. |
 | docs §9.4 string-numbering fix | done | 62cda31 | Lesson example corrected to standard convention (expected [1-5], avoid [6]). |
 
-Day-2 final state @ ecc2f5b: 229 web/tool tests + 56 backend tests green, 7/7 e2e, bundle 115.65 KB gz initial / 250 budget, license 94 pkgs clean, live subscription coaching proven.
+| Chroma band-limit experiment | done — kept | f315229 (merge c64e870) | Disciplined sweep (20+ configs, tuned on dev players 00-03 only, single held-out run): winner is a one-line fMax=800 Hz band-limit on the chroma fold. **Held-out 64.6%→69.5% (+4.9), all-comp 75.1%→78.5%**; C→Em confusion 20→13, Em→E 15→8. Synthetic 8/8 + eval-smoke 10/10 green with zero fixture changes; latency unchanged. Still short of the 90% home-setup gate → Q-04 CRNN trigger stands (Phase-1 CRNN is the recommended next model step). Full sweep table appended to `models/audio/guitarset-eval-report.md`. |
+
+Day-2 final state @ c64e870: 229 web/tool tests + 56 backend tests green, 7/7 e2e, eval-smoke 10/10, bundle 115.65 KB gz initial / 250 budget, license 94 pkgs clean, live subscription coaching proven, real-audio chord accuracy 78.5% comp / 69.5% held-out (honest, §16 gate unclaimed).
