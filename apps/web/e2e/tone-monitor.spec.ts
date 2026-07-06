@@ -42,13 +42,23 @@ test("tone monitor gates output and never disturbs analysis", async ({ page }) =
       const f0 = window.__captureDebug!.snapshot().audioAnalysis?.tuning?.f0;
       return Number.isFinite(f0) ? f0! : NaN;
     });
-  await expect.poll(finiteF0, { timeout: 20_000 }).not.toBeNaN();
-  const f0Before = await finiteF0();
+  // Capture the value that satisfied the poll — a separate re-read after the
+  // poll can land in a null/pre-lock window (the residual flake seen in runs).
+  const waitFiniteF0 = async () => {
+    let v = NaN;
+    await expect
+      .poll(async () => {
+        v = await finiteF0();
+        return v;
+      }, { timeout: 20_000 })
+      .not.toBeNaN();
+    return v;
+  };
+  const f0Before = await waitFiniteF0();
   const before = await page.evaluate(() => window.__captureDebug!.snapshot().eventCounts.tuning);
   await expect
     .poll(() => page.evaluate(() => window.__captureDebug!.snapshot().eventCounts.tuning), { timeout: 20_000 })
     .toBeGreaterThan(before);
-  await expect.poll(finiteF0, { timeout: 20_000 }).not.toBeNaN();
-  const f0After = await finiteF0();
+  const f0After = await waitFiniteF0();
   expect(Math.abs(f0After - f0Before)).toBeLessThan(2); // same fake tone, same reading
 });
