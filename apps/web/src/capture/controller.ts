@@ -3,6 +3,8 @@
 // SAB ring buffer → audio worker, and the vision worker (OffscreenCanvas +
 // ImageBitmap frame pump + WebGPU/WASM capability probe).
 import { buildConstraints, type DeviceSelection } from "./buildConstraints";
+import { classifyAudioInput, listCaptureDevices } from "./devices";
+import { useCaptureStore } from "./captureStore";
 import { startVideoFrameLoop } from "./videoFrameLoop";
 import { ringBufferByteLength, RING_CAPACITY } from "../perception/audio/ringBuffer";
 import type {
@@ -114,6 +116,21 @@ export async function startCapture(
   tone.setParams(useToneStore.getState().params);
   const unsubTone = useToneStore.subscribe((s) => tone.setParams(s.params));
   window.__toneDebug = { outputRms: () => tone.outputRms(), latencyMs: () => tone.latencyMs() };
+
+  // ADR-013: record which input produced this session's evidence (interface vs
+  // mic, latency) so accuracy can be interpreted and sliced later.
+  const track = stream.getAudioTracks()[0];
+  const settings = track?.getSettings() ?? {};
+  const devices = await listCaptureDevices();
+  const label = devices.mics.find((m) => m.deviceId === settings.deviceId)?.label ?? track?.label ?? "";
+  useCaptureStore.getState().setInputMeta({
+    deviceId: settings.deviceId ?? "",
+    label,
+    kind: classifyAudioInput(label),
+    sampleRate: audioContext.sampleRate,
+    baseLatencyMs: audioContext.baseLatency * 1000,
+    outputLatencyMs: (audioContext.outputLatency ?? 0) * 1000,
+  });
 
   // Basic Pitch notes run off the hot path in their own worker (TF.js is
   // heavy). Optional and fully contained — a notes failure never disturbs the
@@ -308,6 +325,7 @@ export async function startCapture(
       stream.getTracks().forEach((t) => t.stop());
       unsubTone();
       tone.dispose();
+      useCaptureStore.getState().setInputMeta(null);
       delete window.__toneDebug;
       source.disconnect();
       workletNode.disconnect();

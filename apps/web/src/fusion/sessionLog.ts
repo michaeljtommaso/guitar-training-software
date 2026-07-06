@@ -19,11 +19,34 @@ const HintRecordSchema = z.object({
   severity: z.number().min(0).max(1),
 });
 
+// ADR-013: which input produced this session's evidence — needed to interpret
+// accuracy (interface vs mic) and for future eval slicing. Optional so records
+// written before this field still validate.
+export const InputMetaSchema = z.object({
+  deviceId: z.string(),
+  label: z.string(),
+  kind: z.enum(["interface", "mic", "unknown"]),
+  sampleRate: z.number(),
+  baseLatencyMs: z.number().optional(),
+  outputLatencyMs: z.number().optional(),
+  noiseFloorDb: z.number().optional(),
+});
+export type InputMeta = z.infer<typeof InputMetaSchema>;
+
 export const SessionRecordSchema = z.object({
   id: z.number().int().optional(), // Dexie auto-increment
   startedAt: z.number(), // epoch ms
   endedAt: z.number().optional(),
   lessonId: z.string().min(1),
+  input: InputMetaSchema.optional(),
+  // TP-2: tone preset + monitor mode this session ran with. Optional so records
+  // written before the tone engine still validate.
+  tone: z
+    .object({
+      preset: z.string().nullable(),
+      monitor: z.enum(["off", "dry", "amp"]),
+    })
+    .optional(),
   steps: z.array(z.object({ step: z.number().int().min(0), chord: z.string(), t: z.number() })),
   diagnoses: z.array(DiagnosisSchema).max(MAX_DIAGNOSES_PER_SESSION),
   hints: z.array(HintRecordSchema).max(MAX_HINTS_PER_SESSION),

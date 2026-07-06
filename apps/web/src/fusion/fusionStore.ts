@@ -19,6 +19,8 @@ import {
 import type { Diagnosis } from "./diagnosis";
 import type { StatusKey } from "../theme/statusColors";
 import { fusionHintHistogram } from "../observability/latencyHistogram";
+import { getInputMeta } from "../capture/captureStore";
+import { getToneMeta } from "../tone/toneStore";
 
 const FLUSH_MS = 2000;
 const LATENCY_SAMPLES_MAX = 200;
@@ -112,6 +114,8 @@ export function startLesson(lessonId: string): boolean {
   record = {
     startedAt: Date.now(),
     lessonId: lesson.id,
+    input: getInputMeta() ?? undefined,
+    tone: getToneMeta(),
     steps: [{ step: 0, chord: lesson.steps[0].chord, t: 0 }],
     diagnoses: [],
     hints: [],
