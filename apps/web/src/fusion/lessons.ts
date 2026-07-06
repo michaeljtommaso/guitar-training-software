@@ -57,6 +57,7 @@ export const LessonSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   steps: z.array(LessonStepSchema).min(1),
+  tone_preset: z.string().optional(),
 });
 export type Lesson = z.infer<typeof LessonSchema>;
 

@@ -15,6 +15,7 @@ import { lessons, getLesson } from "./lessons";
 import { stringName } from "./engine";
 import { fusionHintHistogram } from "../observability/latencyHistogram";
 import type { StatusKey } from "../theme/statusColors";
+import { useToneStore } from "../tone/toneStore";
 
 const ms = (v: number) => (Number.isFinite(v) ? `${v.toFixed(1)} ms` : "-");
 
@@ -57,7 +58,10 @@ export function LessonPanel() {
             data-testid="lesson-start"
             onClick={() => {
               const sel = document.getElementById("lesson-select") as HTMLSelectElement | null;
-              if (sel) startLesson(sel.value);
+              if (!sel) return;
+              startLesson(sel.value);
+              const lesson = getLesson(sel.value);
+              if (lesson?.tone_preset) useToneStore.getState().applyPreset(lesson.tone_preset);
             }}
           >
             Start lesson
