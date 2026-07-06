@@ -19,7 +19,10 @@ import {
   visionHot,
   recordAudioEvents,
   recordNotes,
+  subscribe as subscribePerception,
+  getSnapshot as getPerceptionSnapshot,
 } from "../perception/perceptionStore";
+import { measureRoundTrip } from "../tone/latencyProbe";
 import type { NotesEvent } from "../perception/audio/notes/NoteSource";
 import type { VisionEvent } from "../fusion/events/visionEvents";
 import { fusionIngest } from "../fusion/fusionStore";
@@ -67,6 +70,8 @@ export interface CaptureHandles {
   clearCalibration(): void;
   /** Wet monitoring chain (ADR-013): fans out from source, never analyzed. */
   tone: ToneChainHandles;
+  /** Acoustic round-trip probe (clap test): median ms, or null if no signal. */
+  measureLatency(): Promise<number | null>;
 }
 
 export interface CaptureOptions extends DeviceSelection {
@@ -123,6 +128,7 @@ export async function startCapture(
   const settings = track?.getSettings() ?? {};
   const devices = await listCaptureDevices();
   const label = devices.mics.find((m) => m.deviceId === settings.deviceId)?.label ?? track?.label ?? "";
+  useCaptureStore.getState().setOpenStringsSeen(0); // fresh per-session count
   useCaptureStore.getState().setInputMeta({
     deviceId: settings.deviceId ?? "",
     label,
@@ -320,6 +326,21 @@ export async function startCapture(
       visionWorker.postMessage({ type: "setCalib", H: null, conf: 0 });
     },
     tone,
+    measureLatency() {
+      // Fire onset callbacks when the perception snapshot reports a new onset
+      // time (audio-clock ms — the same clock the probe schedules clicks on).
+      const subscribeOnsets = (cb: (tMs: number) => void): (() => void) => {
+        let last = getPerceptionSnapshot().lastOnsetT;
+        return subscribePerception(() => {
+          const t = getPerceptionSnapshot().lastOnsetT;
+          if (t !== last && Number.isFinite(t)) {
+            last = t;
+            cb(t);
+          }
+        });
+      };
+      return measureRoundTrip(audioContext, { subscribeOnsets });
+    },
     stop() {
       pumpLoop.stop();
       stream.getTracks().forEach((t) => t.stop());

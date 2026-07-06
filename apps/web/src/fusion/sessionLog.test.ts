@@ -99,6 +99,18 @@ describe("sessionLog — Zod as the write gate (§11)", () => {
     await expect(saveSession(db, record(2000))).resolves.toBeGreaterThan(0); // no input field — still valid
   });
 
+  it("round-trips input.openStringsSeen; records without it still validate", async () => {
+    const db = freshDB();
+    const rec = record();
+    rec.input = { deviceId: "x", label: "iface", kind: "interface", sampleRate: 48000, openStringsSeen: 6 };
+    const id = await saveSession(db, rec);
+    expect((await db.sessions.get(id))!.input?.openStringsSeen).toBe(6);
+    // Record whose input omits the field is still valid.
+    const rec2 = record(4000);
+    rec2.input = { deviceId: "y", label: "mic", kind: "mic", sampleRate: 48000 };
+    await expect(saveSession(db, rec2)).resolves.toBeGreaterThan(0);
+  });
+
   it("accepts and persists optional tone metadata; old records still validate", async () => {
     const db = freshDB();
     const rec = record();

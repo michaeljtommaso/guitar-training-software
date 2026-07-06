@@ -19,7 +19,7 @@ import {
 import type { Diagnosis } from "./diagnosis";
 import type { StatusKey } from "../theme/statusColors";
 import { fusionHintHistogram } from "../observability/latencyHistogram";
-import { getInputMeta } from "../capture/captureStore";
+import { getInputMeta, getOpenStringsSeen } from "../capture/captureStore";
 import { getToneMeta } from "../tone/toneStore";
 
 const FLUSH_MS = 2000;
@@ -111,10 +111,11 @@ export function startLesson(lessonId: string): boolean {
   engine = new FusionEngine(lesson);
   policy = new FeedbackPolicy();
   policy.setPriority(lesson.steps[0].feedback_priority);
+  const meta = getInputMeta();
   record = {
     startedAt: Date.now(),
     lessonId: lesson.id,
-    input: getInputMeta() ?? undefined,
+    input: meta ? { ...meta, openStringsSeen: getOpenStringsSeen() } : undefined,
     tone: getToneMeta(),
     steps: [{ step: 0, chord: lesson.steps[0].chord, t: 0 }],
     diagnoses: [],

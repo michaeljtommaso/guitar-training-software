@@ -30,6 +30,8 @@ export const InputMetaSchema = z.object({
   baseLatencyMs: z.number().optional(),
   outputLatencyMs: z.number().optional(),
   noiseFloorDb: z.number().optional(),
+  // How many of the 6 open strings passed the setup sanity check this session.
+  openStringsSeen: z.number().int().min(0).max(6).optional(),
 });
 export type InputMeta = z.infer<typeof InputMetaSchema>;
 
