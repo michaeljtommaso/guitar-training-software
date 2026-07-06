@@ -4,17 +4,20 @@
 // capture on the new device.
 import { useRef, useState } from "react";
 import { useCaptureStore } from "./captureStore";
-import { listCaptureDevices } from "./devices";
+import { listCaptureDevices, classifyAudioInput, pickPreferredAudioInput } from "./devices";
 import { startCapture, MANUAL_TAP_ORDER, type CaptureHandles } from "./controller";
 import type { Point } from "../perception/vision/homography";
 import { OverlayCanvas } from "../overlay/OverlayCanvas";
 import { DebugPanel } from "./DebugPanel";
 import { AudioDebugPanel } from "./AudioDebugPanel";
+import { InputMeter } from "./InputMeter";
+import { OpenStringCheck } from "./OpenStringCheck";
 import { LessonPanel } from "../fusion/LessonPanel";
 
 export function SetupWizard() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const handlesRef = useRef<CaptureHandles | null>(null);
+  const autoPicked = useRef(false);
   const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
   const { cameras, mics, cameraId, micId, phase, error, setDevices, select, setPhase } =
     useCaptureStore();
@@ -31,7 +34,19 @@ export function SetupWizard() {
         videoDeviceId: videoDeviceId || undefined,
         audioDeviceId: audioDeviceId || undefined,
       });
-      setDevices(await listCaptureDevices()); // labels appear after permission
+      const lists = await listCaptureDevices(); // labels appear after permission
+      setDevices(lists);
+      // ADR-013: auto-prefer a direct-input interface on first run if the user
+      // has never chosen a mic. Guarded to run at most once per session.
+      if (!autoPicked.current && !audioDeviceId) {
+        autoPicked.current = true;
+        const preferred = pickPreferredAudioInput(lists.mics);
+        if (preferred) {
+          select({ micId: preferred.deviceId });
+          void start(videoDeviceId, preferred.deviceId); // restart on the interface
+          return;
+        }
+      }
       setVideoEl(video);
       setPhase("running");
     } catch (err) {
@@ -49,6 +64,11 @@ export function SetupWizard() {
   };
 
   const running = phase === "running";
+
+  // ADR-013 classification chip: label heuristic is a hint, not truth. Fall
+  // back to the default device's label once the picker lists populate.
+  const micLabel = mics.find((m) => m.deviceId === micId)?.label ?? mics[0]?.label ?? "";
+  const kind = classifyAudioInput(micLabel);
 
   // --- fretboard calibration (WP-3) ----------------------------------------
   const [calibMode, setCalibMode] = useState(false);
@@ -130,6 +150,9 @@ export function SetupWizard() {
             ))}
           </select>
         </label>
+        <span className={`input-kind ${kind}`}>
+          {kind === "interface" ? "direct input" : kind === "mic" ? "mic · fallback (lower accuracy)" : "unknown input"}
+        </span>
         {running ? (
           <button type="button" onClick={stop}>
             Stop
@@ -144,6 +167,12 @@ export function SetupWizard() {
           </button>
         )}
       </div>
+      {kind === "mic" && (
+        <p className="wizard-tip">
+          Mic mode: expect reduced note/timing accuracy. A USB audio interface with a Hi-Z/instrument
+          input is recommended for reliable feedback.
+        </p>
+      )}
       {phase === "error" && <p className="wizard-error">Could not start capture: {error}</p>}
       {running && (
         <div className="wizard-controls">
@@ -179,6 +208,8 @@ export function SetupWizard() {
         <video ref={videoRef} muted playsInline autoPlay />
         {videoEl && <OverlayCanvas video={videoEl} />}
       </div>
+      {running && <InputMeter />}
+      {running && <OpenStringCheck />}
       <LessonPanel />
       <DebugPanel />
       <AudioDebugPanel />
