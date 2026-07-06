@@ -77,6 +77,25 @@ export function SetupWizard() {
 
   const running = phase === "running";
 
+  // Acoustic round-trip probe (clap test) — measures the full loop latency.
+  const [probing, setProbing] = useState(false);
+  const [latencyMsg, setLatencyMsg] = useState("");
+  const measureLatency = async () => {
+    if (!handlesRef.current) return;
+    setProbing(true);
+    setLatencyMsg("Measuring — sit tight for a couple of clicks…");
+    try {
+      const ms = await handlesRef.current.measureLatency();
+      setLatencyMsg(
+        ms === null
+          ? "No signal detected — use speakers, not headphones, and turn input gain up."
+          : `~${Math.round(ms)} ms round trip`,
+      );
+    } finally {
+      setProbing(false);
+    }
+  };
+
   // ADR-013 classification chip: label heuristic is a hint, not truth. Fall
   // back to the default device's label once the picker lists populate.
   const micLabel = mics.find((m) => m.deviceId === micId)?.label ?? mics[0]?.label ?? "";
@@ -221,6 +240,15 @@ export function SetupWizard() {
         {videoEl && <OverlayCanvas video={videoEl} />}
       </div>
       {running && <InputMeter />}
+      {running && (
+        <div className="wizard-controls">
+          <button type="button" data-testid="measure-latency" disabled={probing} onClick={() => void measureLatency()}>
+            {probing ? "Measuring…" : "Measure round-trip"}
+          </button>
+          {latencyMsg && <span className="wizard-tip">{latencyMsg}</span>}
+          <span className="wizard-tip">Point a speaker (not headphones) at your mic to measure.</span>
+        </div>
+      )}
       {running && <OpenStringCheck />}
       {running && handlesRef.current && <TonePanel tone={handlesRef.current.tone} />}
       <LessonPanel />
