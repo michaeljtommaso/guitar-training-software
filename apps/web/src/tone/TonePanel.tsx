@@ -36,9 +36,25 @@ export function TonePanel({ tone }: { tone: ToneChainHandles }) {
   const micLabel = mics.find((m) => m.deviceId === micId)?.label ?? mics[0]?.label ?? "";
   const feedbackRisk = classifyAudioInput(micLabel) === "mic" && params.monitor !== "off";
 
+  // Cab source: "synthetic" (the built-in default IR) or "custom" (a loaded
+  // file). ponytail: no bundled CC0 IR shipped yet (none could be provenance-
+  // verified — license firewall), so the picker offers synthetic + custom only.
+  // Add a bundled option here (fetch("/irs/<name>.wav") → tone.loadIR) once a
+  // verified CC0 asset lands in public/irs/.
+  const [cab, setCab] = useState<"synthetic" | "custom">("synthetic");
+
   const loadIR = async (file: File) => {
     await tone.loadIR(await file.arrayBuffer());
     setIrName(file.name);
+    setCab("custom");
+  };
+
+  const selectCab = async (value: string) => {
+    if (value === "synthetic") {
+      await tone.resetIR();
+      setIrName("");
+      setCab("synthetic");
+    }
   };
 
   return (
@@ -89,7 +105,16 @@ export function TonePanel({ tone }: { tone: ToneChainHandles }) {
         </div>
       ))}
       <div className="audio-row">
-        <label className="audio-label" htmlFor="tone-ir">Cab IR</label>
+        <label className="audio-label" htmlFor="tone-cab">Cab</label>
+        <select
+          id="tone-cab"
+          aria-label="Cab"
+          value={cab}
+          onChange={(e) => void selectCab(e.target.value)}
+        >
+          <option value="synthetic">Synthetic (default)</option>
+          {cab === "custom" && <option value="custom">Custom: {irName || "loaded file"}</option>}
+        </select>
         <input
           id="tone-ir"
           type="file"

@@ -37,6 +37,8 @@ export const DEFAULT_TONE: ToneParams = {
 export interface ToneChainHandles {
   setParams(p: ToneParams): void;
   loadIR(data: ArrayBuffer): Promise<void>;
+  /** Restore the synthetic default cab IR (undo a loadIR). */
+  resetIR(): Promise<void>;
   latencyMs(): number;
   outputRms(): number;
   dispose(): void;
@@ -57,10 +59,13 @@ export async function buildToneChain(ctx: AudioContext, source: AudioNode): Prom
   const cab = new ConvolverNode(ctx, { disableNormalization: false });
   // ponytail: helpers return the wide Float32Array<ArrayBufferLike>; DOM setters
   // want <ArrayBuffer>. Values are ArrayBuffer-backed at runtime — cast, don't copy.
-  const irData = makeDefaultCabIR(ctx.sampleRate) as Float32Array<ArrayBuffer>;
-  const irBuf = ctx.createBuffer(1, irData.length, ctx.sampleRate);
-  irBuf.copyToChannel(irData, 0);
-  cab.buffer = irBuf;
+  const defaultCabBuffer = (): AudioBuffer => {
+    const irData = makeDefaultCabIR(ctx.sampleRate) as Float32Array<ArrayBuffer>;
+    const irBuf = ctx.createBuffer(1, irData.length, ctx.sampleRate);
+    irBuf.copyToChannel(irData, 0);
+    return irBuf;
+  };
+  cab.buffer = defaultCabBuffer();
   const limiter = new DynamicsCompressorNode(ctx, { threshold: -6, knee: 3, ratio: 20, attack: 0.002, release: 0.1 });
   const volume = new GainNode(ctx, { gain: lin(DEFAULT_TONE.volumeDb) });
   const monitor = new GainNode(ctx, { gain: 0 }); // monitor defaults OFF
@@ -107,6 +112,9 @@ export async function buildToneChain(ctx: AudioContext, source: AudioNode): Prom
     },
     async loadIR(data: ArrayBuffer) {
       cab.buffer = await ctx.decodeAudioData(data);
+    },
+    async resetIR() {
+      cab.buffer = defaultCabBuffer();
     },
     latencyMs() {
       return (ctx.baseLatency + (ctx.outputLatency ?? 0)) * 1000;
