@@ -53,3 +53,20 @@ describe("useToneStore.applyPreset", () => {
     expect(useToneStore.getState().params.monitor).toBe("amp"); // preset's monitor wins
   });
 });
+
+describe("useToneStore persistence (gt-tone)", () => {
+  it("rehydrate restores knobs/preset but forces monitor off (no auto-audio on load)", async () => {
+    localStorage.setItem(
+      "gt-tone",
+      JSON.stringify({
+        state: { params: { ...DEFAULT_TONE, monitor: "amp", drive: 0.55 }, preset: "Lead Sustain" },
+        version: 0,
+      }),
+    );
+    await useToneStore.persist.rehydrate();
+    const s = useToneStore.getState();
+    expect(s.params.monitor).toBe("off"); // safety: never load audible
+    expect(s.params.drive).toBe(0.55); // knobs restored
+    expect(s.preset).toBe("Lead Sustain");
+  });
+});

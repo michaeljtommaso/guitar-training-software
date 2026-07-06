@@ -1,6 +1,7 @@
 // Coarse tone-knob state (UI cadence). The controller subscribes and pushes
 // params into the running chain; TonePanel and lesson presets write here.
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { DEFAULT_TONE, type MonitorMode, type ToneParams } from "./toneChain";
 import { TONE_PRESETS } from "./presets";
 
@@ -13,19 +14,37 @@ interface ToneState {
   applyPreset(name: string, opts?: { preserveMonitor?: boolean }): void;
 }
 
-export const useToneStore = create<ToneState>((set) => ({
-  params: DEFAULT_TONE,
-  preset: null,
-  set: (patch) => set((s) => ({ params: { ...s.params, ...patch }, preset: null })),
-  applyPreset: (name, opts) => {
-    const p = TONE_PRESETS[name];
-    if (!p) return;
-    set((s) => ({
-      params: opts?.preserveMonitor ? { ...p, monitor: s.params.monitor } : p,
-      preset: name,
-    }));
-  },
-}));
+export const useToneStore = create<ToneState>()(
+  persist(
+    (set) => ({
+      params: DEFAULT_TONE,
+      preset: null,
+      set: (patch) => set((s) => ({ params: { ...s.params, ...patch }, preset: null })),
+      applyPreset: (name, opts) => {
+        const p = TONE_PRESETS[name];
+        if (!p) return;
+        set((s) => ({
+          params: opts?.preserveMonitor ? { ...p, monitor: s.params.monitor } : p,
+          preset: name,
+        }));
+      },
+    }),
+    {
+      name: "gt-tone",
+      partialize: (s) => ({ params: s.params, preset: s.preset }),
+      // Restore knobs/preset but ALWAYS force the monitor off on load — never
+      // start audible from a persisted "amp"/"dry" (safety, ADR-013).
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<Pick<ToneState, "params" | "preset">>;
+        return {
+          ...current,
+          preset: p.preset ?? current.preset,
+          params: { ...current.params, ...p.params, monitor: "off" },
+        };
+      },
+    },
+  ),
+);
 
 export const getToneMeta = (): { preset: string | null; monitor: MonitorMode } => {
   const s = useToneStore.getState();
