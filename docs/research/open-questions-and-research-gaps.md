@@ -2,7 +2,7 @@
 
 > **Status:** Planning / architecture only. No application code yet.
 > **Date:** 2026-07-02.
-> **Companion docs:** [opus-stack-implementation-plan.md](opus-stack-implementation-plan.md) · [technology-decision-records.md](technology-decision-records.md) · [implementation-work-packages.md](implementation-work-packages.md)
+> **Companion docs:** [opus-stack-implementation-plan.md](../architecture/opus-stack-implementation-plan.md) · [technology-decision-records.md](../architecture/technology-decision-records.md) · [implementation-work-packages.md](../plans/implementation-work-packages.md)
 
 The stack plan commits to a design; this doc is the honest ledger of what could still break it. Each entry states the **question/risk**, **why it matters** (what decision or gate it threatens), the **validation method** (the cheapest experiment that resolves it), the **owner lane**, and the **decision trigger** (the observation that forces a specific action). Entries are ordered roughly by how early they can sink the plan.
 

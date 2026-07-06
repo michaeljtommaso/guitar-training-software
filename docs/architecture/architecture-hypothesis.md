@@ -48,7 +48,7 @@ flowchart LR
   Cab --> Out[Headphones / monitors]
 ```
 
-Correctness should stay on the dry/clean analysis path; amp/cab/pedal processing is for motivating, low-latency monitoring and practice feel. See [`product-vision-direct-capture-tone.md`](product-vision-direct-capture-tone.md) and [`amp-modeling-and-tone-engine-research.md`](amp-modeling-and-tone-engine-research.md).
+Correctness should stay on the dry/clean analysis path; amp/cab/pedal processing is for motivating, low-latency monitoring and practice feel. See [`product-vision-direct-capture-tone.md`](../product/product-vision-direct-capture-tone.md) and [`amp-modeling-and-tone-engine-research.md`](../research/amp-modeling-and-tone-engine-research.md).
 
 ## Early risk areas
 

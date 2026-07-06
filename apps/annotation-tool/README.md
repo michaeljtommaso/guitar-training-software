@@ -1,6 +1,6 @@
 # annotation-tool (WP-6 — data flywheel)
 
-Internal labeling UI for the data pipeline described in `docs/opus-stack-implementation-plan.md` §13.
+Internal labeling UI for the data pipeline described in `docs/architecture/opus-stack-implementation-plan.md` §13.
 Load a local video, review synced waveform/spectrogram/fretboard-grid overlays, tag fingertip/string/fret
 assignments and mistake-taxonomy ranges, and export/import JSON. No backend, no upload — everything is
 local files (File input / download).

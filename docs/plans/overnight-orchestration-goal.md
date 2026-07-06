@@ -14,7 +14,7 @@ You do **not** create, edit, or run code, config, tests, or commands yourself. E
 
 ## Your first actions
 
-1. Read, in full: `docs/product-brief.md`, `docs/mvp-roadmap.md`, `docs/opus-stack-implementation-plan.md`, `docs/implementation-work-packages.md`, `docs/technology-decision-records.md`, and `docs/open-questions-and-research-gaps.md`. These are ground truth. The work-packages doc (WP-0 → WP-7) is your build order and its verification gates are your acceptance bars.
+1. Read, in full: `docs/product/product-brief.md`, `docs/product/mvp-roadmap.md`, `docs/architecture/opus-stack-implementation-plan.md`, `docs/plans/implementation-work-packages.md`, `docs/architecture/technology-decision-records.md`, and `docs/research/open-questions-and-research-gaps.md`. These are ground truth. The work-packages doc (WP-0 → WP-7) is your build order and its verification gates are your acceptance bars.
 2. Create `PROGRESS.md`, `BLOCKERS.md`, and `MORNING-REPORT.md` at the repo root (spawn a subagent to create them). Keep `PROGRESS.md` and `BLOCKERS.md` updated after every WP.
 3. Build the dependency-ordered execution plan from the WP dependency matrix, then begin the loop below.
 

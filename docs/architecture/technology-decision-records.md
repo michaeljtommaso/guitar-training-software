@@ -2,7 +2,7 @@
 
 > **Status:** Planning / architecture only. No application code yet.
 > **Date:** 2026-07-02.
-> **Companion docs:** [opus-stack-implementation-plan.md](opus-stack-implementation-plan.md) · [implementation-work-packages.md](implementation-work-packages.md) · [open-questions-and-research-gaps.md](open-questions-and-research-gaps.md)
+> **Companion docs:** [opus-stack-implementation-plan.md](opus-stack-implementation-plan.md) · [implementation-work-packages.md](../plans/implementation-work-packages.md) · [open-questions-and-research-gaps.md](../research/open-questions-and-research-gaps.md)
 
 Concise, ADR-style records of the load-bearing technology decisions behind the Opus stack plan. Each record is intentionally short: the decision, why, the alternatives that lost, and the trigger that would reopen it. Full rationale and tradeoff tables live in the stack plan (§3–§16); this doc is the quick-reference index of *what was decided and what would change it*.
 

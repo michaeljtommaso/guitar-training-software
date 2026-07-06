@@ -18,7 +18,7 @@
 
 ## Optional Tone Lane — Practice amp / monitoring engine
 
-This lane is additive to the tutor, not a replacement for the dry correctness path. See [`amp-modeling-and-tone-engine-research.md`](amp-modeling-and-tone-engine-research.md).
+This lane is additive to the tutor, not a replacement for the dry correctness path. See [`amp-modeling-and-tone-engine-research.md`](../research/amp-modeling-and-tone-engine-research.md).
 
 - Treat direct guitar input through a Hi-Z audio interface as the preferred/default path where available.
 - Split input into:

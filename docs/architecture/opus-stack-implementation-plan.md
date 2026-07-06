@@ -1,9 +1,9 @@
 # Opus Stack & Implementation Plan — Real-Time Multimodal Guitar Tutor
 
 > **Status:** Planning / architecture only. No application code yet.
-> **Author lane:** Opus 4.8 cross-judgment pass over the prior research scaffold (`docs/research-synthesis.md`, `research/agent-reports/`).
+> **Author lane:** Opus 4.8 cross-judgment pass over the prior research scaffold (`docs/research/research-synthesis.md`, `docs/research/agent-reports/`).
 > **Date:** 2026-07-02.
-> **Companion docs:** [technology-decision-records.md](technology-decision-records.md) · [implementation-work-packages.md](implementation-work-packages.md) · [open-questions-and-research-gaps.md](open-questions-and-research-gaps.md)
+> **Companion docs:** [technology-decision-records.md](technology-decision-records.md) · [implementation-work-packages.md](../plans/implementation-work-packages.md) · [open-questions-and-research-gaps.md](../research/open-questions-and-research-gaps.md)
 
 This document is the comprehensive front-to-back stack and architecture plan. It (1) records the sanity-check of the existing research, (2) recommends a stack for every layer with alternatives and tradeoff tables, and (3) explains how the whole system works end to end. Concise decision records live in the ADR doc; the ordered build plan lives in the work-packages doc.
 
@@ -69,7 +69,7 @@ Three narrow Sonnet checker-agents independently verified the prior reports on 2
 
 **Why this is defensible even as a personal project:** the entire commercial market answers "*did you play the right thing?*" (audio). Almost none answers "*which finger caused the mistake?*" (vision+audio fusion). Fretello Mirror shows the AR-overlay direction is commercially interesting but stops at guidance. That fusion/error-attribution problem is the hard, open, and differentiated core — see §9.
 
-**Scope discipline (MVP = "Phase 0" in `docs/mvp-roadmap.md`):** open chords (C, G, D, A, E, Am, Em, Dm), standard tuning, seated, front/angled webcam, mono mic, single user, marker calibration. Everything else (barre chords, capo, songs/tabs, markerless, mobile, multi-user) is explicitly deferred.
+**Scope discipline (MVP = "Phase 0" in `docs/product/mvp-roadmap.md`):** open chords (C, G, D, A, E, Am, Em, Dm), standard tuning, seated, front/angled webcam, mono mic, single user, marker calibration. Everything else (barre chords, capo, songs/tabs, markerless, mobile, multi-user) is explicitly deferred.
 
 ---
 
@@ -397,7 +397,7 @@ guitar-tutor/
 
 ## 18. Milestone alignment
 
-The build order and verification gates are in [implementation-work-packages.md](implementation-work-packages.md). At a glance it maps to the roadmap: **WP-0** setup/license firewall → **WP-1** capture shell → **WP-2** audio open-chord loop → **WP-3** vision + marker calibration → **WP-4** fusion + deterministic corrections → **WP-5** slow-path coach (+template fallback) → **WP-6** data flywheel → **WP-7** hardening/Beta. Open uncertainties and how to close them are in [open-questions-and-research-gaps.md](open-questions-and-research-gaps.md).
+The build order and verification gates are in [implementation-work-packages.md](../plans/implementation-work-packages.md). At a glance it maps to the roadmap: **WP-0** setup/license firewall → **WP-1** capture shell → **WP-2** audio open-chord loop → **WP-3** vision + marker calibration → **WP-4** fusion + deterministic corrections → **WP-5** slow-path coach (+template fallback) → **WP-6** data flywheel → **WP-7** hardening/Beta. Open uncertainties and how to close them are in [open-questions-and-research-gaps.md](../research/open-questions-and-research-gaps.md).
 
 ---
 
@@ -417,4 +417,4 @@ The build order and verification gates are in [implementation-work-packages.md](
 - Fender/MatchMySound Feedback Mode partner announcement — <https://www.prweb.com/releases/matchmysound-partners-with-fender-to-create-instant-feedback-feature-for-fender-play-r--867187754.html>
 - LadderSym (multimodal error detection) — <https://arxiv.org/abs/2510.08580>
 - Guitar-TECHS dataset — <https://arxiv.org/abs/2501.03720>
-- Prior in-repo research: `research/agent-reports/01-commercial-products.md`, `02-open-source-and-papers.md`, `03-architecture-and-build-plan.md`
+- Prior in-repo research: `docs/research/agent-reports/01-commercial-products.md`, `02-open-source-and-papers.md`, `03-architecture-and-build-plan.md`

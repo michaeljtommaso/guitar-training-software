@@ -10,7 +10,7 @@
 // fretboard mapping). Any code, test, or lessons datum carrying a `string`
 // number MUST use it.
 //
-// Note: docs/opus-stack-implementation-plan.md §9.4's example fingering lists
+// Note: docs/architecture/opus-stack-implementation-plan.md §9.4's example fingering lists
 // `avoid_strings:[1]` for open C major — but C major mutes the LOW E, so under
 // this standard convention that example must read `avoid_strings:[6]`. The §9.4
 // example uses the opposite (low-E-first) numbering; the fingerings themselves

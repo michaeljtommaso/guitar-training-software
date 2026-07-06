@@ -2,7 +2,7 @@
 
 > **Status:** Product vision addendum.  
 > **Date:** 2026-07-06.  
-> **Companion docs:** [amp-modeling-and-tone-engine-research.md](amp-modeling-and-tone-engine-research.md) · [architecture-hypothesis.md](architecture-hypothesis.md) · [mvp-roadmap.md](mvp-roadmap.md)
+> **Companion docs:** [amp-modeling-and-tone-engine-research.md](../research/amp-modeling-and-tone-engine-research.md) · [architecture-hypothesis.md](../architecture/architecture-hypothesis.md) · [mvp-roadmap.md](mvp-roadmap.md)
 
 ## 1. Cleaned-up vision
 

@@ -5,7 +5,7 @@
 // hygiene: every entry records its license so nothing NC/gated silently
 // enters a training/eval pipeline unlabeled.
 //
-// Scope (deliberately small — see docs/opus-stack-implementation-plan.md
+// Scope (deliberately small — see docs/architecture/opus-stack-implementation-plan.md
 // §13 and the WP-6 brief): GuitarSet (open, CC-BY-4.0, Zenodo) is the only
 // dataset actually fetched. IDMT-SMT-GUITAR is form/registration-gated with
 // a NonCommercial license variant (CC BY-NC-ND) — per ADR-011 that's

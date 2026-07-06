@@ -2,7 +2,7 @@
 
 > **Status:** Planning / architecture only. **No application code yet** — this doc defines *what to build in what order*, not the code.
 > **Date:** 2026-07-02.
-> **Companion docs:** [opus-stack-implementation-plan.md](opus-stack-implementation-plan.md) · [technology-decision-records.md](technology-decision-records.md) · [open-questions-and-research-gaps.md](open-questions-and-research-gaps.md)
+> **Companion docs:** [opus-stack-implementation-plan.md](../architecture/opus-stack-implementation-plan.md) · [technology-decision-records.md](../architecture/technology-decision-records.md) · [open-questions-and-research-gaps.md](../research/open-questions-and-research-gaps.md)
 
 The ordered build plan. Each work package (WP) has an explicit **scope**, **deliverables**, **verification gate** (the objective bar that must pass before the WP is "done"), **dependencies**, and **non-goals** (what is deliberately excluded to prevent scope creep). WPs are sequenced so each one de-risks the next; the differentiated core (fusion, WP-4) is deliberately reached only after both perception legs stand alone.
 
@@ -19,7 +19,7 @@ WP-0  Foundation & license firewall
                                 └─ WP-7  Hardening & Beta (Tauri, sync)
 ```
 
-Traceability: each WP references the governing ADRs in [technology-decision-records.md](technology-decision-records.md) and maps to the milestones in [`mvp-roadmap.md`](mvp-roadmap.md).
+Traceability: each WP references the governing ADRs in [technology-decision-records.md](../architecture/technology-decision-records.md) and maps to the milestones in [`mvp-roadmap.md`](../product/mvp-roadmap.md).
 
 ---
 

@@ -1,11 +1,17 @@
-# Research Reports
+# Research
 
-This directory stores the complete outputs from the parallel research agents dispatched for the real-time multimodal guitar tutor project.
+All research inputs for the real-time multimodal guitar tutor project: agent briefs and reports, synthesis, open questions, and follow-on topic research.
 
-## Reports
+## Contents
 
 | File | Topic |
 |---|---|
+| `research-questions.md` | Deep-research questions originally dispatched to agents |
+| `research-synthesis.md` | Cross-report synthesis of the agent research |
+| `open-questions-and-research-gaps.md` | Unresolved risks/questions with validation method and decision trigger |
+| `amp-modeling-and-tone-engine-research.md` | “Guitar in → amp sound out”: hardware path, amp/cab DSP, open-source stacks, tone-engine fit |
+| `source-index.md` | Source and link index maintained during research |
+| `agent-briefs/` | Exact research briefs sent to agents |
 | `agent-reports/01-commercial-products.md` | Commercial guitar-learning software landscape: Yousician, Rocksmith+, Simply Guitar, Fender Play, Gibson App, Uberchord, Chordify, Fret Zealot, LiberLive, market gap analysis |
 | `agent-reports/02-open-source-and-papers.md` | Open-source projects, GitHub repos, papers, datasets, and libraries for audio transcription, guitar tab inference, and computer vision |
 | `agent-reports/03-architecture-and-build-plan.md` | Full technical architecture, UX, model strategy, latency budgets, datasets, evaluation plan, MVP roadmap |
