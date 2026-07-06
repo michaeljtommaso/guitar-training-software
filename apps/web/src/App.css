@@ -140,6 +140,19 @@
   font-size: 0.85rem;
 }
 
+/* ---- TP-1 tone panel (reuses .audio-debug shell) ---- */
+.tone-panel .audio-label {
+  min-width: 6rem;
+}
+.tone-panel input[type="range"] {
+  flex: 1;
+  min-width: 8rem;
+}
+.tone-panel .audio-value {
+  min-width: 3rem;
+  text-align: right;
+}
+
 .cents.in-tune {
   color: var(--correct);
 }

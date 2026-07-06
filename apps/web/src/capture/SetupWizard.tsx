@@ -12,6 +12,7 @@ import { DebugPanel } from "./DebugPanel";
 import { AudioDebugPanel } from "./AudioDebugPanel";
 import { InputMeter } from "./InputMeter";
 import { OpenStringCheck } from "./OpenStringCheck";
+import { TonePanel } from "../tone/TonePanel";
 import { LessonPanel } from "../fusion/LessonPanel";
 
 export function SetupWizard() {
@@ -210,6 +211,7 @@ export function SetupWizard() {
       </div>
       {running && <InputMeter />}
       {running && <OpenStringCheck />}
+      {running && handlesRef.current && <TonePanel tone={handlesRef.current.tone} />}
       <LessonPanel />
       <DebugPanel />
       <AudioDebugPanel />
