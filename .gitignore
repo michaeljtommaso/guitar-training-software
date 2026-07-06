@@ -14,3 +14,9 @@ services/backend/storage/
 # WP-6 public-data bootstrap (scripts/fetch-eval-data.mjs) — redownloadable,
 # not committed; the manifest it writes documents provenance/license/sha256.
 data/eval/
+# Local AI-tooling/session scratch (Claude Code + plugins) — machine-local,
+# never committed. .claude/ itself stays committable for shared project config.
+.superpowers/
+.impeccable/
+.claude/worktrees/
+.claude/settings.local.json
