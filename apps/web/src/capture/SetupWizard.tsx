@@ -51,6 +51,17 @@ export function SetupWizard() {
       setVideoEl(video);
       setPhase("running");
     } catch (err) {
+      // A persisted cameraId/micId (gt-capture-devices) can go stale if the
+      // device was unplugged since last session; getUserMedia's exact-match
+      // deviceId constraint then throws OverconstrainedError. Clear the
+      // stale ids and retry once on system defaults. The retry call passes
+      // empty ids, so this guard is false on the second failure and it
+      // falls through to the normal error path (no infinite loop).
+      if (err instanceof Error && err.name === "OverconstrainedError" && (videoDeviceId || audioDeviceId)) {
+        select({ cameraId: "", micId: "" });
+        void start("", ""); // retry once on system defaults
+        return;
+      }
       setPhase("error", err instanceof Error ? err.message : String(err));
     }
   };
