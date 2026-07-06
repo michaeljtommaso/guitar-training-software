@@ -3,6 +3,8 @@
 // SAB ring buffer → audio worker, and the vision worker (OffscreenCanvas +
 // ImageBitmap frame pump + WebGPU/WASM capability probe).
 import { buildConstraints, type DeviceSelection } from "./buildConstraints";
+import { classifyAudioInput, listCaptureDevices } from "./devices";
+import { useCaptureStore } from "./captureStore";
 import { startVideoFrameLoop } from "./videoFrameLoop";
 import { ringBufferByteLength, RING_CAPACITY } from "../perception/audio/ringBuffer";
 import type {
@@ -25,6 +27,8 @@ import { audioGlassToWorkerHistogram } from "../observability/latencyHistogram";
 import { solveHomography, type Point } from "../perception/vision/homography";
 import type { HandDetection } from "../perception/vision/handLandmarker";
 import captureProcessorUrl from "../perception/audio/capture-processor.ts?worker&url";
+import { buildToneChain, type ToneChainHandles } from "../tone/toneChain";
+import { useToneStore } from "../tone/toneStore";
 
 // Manual-tap destination corners in normalized fretboard space, in the order the
 // user is asked to tap them: (nut,lowE) (nut,highE) (fret5,highE) (fret5,lowE).
@@ -45,6 +49,8 @@ declare global {
       status?: string;
       detectImageUrl(url: string): Promise<HandDetection[]>;
     };
+    /** e2e/debug hook — set while capture runs; reads the wet monitor path. */
+    __toneDebug?: { outputRms(): number; latencyMs(): number };
   }
 }
 
@@ -59,6 +65,8 @@ export interface CaptureHandles {
   calibrateCharuco(): Promise<number>;
   /** Drop the current calibration (overlay dims, mapping stops). */
   clearCalibration(): void;
+  /** Wet monitoring chain (ADR-013): fans out from source, never analyzed. */
+  tone: ToneChainHandles;
 }
 
 export interface CaptureOptions extends DeviceSelection {
@@ -101,6 +109,29 @@ export async function startCapture(
   });
   audioWorker.postMessage({ type: "init", sab, sampleRate: audioContext.sampleRate });
 
+  // --- wet monitoring chain (ADR-013) --------------------------------------
+  // Fans out from the SAME source node as the dry analysis path; the tutor
+  // never reads this graph. Monitor defaults OFF, so audio is unchanged.
+  const tone = await buildToneChain(audioContext, source);
+  tone.setParams(useToneStore.getState().params);
+  const unsubTone = useToneStore.subscribe((s) => tone.setParams(s.params));
+  window.__toneDebug = { outputRms: () => tone.outputRms(), latencyMs: () => tone.latencyMs() };
+
+  // ADR-013: record which input produced this session's evidence (interface vs
+  // mic, latency) so accuracy can be interpreted and sliced later.
+  const track = stream.getAudioTracks()[0];
+  const settings = track?.getSettings() ?? {};
+  const devices = await listCaptureDevices();
+  const label = devices.mics.find((m) => m.deviceId === settings.deviceId)?.label ?? track?.label ?? "";
+  useCaptureStore.getState().setInputMeta({
+    deviceId: settings.deviceId ?? "",
+    label,
+    kind: classifyAudioInput(label),
+    sampleRate: audioContext.sampleRate,
+    baseLatencyMs: audioContext.baseLatency * 1000,
+    outputLatencyMs: (audioContext.outputLatency ?? 0) * 1000,
+  });
+
   // Basic Pitch notes run off the hot path in their own worker (TF.js is
   // heavy). Optional and fully contained — a notes failure never disturbs the
   // onset/chord/tuner loop.
@@ -131,6 +162,7 @@ export async function startCapture(
           samplesConsumed: msg.samplesConsumed,
           dropped: msg.dropped,
           latencyMs: msg.latencyMs,
+          health: msg.health,
         },
       });
     } else if (msg.type === "audioEvents") {
@@ -287,9 +319,14 @@ export async function startCapture(
       setCalibration(null, 0);
       visionWorker.postMessage({ type: "setCalib", H: null, conf: 0 });
     },
+    tone,
     stop() {
       pumpLoop.stop();
       stream.getTracks().forEach((t) => t.stop());
+      unsubTone();
+      tone.dispose();
+      useCaptureStore.getState().setInputMeta(null);
+      delete window.__toneDebug;
       source.disconnect();
       workletNode.disconnect();
       void audioContext.close();

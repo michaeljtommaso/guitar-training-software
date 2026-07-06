@@ -140,6 +140,19 @@
   font-size: 0.85rem;
 }
 
+/* ---- TP-1 tone panel (reuses .audio-debug shell) ---- */
+.tone-panel .audio-label {
+  min-width: 6rem;
+}
+.tone-panel input[type="range"] {
+  flex: 1;
+  min-width: 8rem;
+}
+.tone-panel .audio-value {
+  min-width: 3rem;
+  text-align: right;
+}
+
 .cents.in-tune {
   color: var(--correct);
 }
@@ -260,5 +273,75 @@
 }
 
 .hint-line {
+  color: var(--warn);
+}
+
+/* ---- TP-0 direct-capture wizard (ADR-013): level meter, open-string check ---- */
+.input-meter,
+.open-string-check {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 720px;
+}
+
+.meter-track {
+  position: relative;
+  width: 12rem;
+  height: 0.6rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  overflow: hidden;
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: var(--correct);
+  transition: transform 120ms ease;
+}
+
+.meter-peak {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--text);
+}
+
+.clip-light {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.clip-light.lit {
+  color: var(--error);
+}
+
+.string-chip.seen {
+  border-color: var(--correct);
+  color: var(--correct);
+}
+
+.input-kind {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.35rem;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.input-kind.interface {
+  border-color: var(--correct);
+  color: var(--correct);
+}
+.input-kind.mic {
+  border-color: var(--warn);
   color: var(--warn);
 }

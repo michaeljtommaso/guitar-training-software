@@ -82,4 +82,29 @@ describe("sessionLog — Zod as the write gate (§11)", () => {
     const oldest = await db.sessions.orderBy("startedAt").first();
     expect(oldest!.startedAt).toBe(1005); // the 5 oldest evicted
   });
+
+  it("accepts and persists optional input metadata; old records still validate", async () => {
+    const db = freshDB();
+    const rec = record();
+    rec.input = {
+      deviceId: "abc",
+      label: "Scarlett 2i2 USB",
+      kind: "interface",
+      sampleRate: 48000,
+      baseLatencyMs: 5.3,
+      noiseFloorDb: -72,
+    };
+    const id = await saveSession(db, rec);
+    expect((await db.sessions.get(id))!.input?.kind).toBe("interface");
+    await expect(saveSession(db, record(2000))).resolves.toBeGreaterThan(0); // no input field — still valid
+  });
+
+  it("accepts and persists optional tone metadata; old records still validate", async () => {
+    const db = freshDB();
+    const rec = record();
+    rec.tone = { preset: "Lead Sustain", monitor: "amp" };
+    const id = await saveSession(db, rec);
+    expect((await db.sessions.get(id))!.tone?.preset).toBe("Lead Sustain");
+    await expect(saveSession(db, record(3000))).resolves.toBeGreaterThan(0); // no tone field — still valid
+  });
 });

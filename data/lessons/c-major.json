@@ -1,6 +1,7 @@
 {
   "id": "open_chords_c_major",
   "title": "C major (open)",
+  "tone_preset": "Clean Chord Practice",
   "steps": [
     {
       "chord": "C",

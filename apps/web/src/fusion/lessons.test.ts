@@ -7,6 +7,31 @@ import { lessons, getLesson, parseLesson, expectedNotes, openMidi, type Lesson }
 import { FusionEngine } from "./engine";
 import type { Diagnosis } from "./diagnosis";
 
+describe("lessons-as-data: tone_preset (TP-2 Task 11)", () => {
+  it("parses a lesson with tone_preset", () => {
+    const raw = structuredClone(getLesson("open_chords_c_major")!) as Record<string, unknown>;
+    raw.tone_preset = "Clean Chord Practice";
+    expect(parseLesson(raw).tone_preset).toBe("Clean Chord Practice");
+  });
+
+  it("parses a lesson without tone_preset (unchanged behavior)", () => {
+    const raw = structuredClone(getLesson("open_chords_g_major") ?? getLesson("open_chords_d_major")!);
+    expect(parseLesson(raw).tone_preset).toBeUndefined();
+  });
+
+  it("rejects a non-string tone_preset", () => {
+    const raw = structuredClone(getLesson("open_chords_c_major")!) as Record<string, unknown>;
+    raw.tone_preset = 5;
+    expect(() => parseLesson(raw)).toThrow();
+  });
+
+  it("ships tone_preset on the C major lesson only", () => {
+    expect(getLesson("open_chords_c_major")!.tone_preset).toBe("Clean Chord Practice");
+    const others = lessons.filter((l) => l.id !== "open_chords_c_major");
+    expect(others.every((l) => l.tone_preset === undefined)).toBe(true);
+  });
+});
+
 describe("lessons-as-data (Zod read gate)", () => {
   it("ships the 8 open chords + 2 transition drills, all Zod-valid", () => {
     expect(lessons).toHaveLength(10);

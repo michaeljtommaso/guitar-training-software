@@ -56,7 +56,7 @@ Governing ADR: 013. Maps to §2 of the vision doc.
 - `classifyAudioInput(label: string): AudioInputKind`
 - `pickPreferredAudioInput(mics: MediaDeviceInfo[]): MediaDeviceInfo | null`
 
-- [ ] **Step 1: Write the failing test** — `apps/web/src/capture/devices.test.ts`:
+- [x] **Step 1: Write the failing test** — `apps/web/src/capture/devices.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -106,9 +106,9 @@ describe("pickPreferredAudioInput", () => {
 });
 ```
 
-- [ ] **Step 2: Run it — must fail** — `pnpm --filter web test devices` → FAIL (`classifyAudioInput` not exported).
+- [x] **Step 2: Run it — must fail** — `pnpm --filter web test devices` → FAIL (`classifyAudioInput` not exported).
 
-- [ ] **Step 3: Implement** — append to `apps/web/src/capture/devices.ts`:
+- [x] **Step 3: Implement** — append to `apps/web/src/capture/devices.ts`:
 
 ```ts
 // ADR-013: label heuristics are a HINT, not truth — permission-gated labels
@@ -134,8 +134,8 @@ export function pickPreferredAudioInput(mics: MediaDeviceInfo[]): MediaDeviceInf
 }
 ```
 
-- [ ] **Step 4: Run tests — must pass** — `pnpm --filter web test devices` → PASS.
-- [ ] **Step 5: Commit** — `git add apps/web/src/capture/devices.ts apps/web/src/capture/devices.test.ts && git commit -m "feat(capture): classify audio inputs, prefer DI/interface devices (ADR-013)"`
+- [x] **Step 4: Run tests — must pass** — `pnpm --filter web test devices` → PASS.
+- [x] **Step 5: Commit** — `git add apps/web/src/capture/devices.ts apps/web/src/capture/devices.test.ts && git commit -m "feat(capture): classify audio inputs, prefer DI/interface devices (ADR-013)"`
 
 ### Task 2: Input health meter (level / clip / noise floor) in the audio worker
 
@@ -150,7 +150,7 @@ export function pickPreferredAudioInput(mics: MediaDeviceInfo[]): MediaDeviceInf
 - Consumes: worker `drain()` loop's per-frame `scratch: Float32Array` (128 samples).
 - Produces: `interface InputHealth { rmsDb: number; peakDb: number; clipped: boolean; noiseFloorDb: number }`, `class InputHealthMeter { push(frame: Float32Array): void; read(): InputHealth }`; `AudioWorkerStats` gains `health: InputHealth`.
 
-- [ ] **Step 1: Write the failing test** — `apps/web/src/perception/audio/inputHealth.test.ts`:
+- [x] **Step 1: Write the failing test** — `apps/web/src/perception/audio/inputHealth.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -189,9 +189,9 @@ describe("InputHealthMeter", () => {
 });
 ```
 
-- [ ] **Step 2: Run it — must fail** — `pnpm --filter web test inputHealth` → FAIL.
+- [x] **Step 2: Run it — must fail** — `pnpm --filter web test inputHealth` → FAIL.
 
-- [ ] **Step 3: Implement** — `apps/web/src/perception/audio/inputHealth.ts`:
+- [x] **Step 3: Implement** — `apps/web/src/perception/audio/inputHealth.ts`:
 
 ```ts
 // Input health for the setup wizard (ADR-013): level, decaying peak, clip
@@ -243,19 +243,19 @@ export class InputHealthMeter {
 }
 ```
 
-- [ ] **Step 4: Run tests — must pass** — `pnpm --filter web test inputHealth` → PASS.
+- [x] **Step 4: Run tests — must pass** — `pnpm --filter web test inputHealth` → PASS.
 
-- [ ] **Step 5: Wire the worker.** In `apps/web/src/perception/audio/audioWorker.ts`:
+- [x] **Step 5: Wire the worker.** In `apps/web/src/perception/audio/audioWorker.ts`:
   - Import: `import { InputHealthMeter, type InputHealth } from "./inputHealth";`
   - Add `health: InputHealth;` to `AudioWorkerStats`.
   - Module scope: `const healthMeter = new InputHealthMeter();`
   - In `drain()`, right after `samplesConsumed += FRAME_SAMPLES;`: `healthMeter.push(scratch);`
   - In `postStats()`, add `health: healthMeter.read(),` to the posted object.
 
-- [ ] **Step 6: Surface it.** In `apps/web/src/perception/perceptionStore.ts` add `health?: InputHealth` to the `audio` slice type (import the type from `../perception/audio/inputHealth` adjusting the relative path to the store's location). In `apps/web/src/capture/controller.ts`, in the `audioStats` branch, add `health: msg.health,` to the object passed to `setPerception({ audio: { … } })`.
+- [x] **Step 6: Surface it.** In `apps/web/src/perception/perceptionStore.ts` add `health?: InputHealth` to the `audio` slice type (import the type from `../perception/audio/inputHealth` adjusting the relative path to the store's location). In `apps/web/src/capture/controller.ts`, in the `audioStats` branch, add `health: msg.health,` to the object passed to `setPerception({ audio: { … } })`.
 
-- [ ] **Step 7: Verify** — `pnpm --filter web typecheck && pnpm --filter web test` → all green.
-- [ ] **Step 8: Commit** — `git commit -am "feat(audio): input health meter (level/clip/noise floor) in worker stats"`
+- [x] **Step 7: Verify** — `pnpm --filter web typecheck && pnpm --filter web test` → all green.
+- [x] **Step 8: Commit** — `git commit -am "feat(audio): input health meter (level/clip/noise floor) in worker stats"`
 
 ### Task 3: Wizard UX — auto-prefer interface, meter, classification chip, open-string check, persistence
 
@@ -270,7 +270,7 @@ export class InputHealthMeter {
 - Consumes: `classifyAudioInput` / `pickPreferredAudioInput` (Task 1), `snap.audio.health` (Task 2), tuner readings from `perceptionStore` (`audioAnalysis.tuning: { name, f0, cents }`).
 - Produces: persisted `cameraId`/`micId`; no new exports consumed by later tasks.
 
-- [ ] **Step 1: Persist device selection.** In `apps/web/src/capture/captureStore.ts`, wrap the store with Zustand's built-in `persist` middleware (already installed — no new dep), persisting only the ids:
+- [x] **Step 1: Persist device selection.** In `apps/web/src/capture/captureStore.ts`, wrap the store with Zustand's built-in `persist` middleware (already installed — no new dep), persisting only the ids:
 
 ```ts
 import { persist } from "zustand/middleware";
@@ -285,7 +285,7 @@ export const useCaptureStore = create<CaptureState>()(
 );
 ```
 
-- [ ] **Step 2: Level meter component** — `apps/web/src/capture/InputMeter.tsx`:
+- [x] **Step 2: Level meter component** — `apps/web/src/capture/InputMeter.tsx`:
 
 ```tsx
 // Live input meter (ADR-013 wizard): RMS bar, peak tick, clip light, noise
@@ -321,7 +321,7 @@ export function InputMeter() {
 }
 ```
 
-- [ ] **Step 3: Open-string check** — `apps/web/src/capture/OpenStringCheck.tsx`. Uses the existing tuner readings; a string chip lights once a near-in-tune reading for that open string is seen. (Confirm the exact `tuning.name` octave format against `midiName` in `apps/web/src/perception/audio/dsp/pitch.ts` before hardcoding — expected `E2 A2 D3 G3 B3 E4`.)
+- [x] **Step 3: Open-string check** — `apps/web/src/capture/OpenStringCheck.tsx`. Uses the existing tuner readings; a string chip lights once a near-in-tune reading for that open string is seen. (Confirm the exact `tuning.name` octave format against `midiName` in `apps/web/src/perception/audio/dsp/pitch.ts` before hardcoding — expected `E2 A2 D3 G3 B3 E4`.)
 
 ```tsx
 // "Strum each open string" sanity check (ADR-013): proves signal per string
@@ -357,7 +357,7 @@ export function OpenStringCheck() {
 }
 ```
 
-- [ ] **Step 4: Wizard integration.** In `apps/web/src/capture/SetupWizard.tsx`:
+- [x] **Step 4: Wizard integration.** In `apps/web/src/capture/SetupWizard.tsx`:
   - Import `classifyAudioInput, pickPreferredAudioInput` from `./devices`, plus `InputMeter`, `OpenStringCheck`.
   - **Classification chip** next to the microphone picker (derive from the selected device's label; empty selection → classify the default device's label once lists populate):
 
@@ -395,8 +395,8 @@ if (!autoPicked.current && !audioDeviceId) {
   - Render `{running && <InputMeter />}` and `{running && <OpenStringCheck />}` above `<LessonPanel />`.
   - Add minimal styles to `apps/web/src/App.css` following the existing `.audio-debug` conventions: `.meter-track` (relative, fixed width, track background), `.meter-fill` (scaleX origin-left, status-triad correct color), `.meter-peak` (absolute 2px tick), `.clip-light.lit` (error color), `.string-chip.seen` (correct color), `.input-kind.interface` (correct) / `.input-kind.mic` (warn).
 
-- [ ] **Step 5: Verify** — `pnpm --filter web typecheck && pnpm --filter web test && pnpm --filter web e2e` → green (the auto-pick restart must not break `capture-smoke.spec.ts` — Chromium's fake device label classifies as `unknown`, so no restart happens in e2e).
-- [ ] **Step 6: Commit** — `git commit -am "feat(capture): direct-capture-first wizard — auto-prefer interface, level meter, open-string check"`
+- [x] **Step 5: Verify** — `pnpm --filter web typecheck && pnpm --filter web test && pnpm --filter web e2e` → green (the auto-pick restart must not break `capture-smoke.spec.ts` — Chromium's fake device label classifies as `unknown`, so no restart happens in e2e).
+- [x] **Step 6: Commit** — `git commit -am "feat(capture): direct-capture-first wizard — auto-prefer interface, level meter, open-string check"`
 
 ### Task 4: Session input metadata
 
@@ -410,7 +410,7 @@ if (!autoPicked.current && !audioDeviceId) {
 **Interfaces:**
 - Produces: `InputMetaSchema` / `type InputMeta` in `sessionLog.ts`; `SessionRecordSchema` gains `input: InputMetaSchema.optional()`; `captureStore` exports `getInputMeta(): InputMeta | null` and gains `inputMeta` state + `setInputMeta(m: InputMeta | null)` action.
 
-- [ ] **Step 1: Write the failing test** — add to `apps/web/src/fusion/sessionLog.test.ts`:
+- [x] **Step 1: Write the failing test** — add to `apps/web/src/fusion/sessionLog.test.ts`:
 
 ```ts
 it("accepts and persists optional input metadata; old records still validate", async () => {
@@ -429,9 +429,9 @@ it("accepts and persists optional input metadata; old records still validate", a
 });
 ```
 
-- [ ] **Step 2: Run it — must fail** — `pnpm --filter web test sessionLog` → FAIL (unknown field / type error).
+- [x] **Step 2: Run it — must fail** — `pnpm --filter web test sessionLog` → FAIL (unknown field / type error).
 
-- [ ] **Step 3: Implement schema** — in `apps/web/src/fusion/sessionLog.ts`, above `SessionRecordSchema`:
+- [x] **Step 3: Implement schema** — in `apps/web/src/fusion/sessionLog.ts`, above `SessionRecordSchema`:
 
 ```ts
 // ADR-013: which input produced this session's evidence — needed to interpret
@@ -451,9 +451,9 @@ export type InputMeta = z.infer<typeof InputMetaSchema>;
 
 and inside `SessionRecordSchema` add `input: InputMetaSchema.optional(),` after `lessonId`.
 
-- [ ] **Step 4: Run tests — must pass** — `pnpm --filter web test sessionLog` → PASS.
+- [x] **Step 4: Run tests — must pass** — `pnpm --filter web test sessionLog` → PASS.
 
-- [ ] **Step 5: Populate on capture start.** In `captureStore.ts` add `inputMeta: InputMeta | null` (initial `null`), action `setInputMeta(m)`, and a module-level getter `export const getInputMeta = () => useCaptureStore.getState().inputMeta;`. In `controller.ts` (`startCapture`, after the audio graph is up):
+- [x] **Step 5: Populate on capture start.** In `captureStore.ts` add `inputMeta: InputMeta | null` (initial `null`), action `setInputMeta(m)`, and a module-level getter `export const getInputMeta = () => useCaptureStore.getState().inputMeta;`. In `controller.ts` (`startCapture`, after the audio graph is up):
 
 ```ts
 const track = stream.getAudioTracks()[0];
@@ -472,10 +472,10 @@ useCaptureStore.getState().setInputMeta({
 
 (and `setInputMeta(null)` in `stop()`).
 
-- [ ] **Step 6: Attach to the session record.** In `fusionStore.ts` `startLesson()`, add `input: getInputMeta() ?? undefined,` to the `record = { … }` literal (import `getInputMeta` from `../capture/captureStore`). Optionally refresh `record.input.noiseFloorDb` from the perception snapshot in `stopLesson()`.
+- [x] **Step 6: Attach to the session record.** In `fusionStore.ts` `startLesson()`, add `input: getInputMeta() ?? undefined,` to the `record = { … }` literal (import `getInputMeta` from `../capture/captureStore`). Optionally refresh `record.input.noiseFloorDb` from the perception snapshot in `stopLesson()`.
 
-- [ ] **Step 7: Verify** — `pnpm --filter web typecheck && pnpm --filter web test` → green.
-- [ ] **Step 8: Commit** — `git commit -am "feat(session): record input device/kind/latency metadata per session (ADR-013)"`
+- [x] **Step 7: Verify** — `pnpm --filter web typecheck && pnpm --filter web test` → green.
+- [x] **Step 8: Commit** — `git commit -am "feat(session): record input device/kind/latency metadata per session (ADR-013)"`
 
 ---
 
@@ -497,7 +497,7 @@ Governing ADR: 013 (tone feature decision). Maps to §4 MVP tone features and re
 
 **Interfaces (produced):** `makeDriveCurve(amount: number, n?: number): Float32Array` — `amount` 0..1, default length 2049 (odd → exact zero at center, no DC offset).
 
-- [ ] **Step 1: Write the failing test** — `apps/web/src/tone/shaper.test.ts`:
+- [x] **Step 1: Write the failing test** — `apps/web/src/tone/shaper.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -539,9 +539,9 @@ describe("makeDriveCurve", () => {
 });
 ```
 
-- [ ] **Step 2: Run it — must fail** — `pnpm --filter web test shaper` → FAIL.
+- [x] **Step 2: Run it — must fail** — `pnpm --filter web test shaper` → FAIL.
 
-- [ ] **Step 3: Implement** — `apps/web/src/tone/shaper.ts`:
+- [x] **Step 3: Implement** — `apps/web/src/tone/shaper.ts`:
 
 ```ts
 // Drive curve for a native WaveShaperNode: y = tanh(kx)/tanh(k), normalized so
@@ -559,8 +559,8 @@ export function makeDriveCurve(amount: number, n = 2049): Float32Array {
 }
 ```
 
-- [ ] **Step 4: Run tests — must pass** — `pnpm --filter web test shaper` → PASS.
-- [ ] **Step 5: Commit** — `git commit -am "feat(tone): tanh drive curve for WaveShaperNode, harmonic-content proven"`
+- [x] **Step 4: Run tests — must pass** — `pnpm --filter web test shaper` → PASS.
+- [x] **Step 5: Commit** — `git commit -am "feat(tone): tanh drive curve for WaveShaperNode, harmonic-content proven"`
 
 ### Task 6: Default cabinet IR (synthetic, deterministic)
 
@@ -570,7 +570,7 @@ export function makeDriveCurve(amount: number, n = 2049): Float32Array {
 
 **Interfaces (produced):** `makeDefaultCabIR(sampleRate: number, durationS?: number): Float32Array` — unit-energy, deterministic (seeded PRNG).
 
-- [ ] **Step 1: Write the failing test** — `apps/web/src/tone/cabIR.test.ts`:
+- [x] **Step 1: Write the failing test** — `apps/web/src/tone/cabIR.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -614,9 +614,9 @@ describe("makeDefaultCabIR", () => {
 });
 ```
 
-- [ ] **Step 2: Run it — must fail** — `pnpm --filter web test cabIR` → FAIL.
+- [x] **Step 2: Run it — must fail** — `pnpm --filter web test cabIR` → FAIL.
 
-- [ ] **Step 3: Implement** — `apps/web/src/tone/cabIR.ts`:
+- [x] **Step 3: Implement** — `apps/web/src/tone/cabIR.ts`:
 
 ```ts
 // ponytail: synthetic default cab IR — a lowpassed, exponentially decaying
@@ -648,8 +648,8 @@ export function makeDefaultCabIR(sampleRate: number, durationS = 0.06): Float32A
 }
 ```
 
-- [ ] **Step 4: Run tests — must pass** — `pnpm --filter web test cabIR` → PASS.
-- [ ] **Step 5: Commit** — `git commit -am "feat(tone): deterministic synthetic default cab IR (unit-energy, HF rolloff)"`
+- [x] **Step 4: Run tests — must pass** — `pnpm --filter web test cabIR` → PASS.
+- [x] **Step 5: Commit** — `git commit -am "feat(tone): deterministic synthetic default cab IR (unit-energy, HF rolloff)"`
 
 ### Task 7: Noise gate (pure core + worklet shell)
 
@@ -664,7 +664,7 @@ export function makeDefaultCabIR(sampleRate: number, durationS = 0.06): Float32A
 - `gateStep(s: GateState, x: number, thresholdLin: number, attack: number, release: number, envCoef: number): number`
 - Worklet registered as `"gate-processor"`, threshold set via `port.postMessage({ thresholdDb })`.
 
-- [ ] **Step 1: Write the failing test** — `apps/web/src/tone/gateCore.test.ts`:
+- [x] **Step 1: Write the failing test** — `apps/web/src/tone/gateCore.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -701,9 +701,9 @@ describe("gate", () => {
 });
 ```
 
-- [ ] **Step 2: Run it — must fail** — `pnpm --filter web test gateCore` → FAIL.
+- [x] **Step 2: Run it — must fail** — `pnpm --filter web test gateCore` → FAIL.
 
-- [ ] **Step 3: Implement core** — `apps/web/src/tone/gateCore.ts`:
+- [x] **Step 3: Implement core** — `apps/web/src/tone/gateCore.ts`:
 
 ```ts
 // Noise-gate math, pure and Node-testable; gate-processor.ts is a thin shell.
@@ -734,9 +734,9 @@ export function gateStep(
 }
 ```
 
-- [ ] **Step 4: Run tests — must pass** — `pnpm --filter web test gateCore` → PASS.
+- [x] **Step 4: Run tests — must pass** — `pnpm --filter web test gateCore` → PASS.
 
-- [ ] **Step 5: Worklet shell** — `apps/web/src/tone/gate-processor.ts`:
+- [x] **Step 5: Worklet shell** — `apps/web/src/tone/gate-processor.ts`:
 
 ```ts
 // Realtime shell around gateCore (audio thread): mono in → gated mono out.
@@ -773,8 +773,8 @@ registerProcessor("gate-processor", GateProcessor);
 
 (If `worklet.d.ts` doesn't declare the `sampleRate` global, add `declare const sampleRate: number;` there.)
 
-- [ ] **Step 6: Verify** — `pnpm --filter web typecheck && pnpm --filter web test` → green.
-- [ ] **Step 7: Commit** — `git commit -am "feat(tone): noise gate — pure core + AudioWorklet shell"`
+- [x] **Step 6: Verify** — `pnpm --filter web typecheck && pnpm --filter web test` → green.
+- [x] **Step 7: Commit** — `git commit -am "feat(tone): noise gate — pure core + AudioWorklet shell"`
 
 ### Task 8: Tone chain graph + params + presets
 
@@ -810,7 +810,7 @@ export function buildToneChain(ctx: AudioContext, source: AudioNode): Promise<To
 
 - `TONE_PRESETS: Record<string, ToneParams>` in `presets.ts`.
 
-- [ ] **Step 1: Implement `toneChain.ts`** (browser-only graph code — verified by the Task 10 e2e in real Chromium; the math it consumes is already unit-tested):
+- [x] **Step 1: Implement `toneChain.ts`** (browser-only graph code — verified by the Task 10 e2e in real Chromium; the math it consumes is already unit-tested):
 
 ```ts
 // Wet monitoring chain (ADR-013): all native Web Audio nodes + the gate
@@ -938,7 +938,7 @@ export async function buildToneChain(ctx: AudioContext, source: AudioNode): Prom
 }
 ```
 
-- [ ] **Step 2: Presets** — `apps/web/src/tone/presets.ts`:
+- [x] **Step 2: Presets** — `apps/web/src/tone/presets.ts`:
 
 ```ts
 // Lesson-facing practice tones (vision doc §4 MVP): data, not code.
@@ -951,8 +951,8 @@ export const TONE_PRESETS: Record<string, ToneParams> = {
 };
 ```
 
-- [ ] **Step 3: Verify** — `pnpm --filter web typecheck` → green (no unit test here; the graph is exercised end-to-end in Task 10).
-- [ ] **Step 4: Commit** — `git commit -am "feat(tone): native Web Audio tone chain (trim/gate/drive/EQ/cab IR/limiter) + presets"`
+- [x] **Step 3: Verify** — `pnpm --filter web typecheck` → green (no unit test here; the graph is exercised end-to-end in Task 10).
+- [x] **Step 4: Commit** — `git commit -am "feat(tone): native Web Audio tone chain (trim/gate/drive/EQ/cab IR/limiter) + presets"`
 
 ### Task 9: Controller integration + tone store + TonePanel UI
 
@@ -967,7 +967,7 @@ export const TONE_PRESETS: Record<string, ToneParams> = {
 - Consumes: `buildToneChain`, `DEFAULT_TONE`, `ToneParams`, `TONE_PRESETS`, `classifyAudioInput` (mic-feedback guard).
 - Produces: `useToneStore` (Zustand): `{ params: ToneParams; preset: string | null; set(patch: Partial<ToneParams>): void; applyPreset(name: string): void }`; module getter `getToneMeta(): { preset: string | null; monitor: MonitorMode }`; `CaptureHandles.tone: ToneChainHandles`; `window.__toneDebug = { outputRms(): number; latencyMs(): number }`.
 
-- [ ] **Step 1: Tone store** — `apps/web/src/tone/toneStore.ts`:
+- [x] **Step 1: Tone store** — `apps/web/src/tone/toneStore.ts`:
 
 ```ts
 // Coarse tone-knob state (UI cadence). The controller subscribes and pushes
@@ -999,7 +999,7 @@ export const getToneMeta = (): { preset: string | null; monitor: MonitorMode } =
 };
 ```
 
-- [ ] **Step 2: Controller wiring.** In `startCapture` (after the analysis graph is set up):
+- [x] **Step 2: Controller wiring.** In `startCapture` (after the analysis graph is set up):
 
 ```ts
 const tone = await buildToneChain(audioContext, source);
@@ -1010,12 +1010,12 @@ window.__toneDebug = { outputRms: () => tone.outputRms(), latencyMs: () => tone.
 
 Add `tone` to the returned `CaptureHandles` (type: `tone: ToneChainHandles`), call `unsubTone()`, `tone.dispose()`, and `delete window.__toneDebug` in `stop()`. Extend the `declare global` block with `__toneDebug?: { outputRms(): number; latencyMs(): number }`.
 
-- [ ] **Step 3: TonePanel** — `apps/web/src/tone/TonePanel.tsx`. Controls (all native inputs — no slider lib): monitor mode `<select>` (`off` / `dry` — clean DI / `amp`), preset `<select>` over `Object.keys(TONE_PRESETS)`, `<input type="range">` per knob (trim −24..24, gate −90..−30, drive 0..1 step 0.01, bass/mid/treble/presence −12..12, volume −60..0), IR loader `<input type="file" accept=".wav,audio/*">` → `file.arrayBuffer()` → `handles.tone.loadIR(buf)`, and a latency readout `{handles.tone.latencyMs().toFixed(1)} ms output path`. Feedback guard: when the selected input classifies as `mic` and monitor ≠ off, render `<p className="wizard-error">Mic input + speakers can feedback — use headphones.</p>` (warn only, don't block). Props: `{ tone: ToneChainHandles }`; knob state lives in `useToneStore` (each `onChange` calls `set({ … })`; the store subscription pushes to the chain).
+- [x] **Step 3: TonePanel** — `apps/web/src/tone/TonePanel.tsx`. Controls (all native inputs — no slider lib): monitor mode `<select>` (`off` / `dry` — clean DI / `amp`), preset `<select>` over `Object.keys(TONE_PRESETS)`, `<input type="range">` per knob (trim −24..24, gate −90..−30, drive 0..1 step 0.01, bass/mid/treble/presence −12..12, volume −60..0), IR loader `<input type="file" accept=".wav,audio/*">` → `file.arrayBuffer()` → `handles.tone.loadIR(buf)`, and a latency readout `{handles.tone.latencyMs().toFixed(1)} ms output path`. Feedback guard: when the selected input classifies as `mic` and monitor ≠ off, render `<p className="wizard-error">Mic input + speakers can feedback — use headphones.</p>` (warn only, don't block). Props: `{ tone: ToneChainHandles }`; knob state lives in `useToneStore` (each `onChange` calls `set({ … })`; the store subscription pushes to the chain).
 
-- [ ] **Step 4: Mount it.** In `SetupWizard.tsx`, when running and `handlesRef.current` exists: `<TonePanel tone={handlesRef.current.tone} />` below `<OpenStringCheck />`. (Renders only while capture runs — `videoEl` state already gates that region; use the same condition.)
+- [x] **Step 4: Mount it.** In `SetupWizard.tsx`, when running and `handlesRef.current` exists: `<TonePanel tone={handlesRef.current.tone} />` below `<OpenStringCheck />`. (Renders only while capture runs — `videoEl` state already gates that region; use the same condition.)
 
-- [ ] **Step 5: Verify** — `pnpm --filter web typecheck && pnpm --filter web test && pnpm --filter web e2e` → all green (existing e2e must not regress: monitor defaults `off`, so fake-device audio is unchanged). Manual: `pnpm --filter web dev`, plug in a guitar, flip monitor to `amp`, sweep drive/EQ — this is the Tone-0 listening check.
-- [ ] **Step 6: Commit** — `git commit -am "feat(tone): tone store, controller wiring, TonePanel UI with presets + IR loader"`
+- [x] **Step 5: Verify** — `pnpm --filter web typecheck && pnpm --filter web test && pnpm --filter web e2e` → all green (existing e2e must not regress: monitor defaults `off`, so fake-device audio is unchanged). Manual: `pnpm --filter web dev`, plug in a guitar, flip monitor to `amp`, sweep drive/EQ — this is the Tone-0 listening check.
+- [x] **Step 6: Commit** — `git commit -am "feat(tone): tone store, controller wiring, TonePanel UI with presets + IR loader"`
 
 ### Task 10: E2E — wet path works, dry path untouched
 
@@ -1024,7 +1024,7 @@ Add `tone` to the returned `CaptureHandles` (type: `tone: ToneChainHandles`), ca
 
 **Interfaces:** Consumes `window.__toneDebug` (Task 9), `window.__captureDebug.snapshot()` (existing), the TonePanel monitor `<select>` (give it `aria-label="Monitor"`).
 
-- [ ] **Step 1: Write the spec** (pattern mirrors `audio-loop.spec.ts` — Chromium fake audio device):
+- [x] **Step 1: Write the spec** (pattern mirrors `audio-loop.spec.ts` — Chromium fake audio device):
 
 ```ts
 import { expect, test } from "@playwright/test";
@@ -1064,9 +1064,9 @@ test("tone monitor gates output and never disturbs analysis", async ({ page }) =
 });
 ```
 
-- [ ] **Step 2: Run it** — `pnpm --filter web e2e tone-monitor` → PASS (plus the full suite: `pnpm --filter web e2e`).
-- [ ] **Step 3: Bundle + license gates** — `pnpm bundle-size && pnpm license-check` → within budget, clean.
-- [ ] **Step 4: Commit** — `git commit -am "test(tone): e2e — monitor gating + dry-path integrity"`
+- [x] **Step 2: Run it** — `pnpm --filter web e2e tone-monitor` → PASS (plus the full suite: `pnpm --filter web e2e`).
+- [x] **Step 3: Bundle + license gates** — `pnpm bundle-size && pnpm license-check` → within budget, clean.
+- [x] **Step 4: Commit** — `git commit -am "test(tone): e2e — monitor gating + dry-path integrity"`
 
 ---
 
@@ -1084,12 +1084,12 @@ Maps to vision §4 "presets tied to lessons" and research §9.1 "session logs st
 - Modify: `apps/web/src/fusion/lessons.test.ts` (schema accepts/omits the field)
 - Modify: one authored lesson file/entry (wherever the 8 open-chord lessons are defined) — give the C-major lesson `tone_preset: "Clean Chord Practice"`.
 
-- [ ] **Step 1: Failing schema test** — a lesson with `tone_preset: "Clean Chord Practice"` parses; a lesson without it parses; `tone_preset: 5` rejects.
-- [ ] **Step 2:** `pnpm --filter web test lessons` → FAIL, implement schema field, → PASS.
-- [ ] **Step 3: Failing store test** (`apps/web/src/tone/toneStore.test.ts`): `applyPreset("Crunch Rhythm")` sets `params.drive` to `0.45` and `preset` to the name; unknown preset name is a no-op; any manual `set({ drive: 0.5 })` clears `preset` to `null`.
-- [ ] **Step 4:** implement (already written in Task 9 — this test locks the behavior), `pnpm --filter web test toneStore` → PASS.
-- [ ] **Step 5:** wire `LessonPanel.tsx` as above; `pnpm --filter web typecheck && pnpm --filter web test` → green.
-- [ ] **Step 6: Commit** — `git commit -am "feat(lessons): optional tone_preset per lesson applies practice tone on start"`
+- [x] **Step 1: Failing schema test** — a lesson with `tone_preset: "Clean Chord Practice"` parses; a lesson without it parses; `tone_preset: 5` rejects.
+- [x] **Step 2:** `pnpm --filter web test lessons` → FAIL, implement schema field, → PASS.
+- [x] **Step 3: Failing store test** (`apps/web/src/tone/toneStore.test.ts`): `applyPreset("Crunch Rhythm")` sets `params.drive` to `0.45` and `preset` to the name; unknown preset name is a no-op; any manual `set({ drive: 0.5 })` clears `preset` to `null`.
+- [x] **Step 4:** implement (already written in Task 9 — this test locks the behavior), `pnpm --filter web test toneStore` → PASS.
+- [x] **Step 5:** wire `LessonPanel.tsx` as above; `pnpm --filter web typecheck && pnpm --filter web test` → green.
+- [x] **Step 6: Commit** — `git commit -am "feat(lessons): optional tone_preset per lesson applies practice tone on start"`
 
 ### Task 12: Session tone metadata
 
@@ -1108,8 +1108,8 @@ tone: z
 - Modify: `apps/web/src/fusion/fusionStore.ts` — in `startLesson()`, add `tone: getToneMeta(),` to the record literal (import `getToneMeta` from `../tone/toneStore`).
 - Modify: `apps/web/src/fusion/sessionLog.test.ts` — record with `tone: { preset: "Lead Sustain", monitor: "amp" }` round-trips; record without `tone` still validates.
 
-- [ ] **Step 1:** failing test → **Step 2:** implement → `pnpm --filter web test sessionLog` → PASS.
-- [ ] **Step 3: Commit** — `git commit -am "feat(session): record tone preset + monitor mode per session"`
+- [x] **Step 1:** failing test → **Step 2:** implement → `pnpm --filter web test sessionLog` → PASS.
+- [x] **Step 3: Commit** — `git commit -am "feat(session): record tone preset + monitor mode per session"`
 
 ---
 
