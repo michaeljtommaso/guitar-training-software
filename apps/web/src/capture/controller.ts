@@ -123,6 +123,7 @@ export async function startCapture(
   const settings = track?.getSettings() ?? {};
   const devices = await listCaptureDevices();
   const label = devices.mics.find((m) => m.deviceId === settings.deviceId)?.label ?? track?.label ?? "";
+  useCaptureStore.getState().setOpenStringsSeen(0); // fresh per-session count
   useCaptureStore.getState().setInputMeta({
     deviceId: settings.deviceId ?? "",
     label,

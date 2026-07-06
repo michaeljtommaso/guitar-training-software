@@ -1,8 +1,9 @@
 // "Strum each open string" sanity check (ADR-013): proves signal per string
 // on the chosen input. A chip lights when the tuner reports that open string
 // within ±50 cents.
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { subscribe, getSnapshot } from "../perception/perceptionStore";
+import { useCaptureStore } from "./captureStore";
 
 const OPEN_STRINGS = ["E2", "A2", "D3", "G3", "B3", "E4"] as const;
 
@@ -10,6 +11,10 @@ export function OpenStringCheck() {
   const snap = useSyncExternalStore(subscribe, getSnapshot);
   const [seen, setSeen] = useState<Set<string>>(new Set());
   const lastReading = useRef("");
+  // Mirror the count into session metadata (fires on new-string and Reset→0).
+  useEffect(() => {
+    useCaptureStore.getState().setOpenStringsSeen(seen.size);
+  }, [seen]);
   const t = snap.audioAnalysis?.tuning;
   const key = t ? `${t.name}:${t.f0.toFixed(1)}` : "";
   if (t && key !== lastReading.current) {
