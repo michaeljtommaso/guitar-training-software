@@ -44,6 +44,7 @@ The Opus-stack planning deliverable defines the full stack, decisions, build ord
 | [`docs/technology-decision-records.md`](docs/technology-decision-records.md) | ADR-style records of the load-bearing decisions (platform, frontend, overlay, capture, audio, vision, fusion, backend, data, model/proxy, license firewall, deploy/eval) with alternatives and reopen triggers |
 | [`docs/implementation-work-packages.md`](docs/implementation-work-packages.md) | Ordered build work packages (WP-0 → WP-7) with scope, deliverables, verification gates, dependencies, and explicit non-goals |
 | [`docs/open-questions-and-research-gaps.md`](docs/open-questions-and-research-gaps.md) | Unresolved risks/questions with why each matters, validation method, owner lane, and decision trigger |
+| [`docs/amp-modeling-and-tone-engine-research.md`](docs/amp-modeling-and-tone-engine-research.md) | Direct research on “guitar in → amp sound out”: hardware path, amp/cab DSP, open-source stacks, and how an optional tone engine coheres with the tutor architecture |
 
 ## Working name ideas
 
