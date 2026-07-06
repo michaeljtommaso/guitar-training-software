@@ -19,6 +19,7 @@ import {
   type RingView,
 } from "./ringBuffer";
 import { AudioAnalyzer, FFT_SIZE, HOP, type AnalyzerState } from "./analysis";
+import { InputHealthMeter, type InputHealth } from "./inputHealth";
 import type { AudioEvent } from "../../fusion/events/audioEvents";
 
 export interface AudioWorkerStats {
@@ -27,6 +28,7 @@ export interface AudioWorkerStats {
   samplesConsumed: number;
   dropped: number;
   latencyMs: number;
+  health: InputHealth;
 }
 
 export interface AudioEventsMsg {
@@ -66,6 +68,7 @@ let latencyMs = NaN; // EMA of per-frame glass-to-worker latency
 let lastFrameStampMs = NaN;
 let lastFrameWallMs = NaN;
 const scratch = new Float32Array(FRAME_SAMPLES);
+const healthMeter = new InputHealthMeter();
 
 // Hop windowing: a rolling FFT-sized window advanced one render quantum at a
 // time; the analyzer runs once every HOP_FRAMES.
@@ -94,6 +97,7 @@ function drain(): void {
     if (frame === null) break;
     framesRead++;
     samplesConsumed += FRAME_SAMPLES;
+    healthMeter.push(scratch);
     lastFrameStampMs = frame.stampMs;
     lastFrameWallMs = frame.wallMs;
     const lat = Date.now() - frame.wallMs;
@@ -144,6 +148,7 @@ function postStats(): void {
     samplesConsumed,
     dropped: Atomics.load(ring.header, IDX_DROPPED),
     latencyMs,
+    health: healthMeter.read(),
   });
 }
 

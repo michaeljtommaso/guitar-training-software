@@ -5,12 +5,14 @@
 import type { AnalyzerState } from "./audio/analysis";
 import type { AudioEvent } from "../fusion/events/audioEvents";
 import type { NotesEvent } from "./audio/notes/NoteSource";
+import type { InputHealth } from "./audio/inputHealth";
 
 export interface AudioStats {
   framesRead: number;
   samplesConsumed: number;
   dropped: number;
   latencyMs: number;
+  health?: InputHealth;
 }
 
 export interface AudioEventCounts {

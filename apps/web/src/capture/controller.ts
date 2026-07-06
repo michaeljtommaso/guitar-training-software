@@ -131,6 +131,7 @@ export async function startCapture(
           samplesConsumed: msg.samplesConsumed,
           dropped: msg.dropped,
           latencyMs: msg.latencyMs,
+          health: msg.health,
         },
       });
     } else if (msg.type === "audioEvents") {
