@@ -14,7 +14,16 @@ Build a **multimodal guitar coach** that combines:
 
 ## Current status
 
-The MVP (WP-0 → WP-7) is built, tested, and review-passed — see [`docs/status.md`](docs/status.md) for the structured status: work-package evidence, measured vs deferred accuracy gates, prioritized blockers, and next actions. The live blocker ledger is [`docs/blockers.md`](docs/blockers.md); the original research inputs live under [`docs/research/`](docs/research/).
+The MVP (WP-0 → WP-7) **and** the direct-capture + tone engine (TP-0 → TP-2) are built, tested, and review-passed: the setup wizard auto-prefers a DI/USB-interface input (mic fallback) with a live level meter and open-string check, a native Web Audio practice amp (gate/drive/EQ/cab/limiter) monitors the wet signal while the tutor keeps analyzing the dry signal, lessons can carry tone presets, and sessions record input/tone metadata. Remaining tone lanes (pedalboard TP-3, NAM/native TP-4) are gated on usage evidence. See [`docs/status.md`](docs/status.md) for structured status (work-package evidence, measured vs deferred accuracy gates, next actions) and [`docs/blockers.md`](docs/blockers.md) for the live blocker ledger; research inputs live under [`docs/research/`](docs/research/).
+
+## Quick start
+
+```bash
+pnpm install --frozen-lockfile
+pnpm --filter web dev        # open the printed URL in Chrome/Edge
+```
+
+Plug in a webcam and a USB audio interface (guitar into its Hi-Z input — the wizard auto-selects it; a bare mic works with lower accuracy), click **Start capture**, strum the open-string check to 6/6, then pick a lesson. For amp sound while you practice, set the Tone panel's Monitor to **amp** (headphones on a mic input). Verify the build with `pnpm typecheck && pnpm test`; the full gate list and a step-by-step usage checklist are in [`docs/testing.md`](docs/testing.md).
 
 ## Repository map
 

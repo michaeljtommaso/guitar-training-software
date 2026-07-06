@@ -1,7 +1,22 @@
 # Testing Guide
 
-> How to test everything in this repo: the existing tutor (WP-0…WP-7, built), and the new direct-capture + tone additions ([plans/direct-capture-and-tone-work-packages.md](plans/direct-capture-and-tone-work-packages.md)) as they land.
+> How to test everything in this repo: the tutor (WP-0…WP-7) and the direct-capture + tone engine (TP-0…TP-2, [plans/direct-capture-and-tone-work-packages.md](plans/direct-capture-and-tone-work-packages.md)) — all built and merged.
 > All commands run from the repo root unless noted. Date: 2026-07-06.
+
+## How to use the software — human checklist
+
+One-time setup: `pnpm install --frozen-lockfile`, then `pnpm --filter web dev` and open the printed URL in Chrome/Edge.
+
+- [ ] Plug in your webcam and USB audio interface (use its Hi-Z/instrument input for the guitar) **before** starting. No interface? The built-in mic works, with reduced note/timing accuracy.
+- [ ] Click **Start capture** and grant camera + microphone. The wizard auto-selects the interface — the chip next to the mic picker should read **direct input** ("mic · fallback" means it fell back). Your device choice persists across reloads.
+- [ ] Set gain on the interface while playing: input meter moving, no red **clip** light (lower gain if it lights), noise floor ≲ −60 dB.
+- [ ] Strum each open string slowly until all six chips light (**6/6**). This proves per-string signal and is recorded with your session.
+- [ ] Optional: click **Measure round-trip** for a real latency number — needs a speaker aimed at the mic/guitar; headphones can't acoustically loop back.
+- [ ] Want amp sound while practicing? Tone panel → Monitor **amp** (wear headphones on a mic input — it warns you), pick a preset or shape drive/EQ/gate, optionally load a cab IR `.wav`. Knob settings persist across reloads; the monitor always comes back **off** so a page load is never suddenly loud.
+- [ ] For finger/fret overlays, calibrate the fretboard when prompted (tap the four corners in the order shown).
+- [ ] Pick a lesson and press **Start lesson**. A lesson with a practice tone (e.g. C major → "Clean Chord Practice") applies its tone settings but respects your monitor on/off choice. Play, and watch the chord/tuner feedback and hints.
+- [ ] Coaching works fully local by default; the cloud coach requires running `services/backend` with a model key.
+- [ ] Afterwards, sessions (including input device, tone, and open-string progress) live in DevTools → Application → IndexedDB → `guitar-tutor` → `sessions`.
 
 ## 0. Prerequisites
 
@@ -25,7 +40,7 @@ That is what CI runs (`.github/workflows/ci.yml`), minus e2e (non-blocking in CI
 ### 2.1 Web + annotation-tool unit tests (Vitest)
 
 ```bash
-pnpm test                        # recursive: apps/web + apps/annotation-tool (~229 tests)
+pnpm test                        # recursive: apps/web + apps/annotation-tool (~270 tests)
 pnpm --filter web test           # web app only
 pnpm --filter web test chords    # one file/pattern (vitest filter)
 ```
@@ -56,7 +71,7 @@ Covers: model-proxy guards (injection fencing, taxonomy-bounded output), cost-ca
 ### 2.3 End-to-end (Playwright, real Chromium, fake camera/mic)
 
 ```bash
-pnpm --filter web e2e            # builds, serves via vite preview, runs 7 scenarios
+pnpm --filter web e2e            # builds, serves via vite preview, runs 8 scenarios
 pnpm --filter web e2e audio-loop # one spec
 ```
 
@@ -69,8 +84,9 @@ Specs in `apps/web/e2e/` and what each proves:
 | `hand-landmark.spec.ts` | Real MediaPipe HandLandmarker runs in-browser (21 landmarks on a still image) |
 | `fusion-lesson.spec.ts` | Lesson → dual-evidence (audio+vision) diagnoses → hints, end to end |
 | `coach-local-only.spec.ts` | Local-only mode delivers corrections + template coaching with zero network |
+| `tone-monitor.spec.ts` | Wet monitor gates output (off → silent, amp → sound) and never disturbs the dry analysis path (ADR-013 tripwire) |
 
-Debug hooks available in the browser console while capture runs: `window.__captureDebug.snapshot()` (perception/fusion state), `window.__visionDebug` (landmark status). The new tone work adds `window.__toneDebug` (TP-1).
+Debug hooks available in the browser console while capture runs: `window.__captureDebug.snapshot()` (perception/fusion state), `window.__visionDebug` (landmark status), `window.__toneDebug` (wet-path RMS + latency, TP-1).
 
 Note: the CI e2e job is `continue-on-error` (not yet proven stable on GitHub runners) — treat a local e2e run as the real bar.
 
@@ -102,9 +118,9 @@ pnpm --filter web dev   # copies vision assets, serves the app
 
 Start capture, use the on-page Debug/Audio panels (chord posterior, tuner, onsets, latency) with a real guitar.
 
-## 3. Testing the new additions (direct capture + tone engine)
+## 3. Testing the direct capture + tone engine (TP-0…TP-2, built)
 
-Each TP task in [plans/direct-capture-and-tone-work-packages.md](plans/direct-capture-and-tone-work-packages.md) is TDD — the test lands *before* the code. This section is the tester's view of the same work: what to run and what to look at after each package merges.
+All TP-0…TP-2 tasks from [plans/direct-capture-and-tone-work-packages.md](plans/direct-capture-and-tone-work-packages.md) are merged, plus five reviewed follow-ups (monitor-safe lesson presets, persisted tone settings, acoustic latency probe, cab picker, open-string session metadata). This section is the tester's view: what to run and what to look at.
 
 ### 3.1 TP-0 — Direct-capture wizard (automated)
 
@@ -129,6 +145,7 @@ pnpm --filter web e2e                # existing specs must stay green (fake devi
 pnpm --filter web test shaper     # drive curve: odd symmetry, bounded, adds 3rd harmonic (verified via existing magnitudeSpectrum)
 pnpm --filter web test cabIR      # default IR: deterministic, unit energy, decays, HF rolloff
 pnpm --filter web test gateCore   # gate opens on signal, closes below threshold, smooth release
+pnpm --filter web test latencyProbe # round-trip probe pairing math: first-onset-after, match window, consume-once, median
 pnpm --filter web e2e tone-monitor  # THE key spec: monitor off → silent; amp → sound; analysis identical either way (dry path = truth source, ADR-013)
 pnpm bundle-size                  # tone chain is native Web Audio — budget must not move meaningfully
 pnpm license-check                # zero new deps expected
@@ -143,20 +160,21 @@ With guitar + interface + **headphones**:
 1. Monitor **off** (default): silence. **dry**: clean DI passthrough. **amp**: processed tone.
 2. Sweep drive 0→1: clean → crunch → saturated, no harsh aliasing fizz on high notes (native 4× oversampling).
 3. Bass/mid/treble/presence knobs audibly shape the tone; gate threshold silences hum between phrases but never chops sustained notes.
-4. Load a downloaded `.wav` cab IR → character changes vs the synthetic default.
-5. Check the latency readout (output path, ms). If a strummed note feels late, note the number — persistent >25–30 ms readings with playability complaints are the TP-4 native-lane trigger.
+4. Load a downloaded `.wav` cab IR → character changes vs the synthetic default; the Cab select's "Synthetic (default)" restores it. (No CC0 IR is bundled yet — none passed provenance verification; the drop-in spot is commented in `TonePanel.tsx`.)
+5. Check the latency readout (output path, ms) — and for the honest number, aim a speaker at the mic/guitar and press **Measure round-trip** (median of 3 clicks paired to dry-path onsets; headphones → "no signal detected"). Persistent >25–30 ms measured readings with playability complaints are the TP-4 native-lane trigger.
 6. Select the mic (not the interface) with monitor on → the feedback warning appears.
 7. While monitoring in amp mode, watch the chord/tuner debug panel: readings must be identical to monitor-off (dry analysis unaffected).
+8. Set knobs, reload the page → knobs and preset come back (localStorage `gt-tone`) but monitor is **off** again (safety: no auto-audio on load).
 
 ### 3.5 TP-2 — Presets & metadata
 
 ```bash
-pnpm --filter web test toneStore   # applyPreset sets params; manual tweak clears preset name
+pnpm --filter web test toneStore   # applyPreset sets params; preserveMonitor keeps the user's monitor; manual tweak clears preset; rehydrate forces monitor off
 pnpm --filter web test lessons     # optional tone_preset field parses; absent field unchanged
-pnpm --filter web test sessionLog  # tone { preset, monitor } round-trips
+pnpm --filter web test sessionLog  # tone { preset, monitor } and input.openStringsSeen round-trip; legacy records still validate
 ```
 
-Manual: start the C-major lesson → tone flips to "Clean Chord Practice"; finish a session → the session record contains `tone: { preset, monitor }`.
+Manual: start the C-major lesson → tone becomes "Clean Chord Practice" **without changing your monitor on/off state** (lessons never force audio; picking a preset yourself in TonePanel applies it fully). Finish a session → the record contains `tone: { preset, monitor }` and `input.openStringsSeen`.
 
 ## 4. Adding new tests — house rules
 
