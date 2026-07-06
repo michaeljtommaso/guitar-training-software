@@ -61,7 +61,8 @@ export function LessonPanel() {
               if (!sel) return;
               startLesson(sel.value);
               const lesson = getLesson(sel.value);
-              if (lesson?.tone_preset) useToneStore.getState().applyPreset(lesson.tone_preset);
+              if (lesson?.tone_preset)
+                useToneStore.getState().applyPreset(lesson.tone_preset, { preserveMonitor: true });
             }}
           >
             Start lesson

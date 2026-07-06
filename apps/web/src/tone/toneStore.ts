@@ -8,16 +8,22 @@ interface ToneState {
   params: ToneParams;
   preset: string | null;
   set(patch: Partial<ToneParams>): void;
-  applyPreset(name: string): void;
+  /** Apply a preset by name. `preserveMonitor` keeps the current monitor mode
+   *  (lessons must not force audio on) while applying every other knob. */
+  applyPreset(name: string, opts?: { preserveMonitor?: boolean }): void;
 }
 
 export const useToneStore = create<ToneState>((set) => ({
   params: DEFAULT_TONE,
   preset: null,
   set: (patch) => set((s) => ({ params: { ...s.params, ...patch }, preset: null })),
-  applyPreset: (name) => {
+  applyPreset: (name, opts) => {
     const p = TONE_PRESETS[name];
-    if (p) set({ params: p, preset: name });
+    if (!p) return;
+    set((s) => ({
+      params: opts?.preserveMonitor ? { ...p, monitor: s.params.monitor } : p,
+      preset: name,
+    }));
   },
 }));
 

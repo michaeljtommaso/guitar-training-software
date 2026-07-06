@@ -30,4 +30,26 @@ describe("useToneStore.applyPreset", () => {
     expect(s.params.drive).toBe(0.5);
     expect(s.preset).toBeNull();
   });
+
+  it("preserveMonitor applies every knob but keeps monitor 'off'", () => {
+    useToneStore.setState({ params: { ...DEFAULT_TONE, monitor: "off" }, preset: null });
+    useToneStore.getState().applyPreset("Clean Chord Practice", { preserveMonitor: true });
+    const s = useToneStore.getState();
+    expect(s.params.drive).toBe(0.08); // knobs applied
+    expect(s.params.gateDb).toBe(-70);
+    expect(s.params.monitor).toBe("off"); // monitor untouched — no surprise audio
+    expect(s.preset).toBe("Clean Chord Practice");
+  });
+
+  it("preserveMonitor keeps a live 'amp' monitor", () => {
+    useToneStore.setState({ params: { ...DEFAULT_TONE, monitor: "amp" }, preset: null });
+    useToneStore.getState().applyPreset("Clean Chord Practice", { preserveMonitor: true });
+    expect(useToneStore.getState().params.monitor).toBe("amp");
+  });
+
+  it("plain applyPreset still applies the preset's own monitor", () => {
+    useToneStore.setState({ params: { ...DEFAULT_TONE, monitor: "off" }, preset: null });
+    useToneStore.getState().applyPreset("Clean Chord Practice");
+    expect(useToneStore.getState().params.monitor).toBe("amp"); // preset's monitor wins
+  });
 });
