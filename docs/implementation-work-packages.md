@@ -39,17 +39,18 @@ Traceability: each WP references the governing ADRs in [technology-decision-reco
 
 ---
 
-## WP-1 — Capture shell (camera + mic + worker topology)
+## WP-1 — Capture shell (camera + direct audio first + worker topology)
 
 - **Governing ADRs:** 001, 003, 004 (capture half).
-- **Scope:** Get clean camera and mic streams into the right threads with the right settings, plus the overlay compositing surface — no analysis yet.
+- **Scope:** Get clean camera and guitar audio streams into the right threads with the right settings, plus the overlay compositing surface — no analysis yet. Audio capture is **direct DI/interface first**, with external/built-in mic fallback.
 - **Deliverables:**
-  - `getUserMedia` device enumeration + a setup wizard: pick camera/mic, recommend a clip-on fretboard cam, live preview.
+  - `getUserMedia` device enumeration + a setup wizard: pick camera/audio input, prefer likely DI/interface devices, recommend a clip-on fretboard cam, live preview.
   - Video: 720p/30fps into `<video>`, driven by `requestVideoFrameCallback`.
   - Audio: `AudioContext` @ 48 kHz with echo cancellation / noise suppression / AGC **disabled**, routed to an `AudioWorkletNode` with a lock-free ring buffer.
+  - Direct-capture setup: level meter, clipping/noise-floor check, open-string sanity check, selected input/gain/sample-rate/latency metadata stored with the session.
   - Worker topology: vision worker (OffscreenCanvas + WASM/WebGPU capability probe), audio worker, main-thread fusion/UI placeholder.
   - Canvas 2D overlay compositing correctly over the video (draws a static test grid).
-- **Verification gate:** Sustained 30 fps preview with the overlay composited and **no main-thread jank**; audio ring buffer delivers frames to the audio worker with measured glass-to-worker latency logged; WebGPU-vs-WASM path selected automatically with a working fallback.
+- **Verification gate:** Sustained 30 fps preview with the overlay composited and **no main-thread jank**; audio ring buffer delivers frames to the audio worker with measured glass-to-worker latency logged; setup wizard prefers a connected interface/DI input when available and falls back to mic mode when not; WebGPU-vs-WASM path selected automatically with a working fallback.
 - **Dependencies:** WP-0.
 - **Non-goals:** landmark detection, pitch/onset detection, calibration math, any diagnosis.
 

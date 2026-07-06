@@ -156,6 +156,21 @@ Concise, ADR-style records of the load-bearing technology decisions behind the O
 
 ---
 
+## ADR-013 — Input policy and tone engine: direct capture first, mic fallback, dry analysis + wet monitoring
+
+- **Status:** Accepted.
+- **Context:** The tutor needs the most reliable audio source for note/chord/onset/timing analysis, while the user also wants the software to include realistic digital tone/pedal processing. A built-in mic is convenient but unreliable: room reflections, noise, automatic gain control, and mic placement can all corrupt the correctness signal.
+- **Decision:** The app defaults to **direct DI / Hi-Z / audio-interface input** when available, then falls back to external mic, then built-in mic. The app keeps two separate audio paths:
+  - **Dry analysis path** — tuner, onset, pitch/chord detection, string/muting evidence, and fusion with vision.
+  - **Wet tone path** — input trim, gate, pedals/effects, amp model, cabinet IR, and monitor output.
+- **Tone feature decision:** Digital tone/pedal processing is a first-class product feature, not just a debug monitor. MVP tone starts with gain/gate/drive/tone-stack/cab-IR/output limiter; later phases add pedal blocks, presets, NAM/neural amp loading, and possibly a native/plugin path if browser latency is not playable.
+- **Implementation notes:** Browser device labels and non-default devices are permission-gated, so the setup wizard must not rely on label matching alone. It should enumerate devices after permission, prefer likely interface labels when visible, run level/noise/clipping/open-string checks, and allow user override. If no suitable interface is connected, fall back gracefully to mic mode and surface lower expected accuracy.
+- **Alternatives:** *Mic-first for onboarding* — easiest but less accurate and contradicts the accuracy goal (rejected as default, retained as fallback). *Analyze wet/distorted output* — sounds good but harms pitch/timing reliability (rejected for correctness). *Native/plugin-first amp rig* — best latency, but too much scope before validating the tutor loop (deferred).
+- **Consequences:** Product copy, setup UX, session metadata, tests, and work packages must all treat direct capture as the preferred path. The wet tone lane cannot become the primary truth source for correctness.
+- **Reopen trigger:** Real user tests show interface setup friction blocks onboarding more than mic inaccuracy hurts outcomes → consider onboarding in mic mode while still recommending DI for accuracy.
+
+---
+
 ## Decision index
 
 | ADR | Area | Decision | Status |
@@ -172,5 +187,4 @@ Concise, ADR-style records of the load-bearing technology decisions behind the O
 | 010 | Data | Local-first IndexedDB (Dexie); Supabase sync later | Accepted |
 | 011 | Model/proxy + license | Capability-contract binding + license firewall | Accepted / Provisional |
 | 012 | Deploy/eval/privacy | Static + Docker; CI eval gates; local-first privacy | Accepted |
-</content>
-</invoke>
+| 013 | Input/tone policy | Direct capture first; mic fallback; dry analysis + wet tone/pedal monitoring | Accepted |

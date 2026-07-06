@@ -8,6 +8,13 @@
 
 The core idea is technically feasible and fits the existing guitar tutor project, but it should be treated as a **parallel tone/monitoring lane**, not as a replacement for the tutor’s correctness engine.
 
+The product should be **direct-capture-first**:
+
+1. Prefer a clean DI / Hi-Z / audio-interface input whenever available.
+2. Analyze the dry/clean signal for accuracy.
+3. Generate amp, cabinet, and pedal tone after capture for monitoring.
+4. Fall back to the current microphone method when no suitable interface is connected.
+
 The simplest end-to-end path is:
 
 ```text
@@ -71,6 +78,30 @@ Sources:
 
 - Focusrite guide to direct guitar recording / instrument inputs: <https://us.focusrite.com/articles/how-to-record-electric-guitar>
 - DI / high-Z to low-Z explanation: <https://theproaudiofiles.com/di-boxes/>
+
+### 1.1 Input-selection policy for this app
+
+The app should default to the cleanest available source, not the easiest source:
+
+| Priority | Input | App behavior |
+|---:|---|---|
+| 1 | DI / Hi-Z / USB audio interface | Preferred default for electric guitar; use for dry analysis and tone engine input |
+| 2 | External USB mic or interface mic | Fallback for acoustic guitar or users without DI; disable browser voice processing where possible |
+| 3 | Built-in mic | Last-resort onboarding path; lower expected accuracy |
+
+Browser implementation caveat: `enumerateDevices()` can list audio inputs/outputs, but labels and non-default devices are permission-gated. The app cannot reliably know that a device is a guitar input from the label alone. Therefore the setup flow should combine:
+
+- device enumeration after permission,
+- likely-interface label heuristics,
+- level/noise/clipping checks,
+- a short “play each open string” calibration,
+- user override.
+
+Sources:
+
+- MDN `enumerateDevices()`: <https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices>
+- MDN `AudioWorklet`: <https://developer.mozilla.org/en-US/docs/Web/API/AudioWorklet>
+- MDN `ConvolverNode`: <https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode>
 
 ---
 
@@ -340,7 +371,7 @@ The dry path is better for correctness. The wet path is better for user experien
 
 ### 9.2 Where it fits in the existing architecture
 
-Add an optional **Tone Engine** beside the existing audio-analysis worker:
+Add an optional **Tone/Pedal Engine** beside the existing audio-analysis worker:
 
 ```text
 Audio input
@@ -349,8 +380,9 @@ Audio input
   │    ├─ Basic Pitch / CREPE
   │    └─ chord/template matching
   │
-  └─ Tone engine worker / native audio callback
+  └─ Tone/pedal engine worker / native audio callback
        ├─ input trim / gate
+       ├─ pedal blocks: compressor | overdrive | modulation | delay | reverb | EQ
        ├─ amp backend: simple DSP | NAM | WDF
        ├─ cabinet IR loader
        └─ monitor output
@@ -398,11 +430,19 @@ Recommended scope control:
 - Add optional Web Audio monitoring chain:
   - input trim
   - gate
+  - simple pedal slots: compressor / drive / modulation / delay / reverb / EQ
   - simple antialiased waveshaper
   - tone controls
   - cab IR loader
   - output limiter
 - Keep analysis on dry or lightly conditioned signal.
+
+### Tone-1A — Direct-capture setup wizard
+
+- Ask for audio permission, enumerate devices, and prefer likely interface/DI inputs.
+- Run a short calibration: level meter, clipping check, noise floor estimate, open-string sanity check.
+- Store selected input, input gain, sample rate, and latency estimate with the session.
+- If no likely interface is connected, fall back to mic mode and clearly label expected accuracy as lower.
 
 ### Tone-2 — Dedicated low-latency path
 
