@@ -14,7 +14,7 @@ Build a **multimodal guitar coach** that combines:
 
 ## Current status
 
-The MVP (WP-0 → WP-7) is built, tested, and review-passed — see [`docs/status.md`](docs/status.md) for the structured status: work-package evidence, measured vs deferred accuracy gates, prioritized blockers, and next actions. The live blocker ledger is [`BLOCKERS.md`](BLOCKERS.md); the original research inputs live under [`docs/research/`](docs/research/).
+The MVP (WP-0 → WP-7) is built, tested, and review-passed — see [`docs/status.md`](docs/status.md) for the structured status: work-package evidence, measured vs deferred accuracy gates, prioritized blockers, and next actions. The live blocker ledger is [`docs/blockers.md`](docs/blockers.md); the original research inputs live under [`docs/research/`](docs/research/).
 
 ## Repository map
 

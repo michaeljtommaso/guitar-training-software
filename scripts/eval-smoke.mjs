@@ -8,7 +8,7 @@
 // SCOPE LABEL (do not remove): this is a synthetic-fixture regression gate —
 // NOT the §16 accuracy gates. It makes NO real-guitar accuracy claim and does
 // NOT verify the §16 latency budgets (those need real captures + the reference
-// laptop — see BLOCKERS.md). It only proves the code still behaves as it did on
+// laptop — see docs/blockers.md). It only proves the code still behaves as it did on
 // synthetic input; a single corrupted constant MUST turn it red.
 import { spawnSync } from "node:child_process";
 

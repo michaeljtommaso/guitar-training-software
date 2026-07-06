@@ -1,7 +1,7 @@
 # Project Status
 
 > **Snapshot:** 2026-07-06.
-> **Merged from** the overnight-run morning report (2026-07-03) and the build progress log (`PROGRESS.md`, retired), cross-checked against the living [`BLOCKERS.md`](../BLOCKERS.md) ledger at the repo root.
+> **Merged from** the overnight-run morning report (2026-07-03) and the build progress log (`PROGRESS.md`, retired), cross-checked against the living [`blockers.md`](blockers.md) ledger.
 > **Companions:** [testing.md](testing.md) (how to verify all of this) · [plans/direct-capture-and-tone-work-packages.md](plans/direct-capture-and-tone-work-packages.md) (next build plan).
 
 ## 1. At a glance
@@ -73,7 +73,7 @@ Integration: `cc42d15` unified string numbering to standard (1 = high e … 6 = 
 
 ## 7. Open blockers → human actions (prioritized)
 
-Living detail in [`BLOCKERS.md`](../BLOCKERS.md); this is the prioritized rollup as of 2026-07-06.
+Living detail in [`blockers.md`](blockers.md); this is the prioritized rollup as of 2026-07-06.
 
 1. **Do the first real capture session** — the gate for nearly everything below. Print the ChArUco board (5×4, `DICT_4X4_50`, spec in WP-3 code), record the 8 open chords with scripted mistakes per `data/capture-protocol.md`, label in the annotation tool.
 2. Fingertip ≥85% gate: measure from that session (WP-3).

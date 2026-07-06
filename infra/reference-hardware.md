@@ -3,7 +3,7 @@
 > **Status (WP-7):** PROVISIONAL reference target — this is the overnight build
 > machine, recorded so the §14 latency budgets and §16 acceptance metrics have a
 > concrete baseline. It is **not yet a ratified reference laptop**: the §16 gates
-> below are **unmeasured on real hardware/input** tonight (see BLOCKERS.md). The
+> below are **unmeasured on real hardware/input** tonight (see docs/blockers.md). The
 > numbers in "Measured tonight" are **synthetic / fake-device** and make **no**
 > real-guitar accuracy or glass-to-glass latency claim.
 

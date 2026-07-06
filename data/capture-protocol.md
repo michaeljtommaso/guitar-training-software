@@ -90,6 +90,6 @@ unambiguously.
 
 ## Status
 
-**Not run.** This document is the protocol only; see `BLOCKERS.md` (owned by the orchestrator, not this
+**Not run.** This document is the protocol only; see `docs/blockers.md` (owned by the orchestrator, not this
 worktree) for the deferred verification-gate note. No real capture sessions, no real clips, and therefore
 no internal labeled training set exist yet.
