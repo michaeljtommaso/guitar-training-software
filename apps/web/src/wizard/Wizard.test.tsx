@@ -12,12 +12,22 @@ vi.mock("../capture/devices", async (orig) => ({
   pickPreferredAudioInput: vi.fn(() => null),
 }));
 
-import { Wizard } from "./Wizard";
+import { Wizard, type WizardProps } from "./Wizard";
+import { useCaptureHost } from "../shell/useCaptureHost";
 import { startCapture } from "../capture/controller";
 import { listCaptureDevices } from "../capture/devices";
 import { useCaptureStore } from "../capture/captureStore";
 import { setPerception } from "../perception/perceptionStore";
 import { visionHot } from "../perception/perceptionStore";
+
+/** The Wizard consumes the shared CaptureHost (owned by AppShell in the real
+ *  app) — this harness supplies a real one so the behavioral flows (start,
+ *  device change, latency probe, the never-stops-capture invariant) run
+ *  through the actual host logic. */
+function WizardHarness(props: Omit<WizardProps, "capture">) {
+  const capture = useCaptureHost();
+  return <Wizard capture={capture} {...props} />;
+}
 
 function fakeHandles(overrides: Partial<CaptureHandles> = {}): CaptureHandles {
   return {
@@ -74,7 +84,7 @@ async function startAndContinueToStep2(handles: CaptureHandles) {
 
 describe("Wizard — step 1 (Camera & input, spec §7)", () => {
   it("mounts standalone on step 1 with the first progress dot active", () => {
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     expect(screen.getByTestId("wizard-step-1")).toBeInTheDocument();
     const dots = screen.getByTestId("wizard-progress").querySelectorAll(".wizard-dot");
     expect(dots).toHaveLength(3);
@@ -83,19 +93,19 @@ describe("Wizard — step 1 (Camera & input, spec §7)", () => {
   });
 
   it("Continue is disabled until capture is running", () => {
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     expect(screen.getByTestId("wizard-step1-continue")).toBeDisabled();
   });
 
   it("Start capture calls startCapture and flips to the running preview + Capturing state", async () => {
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     await startAndContinueToStep2(fakeHandles());
     expect(startCapture).toHaveBeenCalledTimes(1);
   });
 
   it("shows the two preview panes (full scene + zoom pane preview) once running", async () => {
     vi.mocked(startCapture).mockResolvedValue(fakeHandles());
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     fireEvent.click(screen.getByTestId("wizard-start-capture"));
     await waitFor(() => expect(screen.getByTestId("wizard-preview")).not.toHaveAttribute("hidden"));
     expect(screen.getByTestId("wizard-preview-full")).toBeInTheDocument();
@@ -106,7 +116,7 @@ describe("Wizard — step 1 (Camera & input, spec §7)", () => {
 
   it("shows the 'direct input' badge only when the classified kind is interface", async () => {
     useCaptureStore.setState({ mics: [{ deviceId: "m1", label: "Scarlett 2i2 USB" } as MediaDeviceInfo], micId: "m1" });
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     expect(screen.getByTestId("wizard-direct-input-badge")).toBeInTheDocument();
   });
 
@@ -115,13 +125,13 @@ describe("Wizard — step 1 (Camera & input, spec §7)", () => {
       mics: [{ deviceId: "m1", label: "MacBook Pro Microphone" } as MediaDeviceInfo],
       micId: "m1",
     });
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     expect(screen.queryByTestId("wizard-direct-input-badge")).not.toBeInTheDocument();
   });
 
   it("surfaces a capture error and lets the same Start button retry", async () => {
     useCaptureStore.setState({ phase: "error", error: "Permission denied" });
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     expect(screen.getByTestId("wizard-capture-error")).toHaveTextContent("Permission denied");
     expect(screen.getByTestId("wizard-start-capture")).toBeInTheDocument();
   });
@@ -129,7 +139,7 @@ describe("Wizard — step 1 (Camera & input, spec §7)", () => {
 
 describe("Wizard — step 2 (Signal check, spec §7)", () => {
   it("Back returns to step 1, Continue advances to step 3", async () => {
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     await startAndContinueToStep2(fakeHandles());
 
     fireEvent.click(screen.getByTestId("wizard-step2-back"));
@@ -142,7 +152,7 @@ describe("Wizard — step 2 (Signal check, spec §7)", () => {
 
   it("Measure round-trip invokes the running handles and renders the tiered latency-advice line", async () => {
     const handles = fakeHandles({ measureLatency: vi.fn(async () => 8) });
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     await startAndContinueToStep2(handles);
 
     fireEvent.click(screen.getByTestId("measure-latency"));
@@ -153,7 +163,7 @@ describe("Wizard — step 2 (Signal check, spec §7)", () => {
 
   it("a high round-trip renders the echo-tier advice", async () => {
     const handles = fakeHandles({ measureLatency: vi.fn(async () => 52) });
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     await startAndContinueToStep2(handles);
 
     fireEvent.click(screen.getByTestId("measure-latency"));
@@ -175,7 +185,7 @@ describe("Wizard — step 3 (You're set, spec §7) + capture-kept-running invari
     setPerception({ audio: { framesRead: 0, samplesConsumed: 0, dropped: 0, latencyMs: 0, health: { rmsDb: -18, peakDb: -10, noiseFloorDb: -62, clipped: false } } });
 
     const handles = fakeHandles({ measureLatency: vi.fn(async () => 34) });
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     await startAndContinueToStep2(handles);
     fireEvent.click(screen.getByTestId("measure-latency"));
     await waitFor(() => expect(handles.measureLatency).toHaveBeenCalled());
@@ -196,7 +206,7 @@ describe("Wizard — step 3 (You're set, spec §7) + capture-kept-running invari
 
   it("shows 'calibrated' once a fretboard homography is held", async () => {
     visionHot.H = [1, 0, 0, 0, 1, 0, 0, 0, 1];
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     await startAndContinueToStep2(fakeHandles());
     fireEvent.click(screen.getByTestId("wizard-step2-continue"));
     expect(screen.getByTestId("wizard-summary-zoom")).toHaveTextContent("calibrated");
@@ -206,7 +216,7 @@ describe("Wizard — step 3 (You're set, spec §7) + capture-kept-running invari
   it("Start practicing sets gt-setup-done and calls onDone WITHOUT stopping capture", async () => {
     const onDone = vi.fn();
     const handles = fakeHandles();
-    render(<Wizard onDone={onDone} />);
+    render(<WizardHarness onDone={onDone} />);
     await startAndContinueToStep2(handles);
     fireEvent.click(screen.getByTestId("wizard-step2-continue"));
     fireEvent.click(screen.getByTestId("wizard-start-practicing"));
@@ -217,7 +227,7 @@ describe("Wizard — step 3 (You're set, spec §7) + capture-kept-running invari
   });
 
   it("Back from step 3 returns to step 2", async () => {
-    render(<Wizard onDone={vi.fn()} />);
+    render(<WizardHarness onDone={vi.fn()} />);
     await startAndContinueToStep2(fakeHandles());
     fireEvent.click(screen.getByTestId("wizard-step2-continue"));
     fireEvent.click(screen.getByTestId("wizard-step3-back"));
@@ -229,7 +239,7 @@ describe("Wizard — skip path (spec §5/§7)", () => {
   it("skip setup for now sets gt-setup-done and calls onDone from step 1, without stopping capture", async () => {
     const onDone = vi.fn();
     const handles = fakeHandles();
-    render(<Wizard onDone={onDone} />);
+    render(<WizardHarness onDone={onDone} />);
     await startAndContinueToStep2(handles); // capture running, still mid-wizard
 
     fireEvent.click(screen.getByTestId("wizard-skip"));
@@ -240,7 +250,7 @@ describe("Wizard — skip path (spec §5/§7)", () => {
 
   it("skip works even before capture has ever started", () => {
     const onDone = vi.fn();
-    render(<Wizard onDone={onDone} />);
+    render(<WizardHarness onDone={onDone} />);
     fireEvent.click(screen.getByTestId("wizard-skip"));
     expect(localStorage.getItem("gt-setup-done")).toBe("true");
     expect(onDone).toHaveBeenCalledTimes(1);

@@ -103,6 +103,13 @@ describe("TopBar", () => {
     expect(badge.className).toContain("topbar-input-badge--interface");
   });
 
+  it("input badge click opens the console (spec §3: post-setup input changes live in the drawer)", () => {
+    const props = baseProps();
+    render(<TopBar {...props} />);
+    fireEvent.click(screen.getByTestId("topbar-input-badge"));
+    expect(props.onToggleConsole).toHaveBeenCalledTimes(1);
+  });
+
   it("shows a feedback-risk warning when a plain mic is monitoring live", () => {
     useCaptureStore.setState({
       mics: [{ deviceId: "1", label: "Built-in Microphone", kind: "audioinput" } as MediaDeviceInfo],

@@ -100,6 +100,9 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
+  /* It's a <button> since T6 (§3: badge click → drawer Inputs section). */
+  background: transparent;
+  cursor: pointer;
 }
 
 .topbar-input-badge--interface {
@@ -297,10 +300,9 @@
   color: var(--text-muted);
 }
 
-/* Tone preset selection lives in TopBar (spec §3) — hide TonePanel's own
-   preset dropdown + label when it's mounted inside the drawer, without
-   touching TonePanel.tsx itself. */
-.console-section--hide-preset #tone-preset,
-.console-section--hide-preset label[for="tone-preset"] {
-  display: none;
+/* VideoMount (T6): a zero-box wrapper that hosts the capture host's singleton
+   <video> element — display:contents so ancestors' `video` rules (video-stage,
+   wizard preview pane) style the element as if it were a direct child. */
+.video-mount {
+  display: contents;
 }

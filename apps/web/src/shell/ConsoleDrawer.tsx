@@ -1,10 +1,10 @@
 // ConsoleDrawer (spec §5): slide-up panel hosting the relocated debug/tone
-// panels — Audio (AudioDebugPanel), Tone (TonePanel minus the preset
-// dropdown — the dropdown itself lives in TopBar per spec §3), System
-// (DebugPanel), Inputs (device selects + re-run latency probe + stop
-// capture). All four are the EXISTING components, mounted as-is; only the
-// preset <select> is hidden (CSS-only — TonePanel itself is out of bounds
-// for this task, see report).
+// panels — Audio (AudioDebugPanel), Tone (TonePanel — its preset dropdown was
+// removed in T6; presets live in TopBar per spec §3), System (DebugPanel),
+// Inputs (device selects + re-run latency probe + stop/restart capture — the
+// restart path exists because AppShell's CaptureHost owns the video element,
+// so a drawer with no video mount of its own can still (re)start capture
+// through the `onRestartCapture` callback).
 //
 // Review fix (carried from Wave A): AppShell's backtick handler toggles the
 // drawer even while the user is typing (e.g. a backtick in the coach
@@ -42,9 +42,15 @@ export interface ConsoleDrawerProps {
   /** Live capture handles, or null when capture isn't running. Tone/Inputs
    *  sections degrade gracefully (no fake controls) when null. */
   handles: CaptureHandles | null;
-  /** Called after a successful `handles.stop()` (Wave C: clear routing/UI
-   *  state that lives outside this component). */
+  /** Owns the stop action when provided (AppShell wires the CaptureHost's
+   *  stop(), which also resets phase/host state). Without it the drawer falls
+   *  back to stopping the handles + resetting the phase itself. */
   onStopCapture?: () => void;
+  /** (Re)starts capture on the CURRENT captureStore device selection — wired
+   *  by AppShell to the CaptureHost (which owns the video element). Also
+   *  invoked after a device change while running, preserving the old
+   *  SetupWizard behavior of restarting on the newly selected device. */
+  onRestartCapture?: () => void;
   /** Enable/disable the drawer's own global hotkey listener. Default true —
    *  set false if a caller wants to own key handling itself instead. */
   enableHotkey?: boolean;
@@ -55,6 +61,7 @@ export function ConsoleDrawer({
   onOpenChange,
   handles,
   onStopCapture,
+  onRestartCapture,
   enableHotkey = true,
 }: ConsoleDrawerProps) {
   useEffect(() => {
@@ -72,7 +79,8 @@ export function ConsoleDrawer({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onOpenChange, enableHotkey]);
 
-  const { cameras, mics, cameraId, micId, select } = useCaptureStore();
+  const { cameras, mics, cameraId, micId, phase, select } = useCaptureStore();
+  const running = phase === "running";
   const micLabel = mics.find((m) => m.deviceId === micId)?.label ?? mics[0]?.label ?? "";
   const kind = classifyAudioInput(micLabel);
 
@@ -96,9 +104,12 @@ export function ConsoleDrawer({
   const advice = latencyMs === null ? null : adviseLatency(latencyMs, kind);
 
   const stopCapture = () => {
+    if (onStopCapture) {
+      onStopCapture(); // the owner (CaptureHost) stops + resets phase itself
+      return;
+    }
     handles?.stop();
     useCaptureStore.getState().setPhase("idle");
-    onStopCapture?.();
   };
 
   return (
@@ -116,7 +127,7 @@ export function ConsoleDrawer({
           <AudioDebugPanel />
         </section>
 
-        <section className="console-section console-section--hide-preset" data-testid="console-section-tone">
+        <section className="console-section" data-testid="console-section-tone">
           <h4>TONE</h4>
           {handles ? (
             <TonePanel tone={handles.tone} />
@@ -135,7 +146,16 @@ export function ConsoleDrawer({
           <div className="wizard-controls">
             <label>
               Camera{" "}
-              <select value={cameraId} onChange={(e) => select({ cameraId: e.target.value })}>
+              <select
+                value={cameraId}
+                onChange={(e) => {
+                  select({ cameraId: e.target.value });
+                  // Old SetupWizard behavior: changing a device while running
+                  // restarts capture on the new device (select() has already
+                  // written it, so the zero-arg restart picks it up).
+                  if (running) onRestartCapture?.();
+                }}
+              >
                 <option value="">Default camera</option>
                 {cameras.map((c) => (
                   <option key={c.deviceId} value={c.deviceId}>
@@ -146,7 +166,18 @@ export function ConsoleDrawer({
             </label>
             <label>
               Microphone{" "}
-              <select value={micId} onChange={(e) => select({ micId: e.target.value })}>
+              <select
+                value={micId}
+                onChange={(e) => {
+                  select({ micId: e.target.value });
+                  // A measurement belongs to the device it was taken on —
+                  // clear it so stale ms never gets advice-tiered against the
+                  // new mic's kind (same rule the wizard applies).
+                  setLatencyMs(null);
+                  setLatencyMsg("");
+                  if (running) onRestartCapture?.();
+                }}
+              >
                 <option value="">Default microphone</option>
                 {mics.map((m) => (
                   <option key={m.deviceId} value={m.deviceId}>
@@ -180,7 +211,12 @@ export function ConsoleDrawer({
             <button type="button" data-testid="console-stop-capture" disabled={!handles} onClick={stopCapture}>
               Stop capture
             </button>
-            {!handles && (
+            {onRestartCapture && (
+              <button type="button" data-testid="console-restart-capture" onClick={onRestartCapture}>
+                {handles ? "Restart capture" : "Start capture"}
+              </button>
+            )}
+            {!handles && !onRestartCapture && (
               <span className="wizard-tip">Capture isn't running — start it from the camera pane or setup wizard.</span>
             )}
           </div>

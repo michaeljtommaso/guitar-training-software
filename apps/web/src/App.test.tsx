@@ -1,13 +1,15 @@
+import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
-// App is a thin wrapper around AppShell; stub the heavy child components so
-// this smoke test stays fast. Full shell behavior lives in AppShell.test.tsx.
-vi.mock("./capture/SetupWizard", () => ({
-  SetupWizard: () => <div data-testid="setup-wizard" />,
+// App is a thin wrapper around AppShell; stub the capture boundary so this
+// smoke test stays fast. Full shell behavior lives in AppShell.test.tsx.
+vi.mock("./capture/controller", () => ({
+  startCapture: vi.fn(),
+  MANUAL_TAP_ORDER: [],
 }));
-vi.mock("./coach", () => ({
-  CoachPanel: () => <div data-testid="coach-panel" />,
+vi.mock("./overlay/OverlayCanvas", () => ({
+  OverlayCanvas: () => <div data-testid="overlay-canvas-stub" />,
 }));
 
 import App from "./App";
@@ -23,21 +25,20 @@ afterEach(() => {
 });
 
 describe("App", () => {
-  it("renders the app title", () => {
+  it("renders the wizard (with the app title) on first run", () => {
     render(<App />);
     expect(screen.getByText("Guitar tutor")).toBeInTheDocument();
+    expect(screen.getByTestId("wizard")).toBeInTheDocument();
   });
 
-  it("defaults to dark theme and flips data-theme on toggle (spec §1.4)", () => {
+  it("defaults to dark theme on first load (spec §1.4)", () => {
     render(<App />);
-    // v2 default is dark on first load.
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
 
-    const toggle = screen.getByRole("button", { name: /switch to/i });
-    fireEvent.click(toggle);
-    expect(document.documentElement.getAttribute("data-theme")).toBeNull();
-
-    fireEvent.click(toggle);
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  it("renders the practice screen once setup is done", () => {
+    localStorage.setItem("gt-setup-done", "true");
+    render(<App />);
+    expect(screen.getByTestId("practice-screen")).toBeInTheDocument();
   });
 });
