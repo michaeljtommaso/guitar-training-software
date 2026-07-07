@@ -13,6 +13,16 @@ cabinet-simulation voicings of a Korg AX1500G modeller, released by the author
 under CC0. UI names are descriptive (no amp/brand trademarks); the factual source
 lives only here.
 
+## Quality note (read before judging these by ear)
+These captures are **~5 ms / ~220-sample FIR impulses** — that is what the
+author uploaded (verified on the Freesound page: duration 0:00.005); nothing was
+truncated in transcoding. At ~220 taps they impose the cab-sim's EQ character
+(mid-forward body, high roll-off) but carry essentially no low-frequency or
+room/mic detail — a full cabinet capture runs 100–1000 ms. They are a strict
+step up from the synthetic parametric IR, not studio-grade cab sims. Hunting
+longer CC0/CC-BY full-cab captures (or the NAM/TP-4 lane) stays open for the
+signature-tones feature.
+
 ## Transcode note (how these bytes were produced)
 Freesound gates the original-WAV download behind an authenticated account, which
 this build environment does not have. The **publicly served high-quality preview**
