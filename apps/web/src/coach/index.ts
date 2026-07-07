@@ -4,7 +4,6 @@
 // natural-language / structured coaching, but is structurally unable to mutate
 // the fast-path R/Y/G state — nothing under src/fusion, src/overlay, or
 // src/perception imports from here (enforced by isolation.test.ts).
-export { CoachPanel } from "./CoachPanel";
 export { coachAnswer, type CoachTurnInput, type CoachAnswerOptions } from "./coachClient";
 export { useCoachStore, type CoachStore } from "./coachStore";
 export {

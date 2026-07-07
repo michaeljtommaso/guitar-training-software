@@ -200,33 +200,10 @@
   color: var(--text-muted);
 }
 
-/* ---- WP-4 lesson panel (fusion) ---- */
-.lesson-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 720px;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background: var(--surface);
-}
-
-.lesson-panel h3 {
-  margin: 0;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-}
-
-.string-chips {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
+/* .string-chip is shared by OpenStringCheck (with the .seen modifier below);
+   the WP-4 LessonPanel that also used it (plus .lesson-panel/.string-chips/
+   .hint-line and the R/Y/G chip variants) was deleted in v2-ui Wave D — its
+   chips live on the practice camera pane as .camera-chip now. */
 .string-chip {
   font-family: "IBM Plex Mono", monospace;
   font-variant-numeric: tabular-nums;
@@ -235,27 +212,6 @@
   border-radius: 0.35rem;
   border: 1px solid var(--border);
   color: var(--text);
-}
-
-.string-chip.correct {
-  border-color: var(--correct);
-  color: var(--correct);
-}
-.string-chip.warn {
-  border-color: var(--warn);
-  color: var(--warn);
-}
-.string-chip.error {
-  border-color: var(--error);
-  color: var(--error);
-}
-.string-chip.uncertain {
-  border-color: var(--uncertain);
-  color: var(--uncertain);
-}
-
-.hint-line {
-  color: var(--warn);
 }
 
 /* ---- TP-0 direct-capture wizard (ADR-013): level meter, open-string check ---- */
@@ -446,14 +402,6 @@
   max-width: 480px;
 }
 
-/* ---- WP-5 explore mode: practice/explore + chord/scale toggles ---- */
-.explore-panel button.active {
-  background: var(--surface-strong, var(--surface));
-  border-color: var(--text);
-  color: var(--text);
-  font-weight: 600;
-}
-
-.explore-panel .wizard-error {
-  color: var(--error);
-}
+/* WP-5 `.explore-panel` rules removed in v2-ui Wave D with the legacy
+   ExplorePanel wrapper — the explore controls are styled by CoachColumn.css
+   inside the coach column now. */
