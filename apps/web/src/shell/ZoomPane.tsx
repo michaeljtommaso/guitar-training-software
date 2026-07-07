@@ -190,7 +190,10 @@ function drawZoomDot(ctx: CanvasRenderingContext2D, dot: TargetDot, z: { X: numb
     ctx.beginPath();
     ctx.arc(z.X, z.Y, 9, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#000";
+    // Same idiom as drawVision.ts: label ink on a FILLED status-colored disc
+    // drawn over live video — theme-independent canvas content, not UI chrome
+    // (§11 smell-gate reviewed exception, mirrors drawVision's own literal).
+    ctx.fillStyle = "#000"; // readable on the filled neutral disc
     ctx.fillText(dot.label, z.X, z.Y + 0.5);
   } else {
     ctx.beginPath();
