@@ -73,7 +73,16 @@ export default defineConfig({
         // Keep Sentry in its own lazily-loaded chunk: it is imported only when a
         // DSN is configured (WP-7, §15), so it must stay OFF the initial payload.
         // The bundle-size gate treats `sentry` chunks as deferred (like opencv).
-        manualChunks: (id) => (id.includes("@sentry") ? "sentry" : undefined),
+        // Same for the chords-db voicing json: dynamically imported by
+        // theory/chords.ts only when Explore mode first looks up a chord — the
+        // explicit chunk name keeps the bundle-size classifier honest (Vite's
+        // derived name was `guitar`, which the gate counted as initial).
+        manualChunks: (id) =>
+          id.includes("@sentry")
+            ? "sentry"
+            : id.includes("chords-db")
+              ? "chords-db"
+              : undefined,
       },
     },
   },

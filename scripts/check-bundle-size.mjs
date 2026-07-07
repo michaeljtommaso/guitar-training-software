@@ -21,8 +21,10 @@ const BUDGET_KB = 250;
 const ASSETS_DIR = join("apps", "web", "dist", "assets");
 
 // A chunk is DEFERRED (off the initial path) if its name marks it as a worker,
-// an audio worklet, or a lazily-imported vendor split.
-const DEFERRED = /(worker|processor|opencv|sentry)/i;
+// an audio worklet, or a lazily-imported vendor split. Names are an explicit
+// allowlist on purpose — a new lazy chunk must be named here (via vite.config
+// manualChunks) to earn the exemption, never inferred.
+const DEFERRED = /(worker|processor|opencv|sentry|chords-db)/i;
 
 let files;
 try {
