@@ -135,6 +135,30 @@ describe("FusionEngine — canonical §9.2 resolutions (synthetic streams)", () 
   });
 });
 
+describe("FusionEngine — silence/noise gate (BUG-001 / RESULT-002 Problem 1)", () => {
+  it("silence AND noise chord events produce NO diagnoses (no phantom coaching)", () => {
+    const engine = new FusionEngine(cLesson);
+    const diags = run(engine, [
+      [chord(300, "silence", 1), "audio"],
+      [chord(600, "noise", 1), "audio"],
+      [chord(900, "silence", 1), "audio"],
+      [chord(1200, "noise", 1), "audio"],
+      [onset(1500), "audio"],
+    ]);
+    expect(diags).toHaveLength(0);
+  });
+
+  it("a real off-target chord after noise is still diagnosed (gate is not over-broad)", () => {
+    const engine = new FusionEngine(cLesson); // target chord C
+    const diags = run(engine, [
+      [chord(300, "noise", 1), "audio"],
+      [chord(600, "G", 0.8), "audio"],
+      [chord(900, "G", 0.8), "audio"],
+    ]);
+    expect(diags.some((d) => d.code === "missing_note")).toBe(true);
+  });
+});
+
 describe("FusionEngine — determinism and the Zod ingest boundary", () => {
   const sequence: [unknown, "audio" | "vision"][] = [
     [calib(0), "vision"],

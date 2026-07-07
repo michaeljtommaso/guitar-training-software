@@ -84,6 +84,16 @@ export function stringName(s: number): string {
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
+// BUG-001 / RESULT-002 Problem 1: the audio leg's own gate labels an idle/quiet
+// or broadband-noisy frame `silence` or `noise`. Neither is a tonal chord
+// observation, so neither may drive a diagnosis — otherwise mic noise
+// manufactures phantom hints inside a live lesson. A label is "counter-evidence"
+// only when it is a real chord that differs from the target.
+const NON_TONAL_LABELS = new Set(["silence", "noise"]);
+function isTonalChord(label: string | null): label is string {
+  return label !== null && !NON_TONAL_LABELS.has(label);
+}
+
 interface PendingTransition {
   t: number; // step-change time
   audioT: number | null; // when the new target chord was first heard
@@ -283,8 +293,9 @@ export class FusionEngine {
 
     this.status = this.computeStringStatus(step, notesFresh, exactMissing, pcMissing, extraMidi);
 
-    // Nothing to judge: silence and no fresh evidence on either leg.
-    if (!notesFresh && !visionUsable && (this.lastChordLabel === null || this.lastChordLabel === "silence")) {
+    // Nothing to judge: no tonal chord heard (silence/noise/none) and no fresh
+    // evidence on either leg (BUG-001 — noise must gate here exactly like silence).
+    if (!notesFresh && !visionUsable && !isTonalChord(this.lastChordLabel)) {
       return [];
     }
 
@@ -374,9 +385,8 @@ export class FusionEngine {
     // 4c) No usable note set: judge on the smoothed chord posterior alone.
     if (
       chordP < step.success_criteria.min_audio_conf &&
-      this.lastChordLabel !== null &&
-      this.lastChordLabel !== step.chord &&
-      this.lastChordLabel !== "silence"
+      isTonalChord(this.lastChordLabel) &&
+      this.lastChordLabel !== step.chord
     ) {
       const audioConf = clamp01((1 - chordP) * 0.5);
       return [this.emitStatus({
@@ -394,7 +404,7 @@ export class FusionEngine {
     return [this.emitStatus({
       t, code: "ok", target,
       evidence: {
-        audio: this.lastChordLabel ? `hearing ${this.lastChordLabel} (target ${pct(chordP)})` : undefined,
+        audio: isTonalChord(this.lastChordLabel) ? `hearing ${this.lastChordLabel} (target ${pct(chordP)})` : undefined,
         vision: visionUsable ? `shape score ${pct(canonicalScore)}` : undefined,
       },
       severity: 0,
