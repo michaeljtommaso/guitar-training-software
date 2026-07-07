@@ -404,6 +404,11 @@
 .fret-strip .scale-dot {
   fill: var(--text-muted);
 }
+.fret-strip .scale-dot.hit,
+.fret-strip .root.hit {
+  fill: var(--correct);
+  stroke: var(--correct);
+}
 .fret-strip .degree {
   fill: var(--bg);
   font-size: 9px;

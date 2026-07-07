@@ -35,6 +35,18 @@ describe("FretboardStrip", () => {
     );
     expect(container.querySelectorAll("[data-tick='ok']")).toHaveLength(3);
   });
+  it("scale dots whose midi was heard render data-hit + .hit class", () => {
+    const { container } = render(
+      <FretboardStrip target={GMAJ} window={[0, 12]} heard={{ chordHeard: false, scaleHitMidis: [43] }} />,
+    );
+    const hits = container.querySelectorAll("[data-hit='true']");
+    expect(hits).toHaveLength(1);
+    expect(hits[0].getAttribute("data-dot")).toBe("root");
+    expect(hits[0].getAttribute("class")).toContain("hit");
+    const miss = container.querySelector("[data-dot='scale']");
+    expect(miss?.getAttribute("data-hit")).toBeNull();
+    expect(miss?.getAttribute("class")).not.toContain("hit");
+  });
   it("null target renders an empty board without crashing", () => {
     const { container } = render(<FretboardStrip target={null} />);
     expect(container.querySelector("svg")).not.toBeNull();

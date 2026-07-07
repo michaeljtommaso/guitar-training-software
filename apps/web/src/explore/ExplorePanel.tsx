@@ -4,19 +4,46 @@
 // reskins this chrome. No store reads happen inside FretboardStrip itself;
 // this panel is the bridge between local UI selection state and the
 // exploreStore target.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCaptureStore } from "../capture/captureStore";
 import { classifyAudioInput } from "../capture/devices";
 import { CHORD_ROOTS, chordSuffixes } from "../theory/chords";
 import { SCALE_TYPES, type ScaleType } from "../theory/scales";
-import { useExploreStore, currentResolvedTier, type FeedbackTier } from "./exploreStore";
+import { exploreHot, useExploreStore, currentResolvedTier, type FeedbackTier } from "./exploreStore";
+import type { HeardState } from "./feedback";
 import { FretboardStrip } from "./FretboardStrip";
 
 const FALLBACK_SUFFIXES = ["major", "minor"];
 
+/** Render-relevant signature of a HeardState — the rAF sampler only commits a
+ *  setState when this changes, so audio-event-rate churn never re-renders the
+ *  panel (ADR-002 spirit: hot data stays out of React until the last moment). */
+function heardSig(h: HeardState): string {
+  return `${h.chordHeard}|${h.strings?.join(",") ?? ""}|${h.scaleHitMidis?.join(",") ?? ""}`;
+}
+
 export function ExplorePanel() {
-  const { target, loadError, tier, setTier, setVoicing } = useExploreStore();
+  const { mode, target, loadError, tier, setTier, setVoicing } = useExploreStore();
   const { mics, micId } = useCaptureStore();
+
+  // Listening feedback: exploreHot.heard is a non-reactive module ref written
+  // by feedback.ts at audio-event rate; sample it once per animation frame
+  // while explore mode is live and mirror meaningful changes into React.
+  const [heard, setHeard] = useState<HeardState>(() => exploreHot.heard);
+  const heardSigRef = useRef(heardSig(exploreHot.heard));
+  useEffect(() => {
+    if (mode !== "explore") return;
+    let raf = requestAnimationFrame(function tick() {
+      const h = exploreHot.heard;
+      const sig = heardSig(h);
+      if (sig !== heardSigRef.current) {
+        heardSigRef.current = sig;
+        setHeard(h);
+      }
+      raf = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [mode]);
 
   const [kind, setKind] = useState<"chord" | "scale">("chord");
   const [root, setRoot] = useState<string>(CHORD_ROOTS[0]);
@@ -167,7 +194,14 @@ export function ExplorePanel() {
 
       {target && (
         <>
-          <FretboardStrip target={target} />
+          <FretboardStrip target={target} heard={heard} />
+          {/* Spec §8: unknown root/suffix → empty voicing list must say so
+              (message replaces the pager; never throws into React). */}
+          {chordTarget && chordTarget.voicings.length === 0 && (
+            <p className="wizard-tip" data-testid="explore-no-voicings">
+              no voicings for this chord
+            </p>
+          )}
           {chordTarget && voicing && (
             <div className="wizard-controls">
               <button
