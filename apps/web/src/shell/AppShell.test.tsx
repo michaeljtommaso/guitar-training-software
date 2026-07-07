@@ -1,6 +1,6 @@
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { CaptureHandles } from "../capture/controller";
 import type { ToneChainHandles } from "../tone/toneChain";
 
@@ -27,12 +27,17 @@ vi.mock("../capture/devices", async (orig) => ({
 }));
 vi.mock("../theory/chords", async (orig) => ({
   ...(await orig<typeof import("../theory/chords")>()),
+  chordVoicings: vi.fn(async () => [
+    { frets: [0, 1, 2, 2, 0, -1], fingers: [0, 1, 3, 2, 0, 0], barres: [], baseFret: 1, window: [0, 4], difficulty: 13 },
+    { frets: [5, 5, 5, 7, 7, 5], fingers: [1, 1, 1, 3, 4, 1], barres: [5], baseFret: 5, window: [4, 8], difficulty: 61 },
+  ]),
   chordSuffixes: vi.fn(async () => ["major", "minor"]),
 }));
 
 import { AppShell } from "./AppShell";
 import { startCapture } from "../capture/controller";
 import { useCaptureStore } from "../capture/captureStore";
+import { exploreHot, useExploreStore } from "../explore/exploreStore";
 
 function fakeHandles(overrides: Partial<CaptureHandles> = {}): CaptureHandles {
   const tone: ToneChainHandles = {
@@ -276,5 +281,83 @@ describe("AppShell — console drawer state (via ConsoleDrawer's own guarded han
     expect(screen.getByTestId("console-drawer")).toHaveAttribute("data-open", "true");
     fireEvent.click(screen.getByTestId("telemetry-footer-console"));
     expect(screen.getByTestId("console-drawer")).toHaveAttribute("data-open", "false");
+  });
+});
+
+// Migrated from ExplorePanel.test.tsx (the assembled legacy wrapper, deleted
+// in Wave D): the picker → strip path now spans CoachColumn (ExploreControls)
+// → exploreStore → AppShell's ZoomPaneSlot, and the rAF heard-sampler lives
+// in AppShell (useExploreHeard) instead of the old ExplorePanel body. Same
+// behavioral assertions against the new owners.
+describe("AppShell — explore mode: strip + heard ticks in the ZoomPane slot (spec §8)", () => {
+  beforeEach(() => {
+    useExploreStore.setState({ mode: "practice", target: null });
+    exploreHot.heard = { chordHeard: false };
+  });
+  afterEach(() => {
+    useExploreStore.setState({ mode: "practice", target: null });
+    exploreHot.heard = { chordHeard: false };
+    vi.unstubAllGlobals();
+  });
+
+  function pickAm() {
+    fireEvent.click(screen.getByTestId("mode-explore"));
+    fireEvent.change(screen.getByTestId("explore-root"), { target: { value: "A" } });
+    fireEvent.change(screen.getByTestId("explore-suffix"), { target: { value: "minor" } });
+  }
+
+  it("picking a chord renders its dots on the zoom-pane strip, with a working voicing pager", async () => {
+    localStorage.setItem("gt-setup-done", "true");
+    render(<AppShell />);
+    pickAm();
+    await waitFor(() => expect(screen.getByTestId("explore-voicing-label")).toHaveTextContent("1/2"));
+
+    const strip = screen.getByTestId("zoom-pane").querySelector('[data-testid="fretboard-strip"]');
+    expect(strip).toBeTruthy();
+    expect(strip!.querySelectorAll('[data-dot="finger"]')).toHaveLength(3);
+    expect(strip!.querySelectorAll('[data-dot="open"]')).toHaveLength(2);
+    expect(strip!.querySelectorAll('[data-dot="muted"]')).toHaveLength(1);
+
+    fireEvent.click(screen.getByTestId("explore-voicing-next"));
+    expect(screen.getByTestId("explore-voicing-label")).toHaveTextContent("2/2");
+  });
+
+  it("the shell's rAF sampler mirrors exploreHot.heard into the strip (ticks appear)", async () => {
+    // Deterministic rAF: callbacks queue up and only run when we flush.
+    const rafQueue: FrameRequestCallback[] = [];
+    vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
+      rafQueue.push(cb);
+      return rafQueue.length;
+    });
+    vi.stubGlobal("cancelAnimationFrame", () => {});
+
+    localStorage.setItem("gt-setup-done", "true");
+    render(<AppShell />);
+    pickAm();
+    await waitFor(() => expect(screen.getByTestId("explore-voicing-label")).toBeInTheDocument());
+
+    exploreHot.heard = {
+      chordHeard: true,
+      strings: ["ok", "ok", "pending", "pending", "ok", "muted-expected"],
+    };
+    act(() => {
+      rafQueue.splice(0).forEach((cb) => cb(16));
+    });
+
+    const strip = screen.getByTestId("zoom-pane").querySelector('[data-testid="fretboard-strip"]')!;
+    expect(strip.querySelectorAll("[data-tick='ok']")).toHaveLength(3);
+    expect(strip.getAttribute("class")).toContain("heard");
+  });
+
+  it("scale kind renders positions on the strip without any async voicing load", () => {
+    localStorage.setItem("gt-setup-done", "true");
+    render(<AppShell />);
+    fireEvent.click(screen.getByTestId("mode-explore"));
+    fireEvent.click(screen.getByTestId("explore-kind-scale"));
+    fireEvent.change(screen.getByTestId("explore-root"), { target: { value: "G" } });
+
+    const strip = screen.getByTestId("zoom-pane").querySelector('[data-testid="fretboard-strip"]')!;
+    expect(strip.querySelectorAll('[data-dot="root"]').length).toBeGreaterThan(0);
+    expect(strip.querySelectorAll('[data-dot="scale"]').length).toBeGreaterThan(0);
   });
 });

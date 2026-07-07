@@ -3,11 +3,19 @@ import { expect, test } from "@playwright/test";
 // E2E plumbing proof for WP-1 (substitutes for physical hardware): fake
 // camera/mic → video frames + rVFC ticks, tone → worklet → SAB ring buffer →
 // audio worker stats + glass-to-worker latency, WebGPU/WASM probe, overlay.
+//
+// v2 UI: capture starts inside the setup wizard (step 1) and the spec walks
+// the real wizard to the practice screen — the SAME capture session must
+// carry across (spec §7 invariant), because the overlay-dependent counters
+// (rvfcTicks via OverlayCanvas, the overlay canvas itself) only exist on the
+// practice route. Walking the wizard here also covers the T6 keeper-mount
+// fix: vision frames must keep flowing on wizard steps 2–3, where step 1's
+// preview pane is unmounted.
 test("capture shell smoke with fake devices", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Start capture" }).click();
+  await page.getByTestId("wizard-start-capture").click();
 
-  // Fake camera delivers decodable frames into the <video>.
+  // Fake camera delivers decodable frames into the <video> (wizard preview).
   const video = page.locator("video");
   await expect
     .poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState), { timeout: 15_000 })
@@ -15,8 +23,29 @@ test("capture shell smoke with fake devices", async ({ page }) => {
   const videoWidth = await video.evaluate((v: HTMLVideoElement) => v.videoWidth);
   expect(videoWidth).toBeGreaterThan(0);
 
-  // rVFC tick counter: > 25 ticks across a real 2 s window.
   await page.waitForFunction(() => window.__captureDebug !== undefined);
+
+  // Wizard step 2: step 1's preview pane is gone, but the keeper mount keeps
+  // the singleton <video> rendered — vision frames must NOT stall mid-wizard
+  // (T6 concern 1). Strictly-increasing framesReceived proves the pump runs.
+  await page.getByTestId("wizard-step1-continue").click();
+  await expect(page.getByTestId("wizard-step-2")).toBeVisible();
+  const vf0 = await page.evaluate(() => window.__captureDebug!.snapshot().visionFrames);
+  await expect
+    .poll(() => page.evaluate(() => window.__captureDebug!.snapshot().visionFrames), {
+      timeout: 30_000,
+    })
+    .toBeGreaterThan(vf0);
+
+  // Finish the wizard → practice screen. Capture carries across untouched.
+  await page.getByTestId("wizard-step2-continue").click();
+  await page.getByTestId("wizard-start-practicing").click();
+  await expect(page.getByTestId("route-practice")).toBeVisible();
+  // Still exactly ONE video element — moved, not re-created (spec §7).
+  await expect(page.locator("video")).toHaveCount(1);
+
+  // rVFC tick counter: > 25 ticks across a real 2 s window (OverlayCanvas,
+  // mounted on the practice camera pane, drives this counter).
   const t0 = await page.evaluate(() => window.__captureDebug!.hot.rvfcTicks);
   await page.waitForTimeout(2000);
   const t1 = await page.evaluate(() => window.__captureDebug!.hot.rvfcTicks);

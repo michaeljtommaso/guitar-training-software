@@ -1,33 +1,23 @@
-// Explore-mode control panel (v1-thin): pick a chord or scale, see it on the
-// schematic FretboardStrip. Native inputs, reuses the existing "audio-debug"
-// panel shell (same idiom as AudioDebugPanel/TonePanel) — the v2-UI project
-// reskins this chrome. No store reads happen inside FretboardStrip itself;
-// this panel is the bridge between local UI selection state and the
-// exploreStore target.
+// Explore-mode controls (v2-ui spec §5/§8): pick a chord or scale — the
+// CoachColumn mounts these pickers/pager/tier/no-voicings in explore mode,
+// while the schematic FretboardStrip renders in the ZoomPane slot (AppShell's
+// ZoomPaneSlot owns the exploreHot.heard rAF sampler). This file is the
+// bridge between local UI selection state and the exploreStore target; no
+// store reads happen inside FretboardStrip itself.
 //
-// v2-ui (spec §5/§8): `ExploreControls` is split out so the CoachColumn can
-// mount the pickers/pager/tier/no-voicings alone (same components, same
-// testids) while the strip itself renders in the ZoomPane slot instead of the
-// coach column. This is a pure presentational split — no store/logic change —
-// and `ExplorePanel` still assembles both pieces exactly as before for any
-// caller (SetupWizard today) that hasn't moved to the split layout.
-import { useEffect, useRef, useState } from "react";
+// History: the v1 `ExplorePanel` wrapper (controls + strip assembled in one
+// panel, with its own heard sampler) was deleted in Wave D once its last
+// mount point (SetupWizard) was dismantled — its behavioral assertions moved
+// to AppShell.test.tsx ("explore mode: strip + heard ticks in the ZoomPane
+// slot") and CoachColumn.test.tsx (pager / no-voicings).
+import { useEffect, useState } from "react";
 import { useCaptureStore } from "../capture/captureStore";
 import { classifyAudioInput } from "../capture/devices";
 import { CHORD_ROOTS, chordSuffixes } from "../theory/chords";
 import { SCALE_TYPES, type ScaleType } from "../theory/scales";
-import { exploreHot, useExploreStore, currentResolvedTier, type FeedbackTier } from "./exploreStore";
-import type { HeardState } from "./feedback";
-import { FretboardStrip } from "./FretboardStrip";
+import { useExploreStore, currentResolvedTier, type FeedbackTier } from "./exploreStore";
 
 const FALLBACK_SUFFIXES = ["major", "minor"];
-
-/** Render-relevant signature of a HeardState — the rAF sampler only commits a
- *  setState when this changes, so audio-event-rate churn never re-renders the
- *  panel (ADR-002 spirit: hot data stays out of React until the last moment). */
-function heardSig(h: HeardState): string {
-  return `${h.chordHeard}|${h.strings?.join(",") ?? ""}|${h.scaleHitMidis?.join(",") ?? ""}`;
-}
 
 /** Pickers/pager/tier/no-voicings — everything except the strip itself. */
 export function ExploreControls() {
@@ -211,36 +201,5 @@ export function ExploreControls() {
         </div>
       )}
     </>
-  );
-}
-
-export function ExplorePanel() {
-  const { mode, target } = useExploreStore();
-
-  // Listening feedback: exploreHot.heard is a non-reactive module ref written
-  // by feedback.ts at audio-event rate; sample it once per animation frame
-  // while explore mode is live and mirror meaningful changes into React.
-  const [heard, setHeard] = useState<HeardState>(() => exploreHot.heard);
-  const heardSigRef = useRef(heardSig(exploreHot.heard));
-  useEffect(() => {
-    if (mode !== "explore") return;
-    let raf = requestAnimationFrame(function tick() {
-      const h = exploreHot.heard;
-      const sig = heardSig(h);
-      if (sig !== heardSigRef.current) {
-        heardSigRef.current = sig;
-        setHeard(h);
-      }
-      raf = requestAnimationFrame(tick);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [mode]);
-
-  return (
-    <section className="audio-debug explore-panel">
-      <h3>Explore</h3>
-      <ExploreControls />
-      {target && <FretboardStrip target={target} heard={heard} />}
-    </section>
   );
 }

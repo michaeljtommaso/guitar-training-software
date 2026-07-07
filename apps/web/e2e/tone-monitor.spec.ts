@@ -2,9 +2,15 @@ import { expect, test } from "@playwright/test";
 
 // ADR-013 e2e: the wet monitor produces sound only when enabled, and the dry
 // analysis path is indifferent to it (dry = truth source).
+//
+// v2 UI: skip the wizard (seeded flag), start capture from the practice
+// start card, and open the ConsoleDrawer via the TopBar button — the tone
+// controls (TonePanel, unchanged component) live in the drawer's Tone
+// section and are hidden until it opens.
 test("tone monitor gates output and never disturbs analysis", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("gt-setup-done", "true"));
   await page.goto("/");
-  await page.getByRole("button", { name: "Start capture" }).click();
+  await page.getByTestId("capture-start").click();
   await page.waitForFunction(() => window.__captureDebug !== undefined && window.__toneDebug !== undefined);
 
   // Analysis alive before touching tone.
@@ -17,7 +23,9 @@ test("tone monitor gates output and never disturbs analysis", async ({ page }) =
     .poll(() => page.evaluate(() => window.__toneDebug!.outputRms()), { timeout: 10_000 })
     .toBeLessThan(1e-4);
 
-  // Amp mode → audible output.
+  // Amp mode → audible output. The Monitor select sits in the console drawer.
+  await page.getByTestId("topbar-console-toggle").click();
+  await expect(page.getByTestId("console-drawer")).toBeVisible();
   await page.getByLabel("Monitor").selectOption("amp");
   await expect
     .poll(() => page.evaluate(() => window.__toneDebug!.outputRms()), { timeout: 30_000 })

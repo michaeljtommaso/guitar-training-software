@@ -6,14 +6,14 @@
 // driven by the SAME useCoach() hook the legacy CoachPanel uses (behavior
 // byte-identical, restyled to v2 tokens).
 //
-// Explore mode swaps to the EXISTING ExplorePanel controls (kind/root/suffix
-// pickers, feedback tier, voicing pager, no-voicings message) via the
-// `ExploreControls` split (see explore/ExplorePanel.tsx) — every existing
+// Explore mode swaps to the EXISTING explore controls (kind/root/suffix
+// pickers, feedback tier, voicing pager, no-voicings message) via
+// `ExploreControls` (explore/ExploreControls.tsx) — every existing
 // explore-* testid keeps working, and its store/logic are untouched. The
 // strip itself is NOT mounted here; per spec §5/§8 it renders in the ZoomPane
-// slot (a parallel task), so it stays out of this ~320px column.
+// slot, so it stays out of this ~320px column.
 import { useExploreStore } from "../explore/exploreStore";
-import { ExploreControls } from "../explore/ExplorePanel";
+import { ExploreControls } from "../explore/ExploreControls";
 import { useCoach } from "../coach/useCoach";
 import "./CoachColumn.css";
 

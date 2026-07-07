@@ -170,6 +170,30 @@ describe("Wizard — step 2 (Signal check, spec §7)", () => {
     const advice = await screen.findByTestId("latency-advice");
     expect(advice.className).toContain("wizard-latency-advice-echo");
   });
+
+  it("keeps the capture <video> attached to the document on steps 2–3 (keeper mount, T6 concern 1)", async () => {
+    render(<WizardHarness onDone={vi.fn()} />);
+    await startAndContinueToStep2(fakeHandles());
+
+    // The singleton element startCapture was given must stay IN the document
+    // while step 1's preview pane is unmounted — otherwise the rVFC frame
+    // pump stalls and vision frames pause mid-wizard.
+    const video = vi.mocked(startCapture).mock.calls[0][0];
+    expect(screen.getByTestId("wizard-video-keeper").contains(video)).toBe(true);
+    expect(video.isConnected).toBe(true);
+
+    fireEvent.click(screen.getByTestId("wizard-step2-continue"));
+    expect(screen.getByTestId("wizard-step-3")).toBeInTheDocument();
+    expect(video.isConnected).toBe(true);
+
+    // Back on step 1 the keeper unmounts and the preview pane re-adopts the
+    // SAME element (moved, not re-created).
+    fireEvent.click(screen.getByTestId("wizard-step3-back"));
+    fireEvent.click(screen.getByTestId("wizard-step2-back"));
+    expect(screen.queryByTestId("wizard-video-keeper")).not.toBeInTheDocument();
+    expect(screen.getByTestId("wizard-preview-full").contains(video)).toBe(true);
+    expect(document.querySelectorAll("video")).toHaveLength(1);
+  });
 });
 
 describe("Wizard — step 3 (You're set, spec §7) + capture-kept-running invariant", () => {

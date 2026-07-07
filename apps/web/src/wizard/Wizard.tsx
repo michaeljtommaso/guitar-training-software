@@ -18,6 +18,7 @@ import { classifyAudioInput } from "../capture/devices";
 import { adviseLatency, type LatencyAdvice } from "../capture/latencyAdvice";
 import { visionHot, subscribe, getSnapshot } from "../perception/perceptionStore";
 import type { CaptureHost } from "../shell/useCaptureHost";
+import { VideoMount } from "../shell/VideoMount";
 import { WizardStep1 } from "./WizardStep1";
 import { WizardStep2 } from "./WizardStep2";
 import { WizardStep3 } from "./WizardStep3";
@@ -150,6 +151,17 @@ export function Wizard({ capture, onDone }: WizardProps) {
         )}
         {step === 3 && <WizardStep3 summary={summary} onBack={() => setStep(2)} onFinish={finish} />}
       </div>
+
+      {/* Keeper mount (T6 concern 1): steps 2–3 unmount step 1's preview pane,
+          which would leave the singleton <video> off-document and stall the
+          rVFC frame pump (vision frames pause mid-wizard). Keep the SAME
+          element attached — visually hidden but rendered, NOT display:none,
+          so requestVideoFrameCallback keeps firing. */}
+      {step !== 1 && (
+        <div className="wizard-video-keeper" aria-hidden="true" data-testid="wizard-video-keeper">
+          <VideoMount video={capture.video} />
+        </div>
+      )}
 
       <button type="button" className="wizard-skip" data-testid="wizard-skip" onClick={skip}>
         skip setup for now
