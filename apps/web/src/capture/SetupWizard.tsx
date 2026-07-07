@@ -5,6 +5,7 @@
 import { useRef, useState } from "react";
 import { useCaptureStore } from "./captureStore";
 import { listCaptureDevices, classifyAudioInput, pickPreferredAudioInput } from "./devices";
+import { adviseLatency } from "./latencyAdvice";
 import { startCapture, MANUAL_TAP_ORDER, type CaptureHandles } from "./controller";
 import type { Point } from "../perception/vision/homography";
 import { OverlayCanvas } from "../overlay/OverlayCanvas";
@@ -80,12 +81,15 @@ export function SetupWizard() {
   // Acoustic round-trip probe (clap test) — measures the full loop latency.
   const [probing, setProbing] = useState(false);
   const [latencyMsg, setLatencyMsg] = useState("");
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const measureLatency = async () => {
     if (!handlesRef.current) return;
     setProbing(true);
     setLatencyMsg("Measuring — sit tight for a couple of clicks…");
+    setLatencyMs(null);
     try {
       const ms = await handlesRef.current.measureLatency();
+      setLatencyMs(ms);
       setLatencyMsg(
         ms === null
           ? "No signal detected — use speakers, not headphones, and turn input gain up."
@@ -100,6 +104,10 @@ export function SetupWizard() {
   // back to the default device's label once the picker lists populate.
   const micLabel = mics.find((m) => m.deviceId === micId)?.label ?? mics[0]?.label ?? "";
   const kind = classifyAudioInput(micLabel);
+
+  // "Not measured yet" (latencyMs === null) renders no advice line — no
+  // placeholder junk before the user has run the round-trip probe.
+  const latencyAdvice = latencyMs === null ? null : adviseLatency(latencyMs, kind);
 
   // --- fretboard calibration (WP-3) ----------------------------------------
   const [calibMode, setCalibMode] = useState(false);
@@ -246,6 +254,14 @@ export function SetupWizard() {
             {probing ? "Measuring…" : "Measure round-trip"}
           </button>
           {latencyMsg && <span className="wizard-tip">{latencyMsg}</span>}
+          {latencyAdvice && (
+            <span
+              className={`wizard-tip latency-advice latency-advice-${latencyAdvice.tier}`}
+              data-testid="latency-advice"
+            >
+              {latencyAdvice.message}
+            </span>
+          )}
           <span className="wizard-tip">Point a speaker (not headphones) at your mic to measure.</span>
         </div>
       )}
