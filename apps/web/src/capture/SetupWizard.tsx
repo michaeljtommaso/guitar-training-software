@@ -15,6 +15,8 @@ import { InputMeter } from "./InputMeter";
 import { OpenStringCheck } from "./OpenStringCheck";
 import { TonePanel } from "../tone/TonePanel";
 import { LessonPanel } from "../fusion/LessonPanel";
+import { ExplorePanel } from "../explore/ExplorePanel";
+import { useExploreStore } from "../explore/exploreStore";
 
 export function SetupWizard() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -23,6 +25,7 @@ export function SetupWizard() {
   const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
   const { cameras, mics, cameraId, micId, phase, error, setDevices, select, setPhase } =
     useCaptureStore();
+  const { mode, setMode } = useExploreStore();
 
   const start = async (videoDeviceId: string, audioDeviceId: string) => {
     const video = videoRef.current;
@@ -271,7 +274,25 @@ export function SetupWizard() {
       )}
       {running && <OpenStringCheck />}
       {running && handlesRef.current && <TonePanel tone={handlesRef.current.tone} />}
-      <LessonPanel />
+      <div className="wizard-controls mode-toggle">
+        <button
+          type="button"
+          data-testid="mode-practice"
+          className={mode === "practice" ? "active" : ""}
+          onClick={() => setMode("practice")}
+        >
+          Practice
+        </button>
+        <button
+          type="button"
+          data-testid="mode-explore"
+          className={mode === "explore" ? "active" : ""}
+          onClick={() => setMode("explore")}
+        >
+          Explore
+        </button>
+      </div>
+      {mode === "practice" ? <LessonPanel /> : <ExplorePanel />}
       <DebugPanel />
       <AudioDebugPanel />
     </section>
