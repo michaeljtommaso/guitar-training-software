@@ -426,3 +426,16 @@
 .fret-strip.heard {
   box-shadow: 0 0 0 2px var(--correct);
 }
+
+/* ---- WP-5 explore mode: practice/explore + chord/scale toggles ---- */
+.mode-toggle button.active,
+.explore-panel button.active {
+  background: var(--surface-strong, var(--surface));
+  border-color: var(--text);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.explore-panel .wizard-error {
+  color: var(--error);
+}
