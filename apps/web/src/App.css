@@ -355,3 +355,74 @@
   border-color: var(--warn);
   color: var(--warn);
 }
+
+.fret-strip {
+  width: 100%;
+  max-width: 720px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+.fret-strip .fret {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.fret-strip .nut {
+  stroke: var(--text);
+  stroke-width: 3;
+}
+.fret-strip .string {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
+.fret-strip .finger {
+  fill: var(--correct);
+}
+.fret-strip .finger-num {
+  fill: var(--bg);
+  font-size: 10px;
+  font-weight: 600;
+}
+.fret-strip .open {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+.fret-strip .muted {
+  fill: var(--error);
+  font-size: 12px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+.fret-strip .barre {
+  fill: var(--correct);
+  opacity: 0.35;
+}
+.fret-strip .root {
+  fill: var(--warn);
+}
+.fret-strip .scale-dot {
+  fill: var(--text-muted);
+}
+.fret-strip .degree {
+  fill: var(--bg);
+  font-size: 9px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+.fret-strip .tick {
+  font-size: 12px;
+  text-anchor: middle;
+}
+.fret-strip .tick.ok {
+  fill: var(--correct);
+}
+.fret-strip .tick.pending {
+  fill: var(--text-muted);
+}
+.fret-strip .tick.muted-expected {
+  fill: var(--warn);
+}
+.fret-strip.heard {
+  box-shadow: 0 0 0 2px var(--correct);
+}
