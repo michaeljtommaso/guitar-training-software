@@ -137,7 +137,14 @@ export function TopBar({ theme, onToggleTheme, consoleOpen, onToggleConsole }: T
           <select
             data-testid="topbar-tone-preset"
             value={preset ?? ""}
-            onChange={(e) => e.target.value && applyPreset(e.target.value)}
+            // Final-review fix: on a classified MIC input, never let a preset
+            // pick auto-enable amp monitoring (mic + speakers = feedback path;
+            // this control is now always visible, unlike the old TonePanel).
+            // Direct-input setups keep the instant-sound behavior.
+            onChange={(e) =>
+              e.target.value &&
+              applyPreset(e.target.value, { preserveMonitor: kind === "mic" })
+            }
           >
             <option value="" disabled>
               Custom

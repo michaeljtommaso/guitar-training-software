@@ -72,6 +72,7 @@ export function ConsoleDrawer({
         e.preventDefault();
         onOpenChange(!open);
       } else if (e.key === "Escape") {
+        if (isEditableTarget(e.target)) return; // same guard as backtick — don't steal Escape from inputs/selects
         onOpenChange(false);
       }
     };
