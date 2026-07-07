@@ -4,6 +4,10 @@
 // enabled, so a static import is enough — no need for in-worker code-splitting.
 // All failures are contained and reported — a notes-worker crash must not take
 // down the perception loop.
+// BUG-003: must be the first import — installs a `window` alias before
+// TF.js/basic-pitch's top-level code runs. See windowShim.ts for why import
+// ordering guarantees this.
+import "./windowShim";
 import { BasicPitchNoteSource } from "./basicPitchSource";
 import type { NotesEvent } from "./NoteSource";
 
