@@ -3,78 +3,16 @@
 // mode it answers from the on-device template coach with ZERO network calls;
 // with the toggle off it streams from /ws/coach and degrades to templates if
 // the backend is unavailable.
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { DiagnosisCode } from "../fusion";
-import { getFusionSnapshot, subscribeFusion } from "../fusion/fusionStore";
-import { coachAnswer } from "./coachClient";
-import { useCoachStore } from "./coachStore";
-import type { CoachDiagnosis, CoachReply } from "./templateCoach";
+//
+// v2-ui (spec §5): the state/behavior lives in useCoach() so the restyled
+// CoachColumn can reuse it byte-identically — this component is now purely
+// the legacy JSX shell over that hook.
+import { useCoach } from "./useCoach";
 import "./coach.css";
 
-const CODE_LABELS: Record<DiagnosisCode, string> = {
-  wrong_fret: "wrong fret",
-  wrong_string: "wrong string",
-  muted_string: "muted string",
-  behind_fret: "finger behind the fret",
-  missing_note: "missing note",
-  late_strum: "late strum",
-  ok: "sounding good",
-};
-
-function newSessionId(): string {
-  const c = globalThis.crypto;
-  return c && "randomUUID" in c ? c.randomUUID() : `sess-${Date.now()}`;
-}
-
 export function CoachPanel() {
-  const snap = useSyncExternalStore(subscribeFusion, getFusionSnapshot);
-  const localOnly = useCoachStore((s) => s.localOnly);
-  const toggleLocalOnly = useCoachStore((s) => s.toggleLocalOnly);
-  const hydrate = useCoachStore((s) => s.hydrate);
-
-  const sessionId = useRef(newSessionId()).current;
-  const [question, setQuestion] = useState("");
-  const [streaming, setStreaming] = useState("");
-  const [reply, setReply] = useState<CoachReply | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    void hydrate();
-  }, [hydrate]);
-
-  const last = snap.lastDiagnosis;
-  const summary = last
-    ? `Last: ${CODE_LABELS[last.code]} (${Math.round(last.conf * 100)}% conf) on ${snap.targetChord ?? "—"}`
-    : "Play a chord to get feedback, then ask the coach about it.";
-
-  async function ask() {
-    setBusy(true);
-    setStreaming("");
-    setReply(null);
-    const diagnoses: CoachDiagnosis[] = last
-      ? [{ code: last.code, conf: last.conf, severity: last.severity }]
-      : [];
-    const result = await coachAnswer(
-      {
-        sessionId,
-        targetChord: snap.targetChord ?? undefined,
-        lessonId: snap.lessonId ?? undefined,
-        diagnoses,
-        question,
-      },
-      { localOnly, onDelta: (t) => setStreaming((s) => s + t) },
-    );
-    setReply(result);
-    setBusy(false);
-  }
-
-  const sourceLabel = reply
-    ? reply.source === "model"
-      ? `Model reply (${reply.provider})`
-      : reply.provider === "local"
-        ? "On-device coach"
-        : "On-device coach (backend unavailable)"
-    : "";
+  const { localOnly, toggleLocalOnly, summary, question, setQuestion, streaming, reply, busy, ask, sourceLabel } =
+    useCoach();
 
   return (
     <section className="coach-panel" aria-label="Coach">

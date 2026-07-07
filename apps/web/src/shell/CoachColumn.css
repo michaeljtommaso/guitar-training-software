@@ -1,0 +1,153 @@
+/* Coach column (spec v2-ui §5) — right-hand rail, ~320px, tokens only. */
+.coach-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  width: 320px;
+  min-width: 320px;
+  padding: var(--sp-1) 0 0;
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+.coach-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.coach-column-eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Badge-toggle (spec §5): a pill-shaped checkbox — same checkbox semantics
+   and testid as the legacy CoachPanel (e2e checks toBeChecked()), styled to
+   read as a toggle chip rather than a plain labelled checkbox. */
+.coach-column-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px var(--sp-2);
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.coach-column-toggle:has(input:checked) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.coach-column-toggle input {
+  accent-color: var(--accent);
+}
+
+.coach-column-summary {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.coach-column-ask {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.coach-column-ask textarea {
+  width: 100%;
+  min-height: 56px;
+  resize: vertical;
+  font: inherit;
+  padding: var(--sp-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.coach-column-ask button {
+  align-self: flex-start;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-ui);
+  cursor: pointer;
+}
+
+.coach-column-ask button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.coach-column-reply {
+  border-top: 1px solid var(--border);
+  padding-top: var(--sp-3);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.coach-column-source {
+  margin-top: var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.coach-column-explore {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* Explore controls (spec §5/§8) restyled in-place when mounted inside the
+   coach column — same testids/components as ExplorePanel, tokens only. */
+.coach-column-explore .wizard-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.coach-column-explore select,
+.coach-column-explore button {
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+.coach-column-explore button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.coach-column-explore .wizard-tip {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.coach-column-explore .wizard-error {
+  color: var(--danger);
+}
+
+.coach-column-explore .audio-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}

@@ -1,0 +1,232 @@
+/* Practice screen (spec v2-ui §5) — camera pane dominant, zoom-pane + hint-bar
+   slots, ~320px coach column. Tokens only. */
+.practice-screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pane-gap);
+  width: 100%;
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--font-ui);
+}
+
+.practice-screen-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--pane-gap);
+  align-items: start;
+}
+
+.practice-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pane-gap);
+  min-width: 0;
+}
+
+/* ---- camera pane ---- */
+.camera-pane {
+  width: 100%;
+}
+
+.video-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.video-stage video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-stage .overlay-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.camera-edge-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  background: var(--surface);
+  text-align: center;
+}
+
+.camera-edge-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.camera-edge-message {
+  margin: 0;
+  color: var(--danger);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.camera-edge-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+
+.camera-edge-controls select,
+.camera-edge-controls button {
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+.camera-edge-card button[data-testid="capture-start"],
+.camera-edge-card button[data-testid="capture-retry"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+/* ---- calibrate ghost button + secondary actions (top-right) ---- */
+.camera-calibrate {
+  position: absolute;
+  top: var(--sp-3);
+  right: var(--sp-3);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  max-width: calc(100% - 2 * var(--sp-3));
+}
+
+.ghost-button {
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgb(0 0 0 / 0.35);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.calibrate-button {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.camera-pane-tip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  background: rgb(0 0 0 / 0.35);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-sm);
+}
+
+/* ---- target card (bottom-left overlay) ---- */
+.target-card {
+  position: absolute;
+  left: var(--sp-3);
+  bottom: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  text-shadow: 0 1px 6px rgb(0 0 0 / 0.6);
+}
+
+.target-card-eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.target-card-name {
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.target-card-spelling {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--text-muted);
+  letter-spacing: 0.15em;
+}
+
+/* ---- per-string status chips (bottom-right overlay) ---- */
+.camera-chips {
+  position: absolute;
+  right: var(--sp-3);
+  bottom: var(--sp-3);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-1);
+}
+
+.camera-chip {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  padding: 3px var(--sp-2);
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgb(0 0 0 / 0.45);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.camera-chip.correct {
+  border-color: var(--correct);
+  color: var(--correct);
+}
+.camera-chip.warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.camera-chip.error {
+  border-color: var(--error);
+  color: var(--error);
+}
+.camera-chip.uncertain {
+  border-color: var(--uncertain);
+  color: var(--uncertain);
+}
+
+/* ---- zoom-pane slot (T4 owns the real component) ---- */
+.zoom-pane-slot {
+  width: 100%;
+}
+
+.zoom-pane-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 1;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}

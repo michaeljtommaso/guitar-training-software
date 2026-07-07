@@ -4,6 +4,13 @@
 // reskins this chrome. No store reads happen inside FretboardStrip itself;
 // this panel is the bridge between local UI selection state and the
 // exploreStore target.
+//
+// v2-ui (spec §5/§8): `ExploreControls` is split out so the CoachColumn can
+// mount the pickers/pager/tier/no-voicings alone (same components, same
+// testids) while the strip itself renders in the ZoomPane slot instead of the
+// coach column. This is a pure presentational split — no store/logic change —
+// and `ExplorePanel` still assembles both pieces exactly as before for any
+// caller (SetupWizard today) that hasn't moved to the split layout.
 import { useEffect, useRef, useState } from "react";
 import { useCaptureStore } from "../capture/captureStore";
 import { classifyAudioInput } from "../capture/devices";
@@ -22,28 +29,10 @@ function heardSig(h: HeardState): string {
   return `${h.chordHeard}|${h.strings?.join(",") ?? ""}|${h.scaleHitMidis?.join(",") ?? ""}`;
 }
 
-export function ExplorePanel() {
-  const { mode, target, loadError, tier, setTier, setVoicing } = useExploreStore();
+/** Pickers/pager/tier/no-voicings — everything except the strip itself. */
+export function ExploreControls() {
+  const { target, loadError, tier, setTier, setVoicing } = useExploreStore();
   const { mics, micId } = useCaptureStore();
-
-  // Listening feedback: exploreHot.heard is a non-reactive module ref written
-  // by feedback.ts at audio-event rate; sample it once per animation frame
-  // while explore mode is live and mirror meaningful changes into React.
-  const [heard, setHeard] = useState<HeardState>(() => exploreHot.heard);
-  const heardSigRef = useRef(heardSig(exploreHot.heard));
-  useEffect(() => {
-    if (mode !== "explore") return;
-    let raf = requestAnimationFrame(function tick() {
-      const h = exploreHot.heard;
-      const sig = heardSig(h);
-      if (sig !== heardSigRef.current) {
-        heardSigRef.current = sig;
-        setHeard(h);
-      }
-      raf = requestAnimationFrame(tick);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [mode]);
 
   const [kind, setKind] = useState<"chord" | "scale">("chord");
   const [root, setRoot] = useState<string>(CHORD_ROOTS[0]);
@@ -108,8 +97,7 @@ export function ExplorePanel() {
   const voicing = chordTarget?.voicings[chordTarget.active];
 
   return (
-    <section className="audio-debug explore-panel">
-      <h3>Explore</h3>
+    <>
       <div className="wizard-controls">
         <button
           type="button"
@@ -192,41 +180,67 @@ export function ExplorePanel() {
         </div>
       )}
 
-      {target && (
-        <>
-          <FretboardStrip target={target} heard={heard} />
-          {/* Spec §8: unknown root/suffix → empty voicing list must say so
-              (message replaces the pager; never throws into React). */}
-          {chordTarget && chordTarget.voicings.length === 0 && (
-            <p className="wizard-tip" data-testid="explore-no-voicings">
-              no voicings for this chord
-            </p>
-          )}
-          {chordTarget && voicing && (
-            <div className="wizard-controls">
-              <button
-                type="button"
-                data-testid="explore-voicing-prev"
-                disabled={chordTarget.active <= 0}
-                onClick={() => setVoicing(chordTarget.active - 1)}
-              >
-                ‹
-              </button>
-              <span data-testid="explore-voicing-label" className="audio-count">
-                voicing {chordTarget.active + 1}/{chordTarget.voicings.length}
-              </span>
-              <button
-                type="button"
-                data-testid="explore-voicing-next"
-                disabled={chordTarget.active >= chordTarget.voicings.length - 1}
-                onClick={() => setVoicing(chordTarget.active + 1)}
-              >
-                ›
-              </button>
-            </div>
-          )}
-        </>
+      {/* Spec §8: unknown root/suffix → empty voicing list must say so
+          (message replaces the pager; never throws into React). */}
+      {chordTarget && chordTarget.voicings.length === 0 && (
+        <p className="wizard-tip" data-testid="explore-no-voicings">
+          no voicings for this chord
+        </p>
       )}
+      {chordTarget && voicing && (
+        <div className="wizard-controls">
+          <button
+            type="button"
+            data-testid="explore-voicing-prev"
+            disabled={chordTarget.active <= 0}
+            onClick={() => setVoicing(chordTarget.active - 1)}
+          >
+            ‹
+          </button>
+          <span data-testid="explore-voicing-label" className="audio-count">
+            voicing {chordTarget.active + 1}/{chordTarget.voicings.length}
+          </span>
+          <button
+            type="button"
+            data-testid="explore-voicing-next"
+            disabled={chordTarget.active >= chordTarget.voicings.length - 1}
+            onClick={() => setVoicing(chordTarget.active + 1)}
+          >
+            ›
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+export function ExplorePanel() {
+  const { mode, target } = useExploreStore();
+
+  // Listening feedback: exploreHot.heard is a non-reactive module ref written
+  // by feedback.ts at audio-event rate; sample it once per animation frame
+  // while explore mode is live and mirror meaningful changes into React.
+  const [heard, setHeard] = useState<HeardState>(() => exploreHot.heard);
+  const heardSigRef = useRef(heardSig(exploreHot.heard));
+  useEffect(() => {
+    if (mode !== "explore") return;
+    let raf = requestAnimationFrame(function tick() {
+      const h = exploreHot.heard;
+      const sig = heardSig(h);
+      if (sig !== heardSigRef.current) {
+        heardSigRef.current = sig;
+        setHeard(h);
+      }
+      raf = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [mode]);
+
+  return (
+    <section className="audio-debug explore-panel">
+      <h3>Explore</h3>
+      <ExploreControls />
+      {target && <FretboardStrip target={target} heard={heard} />}
     </section>
   );
 }
