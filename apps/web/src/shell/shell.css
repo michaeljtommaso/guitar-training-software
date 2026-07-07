@@ -1,0 +1,306 @@
+/*
+ * Chrome styles for the v2 shell (spec §5: TopBar / HintBar / TelemetryFooter
+ * / ConsoleDrawer). Token-only (spec §4/§11 hard rule) — every color/spacing/
+ * radius/font value here is a var() from theme/tokens.css, never a literal.
+ */
+
+/* ---- TopBar ------------------------------------------------------------ */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  color: var(--text);
+}
+
+.topbar-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.topbar-lesson-picker,
+.topbar-tone-preset select {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-1) var(--sp-2);
+}
+
+.topbar-mode-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.topbar-mode-toggle button {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: var(--sp-1) var(--sp-3);
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+}
+
+.topbar-mode-toggle button.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.topbar-step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.topbar-step button {
+  font-family: var(--font-mono);
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-1) var(--sp-2);
+  cursor: pointer;
+}
+
+.topbar-tone-preset {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.topbar-input-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+}
+
+.topbar-input-badge--interface {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.topbar-feedback-warn {
+  color: var(--danger);
+}
+
+.topbar-clock {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.topbar-theme-toggle,
+.topbar-console-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-1) var(--sp-2);
+  cursor: pointer;
+}
+
+.topbar-console-toggle[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+/* ---- HintBar ------------------------------------------------------------ */
+
+.hint-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+}
+
+.hint-bar-text {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.hint-bar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.hint-bar-subline {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.hint-bar-tip-wrong {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-1) var(--sp-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hint-bar-tip-wrong:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- TelemetryFooter ----------------------------------------------------- */
+
+.telemetry-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.telemetry-footer-line {
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.telemetry-footer-actions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+}
+
+.telemetry-footer-actions button {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.telemetry-footer-actions button:hover {
+  color: var(--text);
+}
+
+.telemetry-footer-actions button[aria-pressed="true"] {
+  color: var(--accent);
+}
+
+/* ---- ConsoleDrawer -------------------------------------------------------- */
+
+.console-drawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  color: var(--text);
+  font-family: var(--font-ui);
+  z-index: 40;
+}
+
+.console-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.console-drawer-title {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.console-drawer-header button {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-1) var(--sp-2);
+  cursor: pointer;
+}
+
+.console-drawer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+}
+
+.console-section h4 {
+  margin: 0 0 var(--sp-2) 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.console-empty {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Tone preset selection lives in TopBar (spec §3) — hide TonePanel's own
+   preset dropdown + label when it's mounted inside the drawer, without
+   touching TonePanel.tsx itself. */
+.console-section--hide-preset #tone-preset,
+.console-section--hide-preset label[for="tone-preset"] {
+  display: none;
+}
