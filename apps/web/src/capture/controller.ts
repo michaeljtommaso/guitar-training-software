@@ -26,6 +26,7 @@ import { measureRoundTrip } from "../tone/latencyProbe";
 import type { NotesEvent } from "../perception/audio/notes/NoteSource";
 import type { VisionEvent } from "../fusion/events/visionEvents";
 import { fusionIngest } from "../fusion/fusionStore";
+import { exploreIngest } from "../explore/feedback";
 import { audioGlassToWorkerHistogram } from "../observability/latencyHistogram";
 import { solveHomography, type Point } from "../perception/vision/homography";
 import type { HandDetection } from "../perception/vision/handLandmarker";
@@ -161,6 +162,7 @@ export async function startCapture(
         const events = (msg as { events: NotesEvent[] }).events;
         for (const ev of events) recordNotes(ev);
         fusionIngest(events, "audio"); // WP-4: notes evidence into the fusion engine
+        exploreIngest(events); // explore: notes stream for full-tier per-string feedback
       }
     };
   }
@@ -183,6 +185,7 @@ export async function startCapture(
       // WP-4: worker→fusion ingest boundary. The (audio,wall) anchor rides along
       // so fusion can bridge the vision leg's clock (see fusionStore.ts).
       fusionIngest(msg.events, "audio", { wallMs: msg.clockWallMs, audioMs: msg.clockAudioMs });
+      exploreIngest(msg.events); // explore: chord/onset stream for light-tier feedback
     } else if (msg.type === "audioState") {
       setPerception({ audioAnalysis: msg.state });
     } else if (msg.type === "notesChunk") {
