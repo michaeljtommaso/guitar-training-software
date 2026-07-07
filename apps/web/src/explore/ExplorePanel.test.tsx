@@ -12,6 +12,7 @@ vi.mock("../theory/chords", async (orig) => ({
 }));
 
 import { ExplorePanel } from "./ExplorePanel";
+import { chordVoicings } from "../theory/chords";
 import { exploreHot, useExploreStore } from "./exploreStore";
 
 describe("ExplorePanel", () => {
@@ -56,6 +57,15 @@ describe("ExplorePanel", () => {
     });
     expect(container.querySelectorAll("[data-tick='ok']")).toHaveLength(3);
     expect(container.querySelector(".fret-strip")?.getAttribute("class")).toContain("heard");
+  });
+  it("empty voicing list shows the no-voicings message instead of the pager (spec §8)", async () => {
+    vi.mocked(chordVoicings).mockResolvedValueOnce([]);
+    render(<ExplorePanel />);
+    act(() => useExploreStore.getState().setMode("explore"));
+    fireEvent.change(screen.getByTestId("explore-root"), { target: { value: "A" } });
+    await waitFor(() => expect(screen.getByTestId("explore-no-voicings")).toBeTruthy());
+    expect(screen.getByTestId("explore-no-voicings").textContent).toContain("no voicings");
+    expect(screen.queryByTestId("explore-voicing-label")).toBeNull();
   });
   it("scale kind renders positions without any async load", () => {
     render(<ExplorePanel />);

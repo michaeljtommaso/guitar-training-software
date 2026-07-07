@@ -195,6 +195,13 @@ export function ExplorePanel() {
       {target && (
         <>
           <FretboardStrip target={target} heard={heard} />
+          {/* Spec §8: unknown root/suffix → empty voicing list must say so
+              (message replaces the pager; never throws into React). */}
+          {chordTarget && chordTarget.voicings.length === 0 && (
+            <p className="wizard-tip" data-testid="explore-no-voicings">
+              no voicings for this chord
+            </p>
+          )}
           {chordTarget && voicing && (
             <div className="wizard-controls">
               <button
