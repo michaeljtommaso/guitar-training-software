@@ -1,0 +1,299 @@
+/*
+ * Wizard v2 reskin (spec §7) — centered card, mono-caps subtitle, progress
+ * dots, `skip setup for now` ghost link. Tokens only (spec §4/§11 hard rule):
+ * every color/spacing/radius/font value here is a var() from theme/tokens.css.
+ *
+ * InputMeter/OpenStringCheck/latency-advice markup is reused UNCHANGED (their
+ * own classNames already resolve to tokens — see App.css) — the rules below
+ * only add wizard-scoped layout/spacing around them, never override their
+ * component files.
+ */
+
+.wizard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  width: 100%;
+  max-width: 640px;
+  margin: var(--sp-6) auto;
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+.wizard-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  text-align: center;
+}
+
+.wizard-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.wizard-subtitle {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.wizard-dots {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+.wizard-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.wizard-dot.active {
+  background: var(--accent);
+}
+
+.wizard-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  width: 100%;
+  padding: var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.wizard-card h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.wizard-copy {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.wizard-copy-muted {
+  margin: 0;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.wizard-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.wizard-field-label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.wizard-field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.wizard-field select {
+  flex: 1;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+.wizard-badge {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 3px var(--sp-2);
+  border-radius: 999px;
+  border: 1px solid var(--ok);
+  color: var(--ok);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.wizard-error {
+  margin: 0;
+  color: var(--danger);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+/* ---- step 1 running preview pair (spec §7) ---- */
+.wizard-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.wizard-preview-pane {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+}
+
+.wizard-preview-pane video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wizard-preview-caption {
+  position: absolute;
+  left: var(--sp-2);
+  bottom: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: rgb(0 0 0 / 0.45);
+  padding: 2px var(--sp-1);
+  border-radius: var(--radius-sm);
+}
+
+.wizard-preview-pane--zoom {
+  aspect-ratio: auto;
+  padding: var(--sp-2);
+}
+
+/* ---- signal check (step 2) — layout only, components own their own tokens ---- */
+.wizard-signal-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.wizard-latency-advice {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.wizard-latency-advice-great {
+  color: var(--ok);
+}
+
+.wizard-latency-advice-usable {
+  color: var(--warn);
+}
+
+.wizard-latency-advice-echo {
+  color: var(--danger);
+}
+
+/* ---- summary (step 3) ---- */
+.wizard-summary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+/* ---- actions / nav ---- */
+.wizard-actions,
+.wizard-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.wizard-nav {
+  justify-content: flex-end;
+  margin-top: var(--sp-2);
+}
+
+.wizard-btn-primary {
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wizard-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.wizard-btn-ghost {
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-ui);
+  cursor: pointer;
+}
+
+.wizard-btn-captured {
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--ok);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ok);
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+
+.wizard-skip {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+/* ---- reused components (InputMeter/OpenStringCheck), token-styled via
+   descendant selectors only — their own files are never edited (spec
+   boundary). Both already resolve to var() in App.css; this just tightens
+   wizard-local spacing and gives the Reset button a token look. ---- */
+.wizard-signal-block .open-string-check button {
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
