@@ -3,8 +3,9 @@
 // sits over the real fret cell on the live video. Pure geometry — the draw code
 // and the unit tests both call `planTargets`; nothing here touches a canvas.
 import { applyHomography, invertHomography, type Homography } from "../perception/vision/homography";
-import { fretLineX, stringY } from "../perception/vision/fretboard";
+import { MAX_FRET, fretLineX, stringY } from "../perception/vision/fretboard";
 import type { Fingering } from "../fusion/lessons";
+import type { ExploreTarget } from "../explore/exploreStore";
 
 /** The current lesson step's target, mirrored into overlay hot-state so the
  *  frame callback can draw dots without going through React. */
@@ -22,6 +23,8 @@ export interface TargetDot {
   string: number;
   /** finger name (finger dots only). */
   finger?: string;
+  /** explore dots: finger number or scale degree. */
+  label?: string;
   fret?: number;
   /** Image-space pixel position (already scaled by canvas w/h). */
   X: number;
@@ -73,6 +76,36 @@ export function targetDots(target: FusionTarget, H: Homography, w: number, h: nu
   for (const s of target.avoidStrings) {
     const { X, Y } = toXY(fretLineX(0), stringY(s));
     dots.push({ kind: "avoid", string: s, X, Y });
+  }
+  return dots;
+}
+
+/** Project an explore target (chord voicing or scale) into image-space dots.
+ *  Camera calibration covers frets 0..MAX_FRET only (v1) — positions beyond
+ *  it are SKIPPED here; the schematic strip is the full-neck view. */
+export function exploreDots(target: ExploreTarget, H: Homography, w: number, h: number): TargetDot[] {
+  if (!target) return [];
+  const Hinv = invertHomography(H);
+  const toXY = (x: number, y: number) => {
+    const p = applyHomography(Hinv, { x, y });
+    return { X: p.x * w, Y: p.y * h };
+  };
+  const dots: TargetDot[] = [];
+  if (target.kind === "chord") {
+    const v = target.voicings[target.active];
+    if (!v) return [];
+    v.frets.forEach((fret, i) => {
+      const string = i + 1;
+      if (fret > MAX_FRET) return;
+      if (fret < 0) dots.push({ kind: "avoid", string, ...toXY(targetX(0), stringY(string)) });
+      else if (fret === 0) dots.push({ kind: "open", string, ...toXY(targetX(0), stringY(string)) });
+      else dots.push({ kind: "finger", string, fret, label: String(v.fingers[i] || ""), ...toXY(targetX(fret), stringY(string)) });
+    });
+    return dots;
+  }
+  for (const p of target.positions) {
+    if (p.fret > MAX_FRET) continue;
+    dots.push({ kind: "finger", string: p.string, fret: p.fret, label: p.degree, ...toXY(targetX(p.fret), stringY(p.string)) });
   }
   return dots;
 }

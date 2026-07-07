@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { planTargets, targetDots, targetX, type FusionTarget } from "./targetDots";
+import { planTargets, targetDots, targetX, exploreDots, type FusionTarget } from "./targetDots";
 import { IDENTITY_HOMOGRAPHY } from "../perception/vision/homography";
 import { fretLineX, stringY } from "../perception/vision/fretboard";
 import { getLesson } from "../fusion/lessons";
+import type { ExploreTarget } from "../explore/exploreStore";
 
 const W = 1280;
 const H = 720;
@@ -74,5 +75,36 @@ describe("planTargets calibration gating", () => {
   it("no active lesson (or no target) → nothing, no nudge", () => {
     expect(planTargets(false, IDENTITY_HOMOGRAPHY, cTarget, W, H)).toEqual({ dots: [], nudge: false });
     expect(planTargets(true, IDENTITY_HOMOGRAPHY, null, W, H)).toEqual({ dots: [], nudge: false });
+  });
+});
+
+describe("exploreDots", () => {
+  const AM: ExploreTarget = {
+    kind: "chord", root: "A", suffix: "minor", active: 0,
+    voicings: [{ frets: [0, 1, 2, 2, 0, -1], fingers: [0, 1, 3, 2, 0, 0], barres: [], baseFret: 1, window: [0, 4], difficulty: 13 }],
+  };
+  it("emits finger/open/avoid dots with number labels for the active voicing", () => {
+    const dots = exploreDots(AM, IDENTITY_HOMOGRAPHY, W, H);
+    expect(dots.filter((d) => d.kind === "finger")).toHaveLength(3);
+    expect(dots.filter((d) => d.kind === "open")).toHaveLength(2);
+    expect(dots.filter((d) => d.kind === "avoid")).toHaveLength(1);
+    expect(dots.find((d) => d.string === 2)?.label).toBe("1"); // B string, finger 1
+  });
+  it("clamps to the calibrated window: fret > MAX_FRET dots are skipped", () => {
+    const up: ExploreTarget = { ...AM, voicings: [{ ...AM.voicings[0], frets: [5, 5, 5, 7, 7, 5], window: [4, 8] }] };
+    const dots = exploreDots(up, IDENTITY_HOMOGRAPHY, W, H);
+    expect(dots.filter((d) => d.kind === "finger" && (d.fret ?? 0) > 5)).toHaveLength(0);
+  });
+  it("scale targets emit degree-labeled dots, window-clamped", () => {
+    const sc: ExploreTarget = { kind: "scale", root: "G", scaleType: "major", positions: [
+      { string: 6, fret: 3, midi: 43, note: "G2", degree: "1", isRoot: true },
+      { string: 6, fret: 10, midi: 50, note: "D3", degree: "5", isRoot: false },
+    ]};
+    const dots = exploreDots(sc, IDENTITY_HOMOGRAPHY, W, H);
+    expect(dots).toHaveLength(1);
+    expect(dots[0].label).toBe("1");
+  });
+  it("null target → no dots", () => {
+    expect(exploreDots(null, IDENTITY_HOMOGRAPHY, W, H)).toEqual([]);
   });
 });
