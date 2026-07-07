@@ -185,7 +185,12 @@ describe("ConsoleDrawer", () => {
       expect(onOpenChange).not.toHaveBeenCalled();
     });
 
-    it("Escape always closes, even from an editable element", () => {
+    // Final-review fix: Escape gets the SAME editable-target guard as backtick.
+    // Rationale (orchestrator adjudication): the drawer's own controls are
+    // <select>s, and Chrome delivers the Escape keydown when dismissing a native
+    // dropdown — without the guard, closing a dropdown collapses the whole
+    // drawer mid-adjustment. Escape from non-editable targets still closes.
+    it("Escape from an editable element does NOT close (guarded like backtick)", () => {
       const onOpenChange = vi.fn();
       render(
         <div>
@@ -196,6 +201,13 @@ describe("ConsoleDrawer", () => {
       const textarea = screen.getByTestId("somewhere-else");
       textarea.focus();
       fireEvent.keyDown(textarea, { key: "Escape" });
+      expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it("Escape from a non-editable target closes the drawer", () => {
+      const onOpenChange = vi.fn();
+      render(<ConsoleDrawer open onOpenChange={onOpenChange} handles={null} />);
+      fireEvent.keyDown(window, { key: "Escape" });
       expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
