@@ -12,6 +12,11 @@ export default defineConfig({
   plugins: [react()],
   server: { headers: crossOriginIsolationHeaders },
   preview: { headers: crossOriginIsolationHeaders },
+  // worker.format stays at Vite's default 'iife' (classic). The vision worker is
+  // imported via `?worker`, so it is bundled as a self-contained CLASSIC worker in
+  // both dev and build — which is what MediaPipe's importScripts-based wasm loader
+  // requires (a module worker can't importScripts the Emscripten glue). See
+  // controller.ts and docs/debug/phase0-findings.md (BUG-002).
   build: {
     rollupOptions: {
       output: {

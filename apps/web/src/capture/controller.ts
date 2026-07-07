@@ -30,6 +30,10 @@ import { audioGlassToWorkerHistogram } from "../observability/latencyHistogram";
 import { solveHomography, type Point } from "../perception/vision/homography";
 import type { HandDetection } from "../perception/vision/handLandmarker";
 import captureProcessorUrl from "../perception/audio/capture-processor.ts?worker&url";
+// `?worker` (not the `new URL(..., import.meta.url)` pattern) so Vite BUNDLES the
+// worker's ESM imports into a self-contained CLASSIC script in dev too — the raw
+// `new URL` classic path is served unbundled in dev and dies on `import` (BUG-002).
+import VisionWorker from "../perception/vision/visionWorker.ts?worker";
 import { buildToneChain, type ToneChainHandles } from "../tone/toneChain";
 import { useToneStore } from "../tone/toneStore";
 
@@ -187,14 +191,22 @@ export async function startCapture(
   };
 
   // --- vision worker topology ----------------------------------------------
-  // CLASSIC worker (not module): MediaPipe's HandLandmarker loads its wasm
-  // runtime via importScripts, which only exists in classic workers — in a
-  // module worker it fails with "ModuleFactory not set." Vite still bundles the
-  // worker's ESM imports into a classic script at build time.
-  const visionWorker = new Worker(
-    new URL("../perception/vision/visionWorker.ts", import.meta.url),
-    { type: "classic" },
-  );
+  // CLASSIC worker, imported via `?worker` so Vite bundles it. MediaPipe's
+  // HandLandmarker loads its wasm runtime (Emscripten glue, NOT an ES module) via
+  // importScripts, which only exists in a classic worker — a module worker fails
+  // to fetch/`import()` the wasm loader. But the classic `new URL(...,
+  // import.meta.url)` pattern is served UNBUNDLED in `vite dev`, so its ESM
+  // `import`s throw "Cannot use import statement outside a module" and the worker
+  // dies silently (BUG-002). The `?worker` import fixes that: Vite bundles the
+  // worker into a self-contained classic script in BOTH dev and build.
+  const visionWorker = new VisionWorker();
+  // Never let a worker load/runtime failure be silent again (BUG-002 hid because
+  // there was no error handler): surface it to the console and the debug hook.
+  visionWorker.onerror = (event) => {
+    const detail = event.message ?? String(event);
+    console.error(`[vision] worker failed to load or crashed: ${detail}`);
+    if (window.__visionDebug) window.__visionDebug.status = `worker-error: ${detail}`;
+  };
   const offscreen = new OffscreenCanvas(1280, 720);
   visionWorker.postMessage({ type: "init", canvas: offscreen }, [offscreen]);
 

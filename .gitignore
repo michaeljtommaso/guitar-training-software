@@ -18,5 +18,6 @@ data/eval/
 # never committed. .claude/ itself stays committable for shared project config.
 .superpowers/
 .impeccable/
+.playwright-mcp/
 .claude/worktrees/
 .claude/settings.local.json
