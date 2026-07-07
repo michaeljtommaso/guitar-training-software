@@ -10,7 +10,14 @@
 ## BUG-001 — False onsets, phantom chords, and phantom tuner reading on silence
 
 **Severity:** High (core audio perception looks broken on an idle/quiet input)
-**Status:** Diagnosed, not yet fixed (batch-fix later)
+**Status:** ✅ FIXED (2026-07-07 batch-fix, branch `fix/phase0-batch`). Shared
+`SILENCE_RMS = 0.005` exported from `dsp/chords.ts`, imported by the onset
+detector and `YinTunerSource`; gated frames carry an EMPTY posterior (panel shows
+a greyed silence/noise state); fusion gates `noise` exactly like `silence` via
+`isTonalChord` so mic noise can no longer manufacture diagnoses/hints. Bonus: a
+spectral-flatness gate (`NOISE_FLATNESS = 0.4`) labels loud broadband input
+`noise` instead of forcing a chord. Thresholds are Phase-0 built-in-mic values —
+re-tune on the interface in Phase 1.
 **Repro:** Start capture on the built-in mic, play nothing. `onset` counter climbs
 continuously (observed 1647), the chord posterior bars dance across chords, and the
 tuner shows a phantom reading (`E2 · 85 Hz +54.2¢`) — all with no input played.
@@ -53,7 +60,17 @@ needs the silence gate.
 
 **Severity:** Critical (the entire vision leg — hand tracking, fret/finger overlay,
 the headline UX moment — is offline whenever the app runs via `pnpm dev`)
-**Status:** Root cause CONFIRMED (console error), not yet fixed
+**Status:** ✅ FIXED (2026-07-07 batch-fix, attempt 3). Two-part dev fix on top of
+the attempt-2 `?worker` bundling: (1) `forVisionTasks(WASM_PATH,
+import.meta.env.DEV)` selects MediaPipe's ES-module glue in dev (the UMD glue's
+`var ModuleFactory` stays module-scoped under a dynamic `import()` — the true
+remaining blocker), statically inlined so the production build is unchanged;
+(2) a dev-only Vite middleware serves `/models/mediapipe/wasm/*.js` raw, before
+Vite's transform can reject a /public import. Proven: `vite dev` + fake devices →
+HandLandmarker ready, 2 hands / 21 landmarks, vision frames climbing; preview
+path independently confirmed working. Regression net: new `e2e:dev` Playwright
+suite (`e2e-dev/vision-dev.spec.ts`) wired into CI, so the dev path is never
+untested again.
 **Repro:** Start capture. Webcam video displays fine, but `Vision frames` stays at 0
 and no target dots ever appear, even after starting a lesson. Console shows:
 ```
@@ -145,7 +162,12 @@ leg is still non-functional in `vite dev` pending attempt 3.
 
 **Severity:** Medium (polyphonic note detection dead; `Notes: — bp 0`. Does not
 affect the chord/tuner/onset loop, which is isolated by design.)
-**Status:** Root cause identified (console error), not yet fixed
+**Status:** ✅ FIXED at unit level (2026-07-07 batch-fix). `notes/windowShim.ts`
+(`globalThis.window ??= globalThis`) imported FIRST in `notesWorker.ts` — module
+evaluation order guarantees it runs before the TF.js import chain; no-op where
+`window` already exists. Regression-tested both ways. Runtime confirmation that
+the `bp` counter climbs while playing still needs the next real capture session
+(unit tests can't fully replicate a browser worker).
 **Repro:** Start capture. Console shows:
 ```
 @spotify_basic-pitch.js  Uncaught (in promise) ReferenceError: window is not defined
