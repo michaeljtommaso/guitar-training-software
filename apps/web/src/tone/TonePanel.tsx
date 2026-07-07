@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useCaptureStore } from "../capture/captureStore";
 import { classifyAudioInput } from "../capture/devices";
 import { TONE_PRESETS } from "./presets";
+import { BUNDLED_CABINETS } from "./cabinets";
 import type { MonitorMode, ToneChainHandles, ToneParams } from "./toneChain";
 import { useToneStore } from "./toneStore";
 
@@ -36,12 +37,10 @@ export function TonePanel({ tone }: { tone: ToneChainHandles }) {
   const micLabel = mics.find((m) => m.deviceId === micId)?.label ?? mics[0]?.label ?? "";
   const feedbackRisk = classifyAudioInput(micLabel) === "mic" && params.monitor !== "off";
 
-  // Cab source: "synthetic" (the built-in default IR) or "custom" (a loaded
-  // file). ponytail: no bundled CC0 IR shipped yet (none could be provenance-
-  // verified — license firewall), so the picker offers synthetic + custom only.
-  // Add a bundled option here (fetch("/irs/<name>.wav") → tone.loadIR) once a
-  // verified CC0 asset lands in public/irs/.
-  const [cab, setCab] = useState<"synthetic" | "custom">("synthetic");
+  // Cab source: "synthetic" (built-in default IR), a bundled CC0 cabinet id
+  // (public/irs/, see cabinets.ts + MANIFEST.md), or "custom" (a user-loaded
+  // file). Synthetic stays the default fallback.
+  const [cab, setCab] = useState<string>("synthetic");
 
   const loadIR = async (file: File) => {
     await tone.loadIR(await file.arrayBuffer());
@@ -54,6 +53,14 @@ export function TonePanel({ tone }: { tone: ToneChainHandles }) {
       await tone.resetIR();
       setIrName("");
       setCab("synthetic");
+      return;
+    }
+    const bundled = BUNDLED_CABINETS.find((c) => c.id === value);
+    if (bundled) {
+      const res = await fetch(bundled.file);
+      await tone.loadIR(await res.arrayBuffer());
+      setIrName(bundled.label);
+      setCab(bundled.id);
     }
   };
 
@@ -113,6 +120,9 @@ export function TonePanel({ tone }: { tone: ToneChainHandles }) {
           onChange={(e) => void selectCab(e.target.value)}
         >
           <option value="synthetic">Synthetic (default)</option>
+          {BUNDLED_CABINETS.map((c) => (
+            <option key={c.id} value={c.id}>{c.label}</option>
+          ))}
           {cab === "custom" && <option value="custom">Custom: {irName || "loaded file"}</option>}
         </select>
         <input
