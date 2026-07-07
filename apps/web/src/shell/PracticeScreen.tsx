@@ -4,21 +4,23 @@
 // TelemetryFooter are optional slot props (parallel tasks — T2), so this
 // component mounts and is fully testable standalone.
 //
-// The camera pane lifts the EXISTING video + OverlayCanvas mount pattern and
-// calibration-mode logic from SetupWizard.tsx AS-IS (that file is read-only
-// for this task) and adds two new overlay chips that only READ existing
-// stores: the TARGET card (bottom-left) and the per-string status chips
-// (bottom-right, practice mode only — same data as today's LessonPanel
-// chips). Device selects/Start-Stop only appear here for the "skipped the
-// wizard, capture isn't running yet" edge case (spec §9); once running they
-// live in the TopBar input badge / ConsoleDrawer "Inputs" section (§3), so
-// they are intentionally NOT shown while `running`.
-import { type ReactNode, useRef, useState, useSyncExternalStore } from "react";
+// The camera pane consumes the shared CaptureHost (useCaptureHost.ts, owned by
+// AppShell) — capture start/stop and the 4-tap calibration state machine were
+// lifted there (T6) so the live session survives the Wizard → PracticeScreen
+// swap — and adds two new overlay chips that only READ existing stores: the
+// TARGET card (bottom-left) and the per-string status chips (bottom-right,
+// practice mode only — same data as today's LessonPanel chips). Device
+// selects/Start-Stop only appear here for the "skipped the wizard, capture
+// isn't running yet" edge case (spec §9); once running they live in the
+// TopBar input badge / ConsoleDrawer "Inputs" section (§3), so they are
+// intentionally NOT shown while `running`.
+import { type ReactNode, useSyncExternalStore } from "react";
 import { useCaptureStore } from "../capture/captureStore";
-import { listCaptureDevices, pickPreferredAudioInput } from "../capture/devices";
-import { startCapture, MANUAL_TAP_ORDER, type CaptureHandles } from "../capture/controller";
+import { MANUAL_TAP_ORDER } from "../capture/controller";
 import type { Point } from "../perception/vision/homography";
 import { OverlayCanvas } from "../overlay/OverlayCanvas";
+import { VideoMount } from "./VideoMount";
+import type { CaptureHost } from "./useCaptureHost";
 import { useExploreStore, type ExploreTarget } from "../explore/exploreStore";
 import { getFusionSnapshot, subscribeFusion, type FusionSnapshot } from "../fusion/fusionStore";
 import { getLesson, type LessonStep } from "../fusion/lessons";
@@ -138,103 +140,23 @@ function TargetCard({ data }: { data: TargetCardData }) {
   );
 }
 
-function CameraPane() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const handlesRef = useRef<CaptureHandles | null>(null);
-  const autoPicked = useRef(false);
-  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
-  const { cameras, mics, cameraId, micId, phase, error, setDevices, select, setPhase } =
-    useCaptureStore();
+function CameraPane({ capture }: { capture: CaptureHost }) {
+  const { cameras, mics, cameraId, micId, phase, error, select } = useCaptureStore();
   const mode = useExploreStore((s) => s.mode);
   const exploreTarget = useExploreStore((s) => s.target);
   const fusionSnap = useSyncExternalStore(subscribeFusion, getFusionSnapshot);
 
   const running = phase === "running";
 
-  // ── capture start/stop (lifted as-is from SetupWizard.tsx) ────────────────
-  const start = async (videoDeviceId: string, audioDeviceId: string) => {
-    const video = videoRef.current;
-    if (!video) return;
-    handlesRef.current?.stop();
-    handlesRef.current = null;
-    setVideoEl(null);
-    setPhase("starting");
-    try {
-      handlesRef.current = await startCapture(video, {
-        videoDeviceId: videoDeviceId || undefined,
-        audioDeviceId: audioDeviceId || undefined,
-      });
-      const lists = await listCaptureDevices(); // labels appear after permission
-      setDevices(lists);
-      // ADR-013: auto-prefer a direct-input interface on first run if the user
-      // has never chosen a mic. Guarded to run at most once per session.
-      if (!autoPicked.current && !audioDeviceId) {
-        autoPicked.current = true;
-        const preferred = pickPreferredAudioInput(lists.mics);
-        if (preferred) {
-          select({ micId: preferred.deviceId });
-          void start(videoDeviceId, preferred.deviceId); // restart on the interface
-          return;
-        }
-      }
-      setVideoEl(video);
-      setPhase("running");
-    } catch (err) {
-      // A persisted cameraId/micId (gt-capture-devices) can go stale if the
-      // device was unplugged since last session; getUserMedia's exact-match
-      // deviceId constraint then throws OverconstrainedError. Clear the
-      // stale ids and retry once on system defaults.
-      if (err instanceof Error && err.name === "OverconstrainedError" && (videoDeviceId || audioDeviceId)) {
-        select({ cameraId: "", micId: "" });
-        void start("", ""); // retry once on system defaults
-        return;
-      }
-      setPhase("error", err instanceof Error ? err.message : String(err));
-    }
-  };
-
-  // ── fretboard calibration (lifted as-is from SetupWizard.tsx) ─────────────
-  const [calibMode, setCalibMode] = useState(false);
-  const [taps, setTaps] = useState<Point[]>([]);
-  const [calibMsg, setCalibMsg] = useState("");
+  // Capture start/stop + calibration live in the shared CaptureHost (T6) —
+  // this pane only translates DOM events into host calls.
+  const { videoEl, calibMode, taps, calibMsg, start } = capture;
 
   const onStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!calibMode || !handlesRef.current) return;
+    if (!calibMode) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const tap: Point = { x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height };
-    const next = [...taps, tap];
-    if (next.length >= 4) {
-      handlesRef.current.setManualCalibration(next);
-      setTaps([]);
-      setCalibMode(false);
-      setCalibMsg("Calibrated from 4 taps (manual).");
-    } else {
-      setTaps(next);
-    }
-  };
-
-  const toggleCalibMode = () => {
-    setTaps([]);
-    setCalibMode((m) => !m);
-    setCalibMsg(calibMode ? "" : "Tap the four fretboard corners in order.");
-  };
-
-  const detectCharuco = async () => {
-    if (!handlesRef.current) return;
-    setCalibMsg("Detecting ChArUco board…");
-    try {
-      const n = await handlesRef.current.calibrateCharuco();
-      setCalibMsg(n > 0 ? `Calibrated from ChArUco (${n} corners).` : "No ChArUco board detected in frame.");
-    } catch (err) {
-      setCalibMsg(`ChArUco error: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  };
-
-  const clearCalib = () => {
-    handlesRef.current?.clearCalibration();
-    setTaps([]);
-    setCalibMode(false);
-    setCalibMsg("Calibration cleared.");
+    capture.tapCalibration(tap);
   };
 
   const targetCard = deriveTargetCard(mode, fusionSnap, exploreTarget);
@@ -248,7 +170,7 @@ function CameraPane() {
         onClick={onStageClick}
         style={calibMode ? { cursor: "crosshair" } : undefined}
       >
-        <video ref={videoRef} muted playsInline autoPlay />
+        <VideoMount video={capture.video} />
         {videoEl && <OverlayCanvas video={videoEl} />}
 
         {!running && phase === "error" && (
@@ -305,7 +227,7 @@ function CameraPane() {
               type="button"
               className="ghost-button calibrate-button"
               data-testid="calibrate-button"
-              onClick={toggleCalibMode}
+              onClick={capture.toggleCalibMode}
             >
               {calibMode ? "Cancel calibration" : "Calibrate"}
             </button>
@@ -318,10 +240,10 @@ function CameraPane() {
                 {/* Not named as its own row in spec §3's terse table, but "nothing
                     gets dropped" (§3 preamble) — ChArUco detect + reset stay
                     reachable as secondary ghost actions next to `calibrate`. */}
-                <button type="button" className="ghost-button" onClick={() => void detectCharuco()}>
+                <button type="button" className="ghost-button" onClick={() => void capture.detectCharuco()}>
                   Detect ChArUco
                 </button>
-                <button type="button" className="ghost-button" onClick={clearCalib}>
+                <button type="button" className="ghost-button" onClick={capture.clearCalibration}>
                   Clear calibration
                 </button>
                 {calibMsg && <span className="camera-pane-tip">{calibMsg}</span>}
@@ -340,24 +262,27 @@ function CameraPane() {
 // ── screen shell ─────────────────────────────────────────────────────────────
 
 export interface PracticeScreenProps {
-  /** TopBar (spec §5/T2) — parallel task; optional so this mounts standalone. */
+  /** The shared capture host (owned by AppShell) — one video element + one
+   *  CaptureHandles across the whole app, so capture survives screen swaps. */
+  capture: CaptureHost;
+  /** TopBar (spec §5/T2) — optional so this mounts standalone in tests. */
   topBar?: ReactNode;
-  /** HintBar (spec §5/T2) — parallel task; optional so this mounts standalone. */
+  /** HintBar (spec §5/T2) — optional so this mounts standalone in tests. */
   hintBar?: ReactNode;
-  /** TelemetryFooter (spec §5/T2) — parallel task; optional so this mounts standalone. */
+  /** TelemetryFooter (spec §5/T2) — optional so this mounts standalone in tests. */
   footer?: ReactNode;
-  /** ZoomPane (spec §6/T4) — parallel task; falls back to a mount-point
-   *  placeholder (testid `zoom-pane`) so this mounts standalone. */
+  /** ZoomPane (spec §6/T4) — falls back to a mount-point placeholder (testid
+   *  `zoom-pane`) so this mounts standalone in tests. */
   zoomPane?: ReactNode;
 }
 
-export function PracticeScreen({ topBar, hintBar, footer, zoomPane }: PracticeScreenProps) {
+export function PracticeScreen({ capture, topBar, hintBar, footer, zoomPane }: PracticeScreenProps) {
   return (
     <div className="practice-screen" data-testid="practice-screen">
       {topBar}
       <div className="practice-screen-grid">
         <div className="practice-main">
-          <CameraPane />
+          <CameraPane capture={capture} />
           <div className="zoom-pane-slot">
             {zoomPane ?? <div className="zoom-pane-placeholder" data-testid="zoom-pane" />}
           </div>

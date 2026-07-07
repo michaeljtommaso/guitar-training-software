@@ -3,21 +3,20 @@
 // scene video + the SAME ZoomPane component at preview size — reuse, not a
 // copy) and flips the primary button to a disabled "Capturing ✓" state.
 //
-// The <video> element stays mounted at a STABLE tree position regardless of
-// `running` — only its wrapping preview grid toggles the `hidden` attribute.
-// This matters: Wizard.start() reads `videoRef.current` to attach the stream,
-// and re-parenting the <video> node on the running/idle transition would tear
-// down the element startCapture just wired up (a fresh node has no
-// srcObject), breaking the live preview at the exact moment it should appear.
-import type { RefObject } from "react";
+// The <video> element is the capture host's SINGLETON node (see
+// shell/useCaptureHost.ts) — `VideoMount` physically appends the same element
+// here, so startCapture's stream/frame-pump wiring survives step changes and
+// the wizard→practice transition. The preview grid still only toggles the
+// `hidden` attribute with `running` so the element stays in the document.
 import { ZoomPane } from "../shell/ZoomPane";
+import { VideoMount } from "../shell/VideoMount";
 import type { AudioInputKind } from "../capture/devices";
 import type { CapturePhase } from "../capture/captureStore";
 import { isDirectInput } from "./wizardLogic";
 
 export interface WizardStep1Props {
-  videoRef: RefObject<HTMLVideoElement>;
-  videoEl: HTMLVideoElement | null;
+  /** The capture host's singleton video element (mounted via VideoMount). */
+  video: HTMLVideoElement;
   cameras: MediaDeviceInfo[];
   mics: MediaDeviceInfo[];
   cameraId: string;
@@ -32,8 +31,7 @@ export interface WizardStep1Props {
 }
 
 export function WizardStep1({
-  videoRef,
-  videoEl,
+  video,
   cameras,
   mics,
   cameraId,
@@ -110,13 +108,13 @@ export function WizardStep1({
 
       <div className="wizard-preview-grid" data-testid="wizard-preview" hidden={!running}>
         <div className="wizard-preview-pane" data-testid="wizard-preview-full">
-          <video ref={videoRef} muted playsInline autoPlay />
+          <VideoMount video={video} />
           <span className="wizard-preview-caption">full scene</span>
         </div>
         <div className="wizard-preview-pane wizard-preview-pane--zoom" data-testid="wizard-preview-zoom">
           {/* Uncalibrated at this point → ZoomPane's own schematic fallback renders;
               the "calibrate on the practice screen" hint lives in its fallback copy. */}
-          <ZoomPane video={running ? videoEl : null} variant="preview" />
+          <ZoomPane video={running ? video : null} variant="preview" />
         </div>
       </div>
       {running && (

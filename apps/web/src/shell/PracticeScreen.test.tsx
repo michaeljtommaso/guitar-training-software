@@ -34,7 +34,9 @@ import {
   voicingSpelling,
   deriveTargetCard,
   type TargetCardData,
+  type PracticeScreenProps,
 } from "./PracticeScreen";
+import { useCaptureHost } from "./useCaptureHost";
 import { startCapture } from "../capture/controller";
 import { useCaptureStore } from "../capture/captureStore";
 import { useExploreStore } from "../explore/exploreStore";
@@ -52,6 +54,14 @@ function fakeHandles(): CaptureHandles {
     tone: {} as CaptureHandles["tone"],
     measureLatency: vi.fn(async () => null),
   };
+}
+
+/** PracticeScreen requires the shared CaptureHost (owned by AppShell in the
+ *  real app) — this harness supplies a real one so the behavioral flows
+ *  (start/retry/calibrate) run through the actual host logic. */
+function Screen(props: Omit<PracticeScreenProps, "capture">) {
+  const capture = useCaptureHost();
+  return <PracticeScreen capture={capture} {...props} />;
 }
 
 function resetCaptureStore() {
@@ -138,7 +148,7 @@ describe("PracticeScreen — pure helpers", () => {
 
 describe("PracticeScreen — camera pane edge states (spec §9)", () => {
   it("capture not running (skipped wizard) shows the start-capture card with device selects + start button", () => {
-    render(<PracticeScreen />);
+    render(<Screen />);
     expect(screen.getByTestId("capture-start-card")).toBeInTheDocument();
     expect(screen.getByText("Camera")).toBeInTheDocument();
     expect(screen.getByText("Microphone")).toBeInTheDocument();
@@ -148,7 +158,7 @@ describe("PracticeScreen — camera pane edge states (spec §9)", () => {
 
   it("clicking start capture calls startCapture and transitions into the running camera view", async () => {
     vi.mocked(startCapture).mockResolvedValue(fakeHandles());
-    render(<PracticeScreen />);
+    render(<Screen />);
     fireEvent.click(screen.getByTestId("capture-start"));
 
     await waitFor(() => expect(screen.getByTestId("overlay-canvas-stub")).toBeInTheDocument());
@@ -159,7 +169,7 @@ describe("PracticeScreen — camera pane edge states (spec §9)", () => {
 
   it("device/permission error surfaces a token-styled error card with retry", () => {
     useCaptureStore.getState().setPhase("error", "Permission denied");
-    render(<PracticeScreen />);
+    render(<Screen />);
     expect(screen.getByTestId("capture-error-card")).toBeInTheDocument();
     expect(screen.getByText("Permission denied")).toBeInTheDocument();
     expect(screen.getByTestId("capture-retry")).toBeInTheDocument();
@@ -168,7 +178,7 @@ describe("PracticeScreen — camera pane edge states (spec §9)", () => {
   it("retry re-invokes startCapture", async () => {
     vi.mocked(startCapture).mockResolvedValue(fakeHandles());
     useCaptureStore.getState().setPhase("error", "Permission denied");
-    render(<PracticeScreen />);
+    render(<Screen />);
     fireEvent.click(screen.getByTestId("capture-retry"));
     await waitFor(() => expect(startCapture).toHaveBeenCalledTimes(1));
   });
@@ -180,7 +190,7 @@ describe("PracticeScreen — camera pane overlays while running (spec §5)", () 
   });
 
   it("toggling the calibrate ghost button enters tap mode and shows the tap hint", () => {
-    render(<PracticeScreen />);
+    render(<Screen />);
     fireEvent.click(screen.getByTestId("calibrate-button"));
     expect(screen.getByTestId("calibrate-tap-hint")).toHaveTextContent("nut · low E (6th) (0/4)");
     fireEvent.click(screen.getByTestId("calibrate-button"));
@@ -188,14 +198,14 @@ describe("PracticeScreen — camera pane overlays while running (spec §5)", () 
   });
 
   it("no active lesson/explore target → no target card, no string chips", () => {
-    render(<PracticeScreen />);
+    render(<Screen />);
     expect(screen.queryByTestId("target-card")).not.toBeInTheDocument();
     expect(screen.queryByTestId("string-chips")).not.toBeInTheDocument();
   });
 
   it("an active practice lesson renders the target card + per-string chips", () => {
     startLesson("open_chords_c_major");
-    render(<PracticeScreen />);
+    render(<Screen />);
     const card = screen.getByTestId("target-card");
     expect(card).toHaveTextContent("C");
     expect(card).toHaveTextContent("x 3 2 0 1 0");
@@ -207,7 +217,7 @@ describe("PracticeScreen — camera pane overlays while running (spec §5)", () 
   it("explore mode with a chord target renders the target card but NOT string chips", async () => {
     useExploreStore.getState().setMode("explore");
     await useExploreStore.getState().setChord("A", "minor");
-    render(<PracticeScreen />);
+    render(<Screen />);
     await waitFor(() => expect(screen.getByTestId("target-card")).toHaveTextContent("Am"));
     expect(screen.queryByTestId("string-chips")).not.toBeInTheDocument();
   });
@@ -215,19 +225,19 @@ describe("PracticeScreen — camera pane overlays while running (spec §5)", () 
 
 describe("PracticeScreen — grid slots (spec §5)", () => {
   it("renders a zoom-pane placeholder mount point when no zoomPane prop is given", () => {
-    render(<PracticeScreen />);
+    render(<Screen />);
     expect(screen.getByTestId("zoom-pane")).toBeInTheDocument();
   });
 
   it("renders a caller-provided zoomPane instead of the placeholder", () => {
-    render(<PracticeScreen zoomPane={<div data-testid="real-zoom-pane" />} />);
+    render(<Screen zoomPane={<div data-testid="real-zoom-pane" />} />);
     expect(screen.getByTestId("real-zoom-pane")).toBeInTheDocument();
     expect(screen.queryByTestId("zoom-pane")).not.toBeInTheDocument();
   });
 
   it("renders optional topBar/hintBar/footer slots when provided", () => {
     render(
-      <PracticeScreen
+      <Screen
         topBar={<div data-testid="fake-topbar" />}
         hintBar={<div data-testid="fake-hintbar" />}
         footer={<div data-testid="fake-footer" />}
@@ -239,12 +249,12 @@ describe("PracticeScreen — grid slots (spec §5)", () => {
   });
 
   it("mounts the CoachColumn as the persistent right-hand column", () => {
-    render(<PracticeScreen />);
+    render(<Screen />);
     expect(screen.getByTestId("coach-column")).toBeInTheDocument();
   });
 
   it("mounts standalone without any slot props (parallel tasks not required)", () => {
-    expect(() => render(<PracticeScreen />)).not.toThrow();
+    expect(() => render(<Screen />)).not.toThrow();
     expect(screen.getByTestId("practice-screen")).toBeInTheDocument();
   });
 });

@@ -7,34 +7,6 @@
   padding: 2rem;
 }
 
-.app-shell h1 {
-  margin: 0;
-}
-
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.setup-wizard {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-  max-width: 720px;
-}
-
-.setup-wizard h2 {
-  margin: 0;
-}
-
 .wizard-tip {
   margin: 0;
   color: var(--text-muted);
@@ -475,7 +447,6 @@
 }
 
 /* ---- WP-5 explore mode: practice/explore + chord/scale toggles ---- */
-.mode-toggle button.active,
 .explore-panel button.active {
   background: var(--surface-strong, var(--surface));
   border-color: var(--text);

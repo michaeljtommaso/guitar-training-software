@@ -5,7 +5,6 @@
 import { useRef, useState } from "react";
 import { useCaptureStore } from "../capture/captureStore";
 import { classifyAudioInput } from "../capture/devices";
-import { TONE_PRESETS } from "./presets";
 import { BUNDLED_CABINETS } from "./cabinets";
 import type { MonitorMode, ToneChainHandles, ToneParams } from "./toneChain";
 import { useToneStore } from "./toneStore";
@@ -29,7 +28,7 @@ const MONITOR_LABELS: Record<MonitorMode, string> = {
 };
 
 export function TonePanel({ tone }: { tone: ToneChainHandles }) {
-  const { params, preset, set, applyPreset } = useToneStore();
+  const { params, set } = useToneStore();
   const { mics, micId } = useCaptureStore();
   const [irName, setIrName] = useState("");
 
@@ -94,17 +93,8 @@ export function TonePanel({ tone }: { tone: ToneChainHandles }) {
             <option key={m} value={m}>{MONITOR_LABELS[m]}</option>
           ))}
         </select>
-        <label className="audio-label" htmlFor="tone-preset">Preset</label>
-        <select
-          id="tone-preset"
-          value={preset ?? ""}
-          onChange={(e) => e.target.value && applyPreset(e.target.value)}
-        >
-          <option value="">Custom</option>
-          {Object.keys(TONE_PRESETS).map((name) => (
-            <option key={name} value={name}>{name}</option>
-          ))}
-        </select>
+        {/* Preset selection lives in the TopBar (v2-ui spec §3) — the panel
+            keeps monitor/knobs/cab/latency only. */}
       </div>
       {feedbackRisk && (
         <p className="wizard-error">Mic input + speakers can feedback — use headphones.</p>
