@@ -6,7 +6,7 @@
 import type { StatusPalette } from "./statusPalette";
 import { confColor } from "./statusPalette";
 import type { VisionHot } from "../perception/perceptionStore";
-import { applyHomography, invertHomography } from "../perception/vision/homography";
+import { applyHomography, invertHomography, type Homography } from "../perception/vision/homography";
 import { MAX_FRET, fretLineX, stringY } from "../perception/vision/fretboard";
 import { FINGERTIP_LANDMARKS } from "../perception/vision/fingerMapping";
 import { perStringStatus } from "../perception/vision/demoTarget";
@@ -25,6 +25,32 @@ export const overlayDebug = {
   flashActive: false,
   flashColor: null as StatusKey | null,
 };
+
+// ── ZoomPane frame hook (Task T4) ────────────────────────────────────────────
+// The ZoomPane (shell/ZoomPane.tsx) draws a live cropped fretboard on its own
+// canvas each frame WITHOUT a second rVFC loop: it registers a renderer here on
+// mount and clears it on unmount, and the existing overlay frame callback calls
+// it additively (at the end of drawVision). Everything it needs is already
+// computed for the main overlay — dots are REUSED, not recomputed (spec §6.4).
+export interface ZoomFrameInput {
+  /** Current image→fretboard homography (null = uncalibrated → pane falls back). */
+  H: Homography | null;
+  /** Target dots already projected for the main overlay (overlay-canvas pixels). */
+  dots: TargetDot[];
+  palette: StatusPalette;
+  /** Decayed calibration confidence (spec §6.6 crossfade); 0 when uncalibrated. */
+  decayedConf: number;
+  now: number;
+  /** Overlay canvas dimensions the dots were scaled by (for the video-pixel remap). */
+  w: number;
+  h: number;
+}
+type ZoomRenderer = (input: ZoomFrameInput) => void;
+let zoomRenderer: ZoomRenderer | null = null;
+/** Register/replace (fn) or clear (null) the ZoomPane's per-frame renderer. */
+export function setZoomRenderer(fn: ZoomRenderer | null): void {
+  zoomRenderer = fn;
+}
 
 // Flash is triggered on the diagnosis (event) clock but SHOWN on the display
 // clock — so, exactly like the onset blip, we latch a fixed window whenever the
@@ -68,9 +94,11 @@ export function drawVision(
   // Explore-mode target dots: ONLY when no lesson is active and an explore
   // target is set. Same calibration gate as the lesson dots (ADR-007: no
   // calibration → no dots). Filled, neutral, label-carrying; never flashes.
+  let exDots: TargetDot[] = []; // hoisted so the ZoomPane hook can REUSE them (§6.4)
   if (!fusionHot.active && exploreHot.target && vh.H) {
     try {
-      drawExploreDots(ctx, exploreDots(exploreHot.target, vh.H, w, h), palette);
+      exDots = exploreDots(exploreHot.target, vh.H, w, h);
+      drawExploreDots(ctx, exDots, palette);
     } catch {
       // singular homography mid-frame — skip explore dots, keep the overlay
     }
@@ -85,6 +113,21 @@ export function drawVision(
 
   // Flash + nudge ride ABOVE the calibration dimming (own alpha).
   drawFlash(ctx, w, h, palette, now);
+
+  // ZoomPane hook (T4): hand the pane the dots ALREADY computed this frame (never
+  // recompute geometry, §6.4) + the decayed calibration confidence for the
+  // crossfade. No pane mounted → this is a single null check.
+  if (zoomRenderer) {
+    zoomRenderer({
+      H: vh.H,
+      dots: plan.dots.length ? plan.dots : exDots,
+      palette,
+      decayedConf: hasCalib ? decayed : 0,
+      now,
+      w,
+      h,
+    });
+  }
 }
 
 /** Confidence-gated wrong/right flash: a ~250ms edge glow, latched on the
