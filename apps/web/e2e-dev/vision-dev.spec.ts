@@ -11,13 +11,36 @@ test("vision worker initializes in vite dev (BUG-002)", async ({ page }) => {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
 
-  await page.goto("/");
-  await page.getByRole("button", { name: "Start capture" }).click();
-
-  // Worker created and __visionDebug installed.
-  await page.waitForFunction(() => window.__visionDebug !== undefined, { timeout: 30_000 });
-  // createHandLandmarker resolves visionReady (or rejects → status "error: …").
-  await page.evaluate(() => window.__visionDebug!.ready);
+  // Vite dev COLD-START quirk (the reason main's CI check went red): with an
+  // empty .vite dep cache — every fresh CI runner — the first page load (and the
+  // worker deps requested when capture starts) trigger dependency optimization,
+  // and Vite issues a FULL PAGE RELOAD mid-flight. That reload destroys the
+  // test's execution context AND resets the wizard, so the whole boot flow must
+  // be retried, not just the wait. Deterministically reproduced locally via
+  // `rm -rf node_modules/.vite`. At most a couple of reloads ever occur (dep
+  // discovery is staggered across entry + worker), hence 3 attempts.
+  const bootAndAwaitVisionReady = async () => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Start capture" }).click();
+    // Worker created and __visionDebug installed.
+    await page.waitForFunction(() => window.__visionDebug !== undefined, { timeout: 30_000 });
+    // createHandLandmarker resolves visionReady (or rejects → status "error: …").
+    await page.evaluate(() => window.__visionDebug!.ready);
+  };
+  const RELOAD_ERR = /Execution context was destroyed|Element is not attached|Navigation interrupted/i;
+  let bootErr: unknown;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await bootAndAwaitVisionReady();
+      bootErr = undefined;
+      break;
+    } catch (err) {
+      if (!RELOAD_ERR.test(String(err))) throw err;
+      bootErr = err; // vite dev dep-optimization reload — go again on a warmer cache
+      console.log(`[vision-dev] vite full-reload during boot (attempt ${attempt}) — retrying`);
+    }
+  }
+  if (bootErr) throw bootErr;
 
   const status = await page.evaluate(() => window.__visionDebug!.status);
   console.log(`[vision-dev] status after ready: ${status}`);
