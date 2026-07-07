@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { analyzeOnsets } from "./onset";
-import { harmonicNote, whiteNoise, placeAt, mix, resetNoiseSeed } from "./synth";
+import { harmonicNote, whiteNoise, placeAt, mix, resetNoiseSeed, silence } from "./synth";
 
 const SR = 48000;
 
@@ -27,6 +27,22 @@ describe("spectral-flux onset detector (synthetic)", () => {
     const err = Math.min(...onsets.map((o) => Math.abs(o.t - 500)));
     expect(err).toBeLessThan(40);
     console.log(`[onset][synthetic] burst-in-noise onset timing error = ${err.toFixed(1)} ms`);
+  });
+
+  // BUG-001 req 1: the noise-floor of an idle mic must not fire phantom onsets.
+  // Silence and sub-floor near-silence both gate to zero onsets.
+  it("emits NO onsets on pure silence", () => {
+    expect(analyzeOnsets(silence(1.0, SR), SR)).toHaveLength(0);
+  });
+
+  it("suppresses an otherwise-detectable onset whose level is below the silence floor", () => {
+    // The onset threshold is purely RELATIVE (median flux * mult + tiny delta),
+    // so even a very quiet transient rising out of silence clears it — that is
+    // the phantom-onset bug. An RMS gate on the silence floor suppresses it.
+    const pluck = (amp: number) =>
+      placeAt(harmonicNote(196, 0.4, SR, { decayTau: 0.2, amp }), 0.5, 1.2, SR);
+    expect(analyzeOnsets(pluck(0.8), SR).length).toBeGreaterThanOrEqual(1); // loud control fires
+    expect(analyzeOnsets(pluck(0.002), SR)).toHaveLength(0); // sub-floor → gated to zero
   });
 
   it("finds three onsets for three spaced plucks", () => {

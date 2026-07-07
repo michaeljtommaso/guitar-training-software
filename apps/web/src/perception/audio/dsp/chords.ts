@@ -49,10 +49,33 @@ export interface ChordResult {
   posterior: ChordPosterior[];
 }
 
+// ── Shared perception gate thresholds (BUG-001) ─────────────────────────────
+// These are the SINGLE SOURCE OF TRUTH for the loudness/noise gates. The onset
+// detector and the YIN tuner import SILENCE_RMS from here so the whole audio
+// leg shares ONE silence floor (no duplicated magic numbers). All values are
+// deliberately conservative for the built-in-mic Phase-0 run and are expected
+// to be re-tuned against the real interface noise floor in Phase 1 (§14) — keep
+// them here so that tuning is a one-line change.
+
+/**
+ * Frame RMS (linear amplitude) below this counts as silence. 0.005 sits above
+ * a quiet built-in-mic noise floor but well below any real played note. Shared
+ * by chord / onset / tuner gates.
+ */
+export const SILENCE_RMS = 0.005;
+
+/**
+ * Spectral flatness (Wiener entropy, [0,1]) above this — on a non-silent frame —
+ * counts as broadband `noise`, not a tonal chord. Tonal guitar content is peaky
+ * (flatness ≪ 0.2); broadband mic hiss/room noise is flat (→ 1). 0.4 separates
+ * the two with margin.
+ */
+export const NOISE_FLATNESS = 0.4;
+
 export interface ChordConfig {
-  /** RMS below this → `silence`. */
+  /** RMS below this → `silence`. Defaults to the shared {@link SILENCE_RMS}. */
   silenceRms?: number;
-  /** Spectral flatness above this (and not silent) → `noise`. */
+  /** Spectral flatness above this (and not silent) → `noise`. Defaults to {@link NOISE_FLATNESS}. */
   noiseFlatness?: number;
   /** Softmax temperature over cosine similarities (lower = peakier posterior). */
   temperature?: number;
@@ -75,13 +98,22 @@ export function classifyChroma(
   flatness: number,
   cfg: ChordConfig = {},
 ): ChordResult {
-  const silenceRms = cfg.silenceRms ?? 0.005;
-  const noiseFlatness = cfg.noiseFlatness ?? 0.4;
+  const silenceRms = cfg.silenceRms ?? SILENCE_RMS;
+  const noiseFlatness = cfg.noiseFlatness ?? NOISE_FLATNESS;
   const temperature = cfg.temperature ?? 0.1;
 
-  // Similarities are needed for the posterior regardless of the gate outcome.
+  // Gate FIRST (BUG-001 req 3): a silence/noise frame must NOT be presented as a
+  // confident chord spread, so we omit the posterior entirely rather than
+  // returning the softmax over pure noise (which the debug panel would render as
+  // dancing chord bars). Downstream reads `posterior ?? []`.
+  if (rms < silenceRms) return { label: "silence", conf: 1, posterior: [] };
+
+  // Similarities are needed for the posterior of a tonal frame.
   const sims = TEMPLATES.map(([label, tpl]) => ({ label, sim: dot(chroma, tpl) }));
   const maxSim = Math.max(...sims.map((s) => s.sim));
+
+  if (flatness > noiseFlatness) return { label: "noise", conf: 1 - maxSim, posterior: [] };
+
   let expSum = 0;
   const exps = sims.map((s) => {
     const e = Math.exp((s.sim - maxSim) / temperature);
@@ -91,9 +123,6 @@ export function classifyChroma(
   const posterior: ChordPosterior[] = sims
     .map((s, i) => ({ label: s.label, p: exps[i] / expSum }))
     .sort((a, b) => b.p - a.p);
-
-  if (rms < silenceRms) return { label: "silence", conf: 1, posterior };
-  if (flatness > noiseFlatness) return { label: "noise", conf: 1 - maxSim, posterior };
 
   return { label: posterior[0].label, conf: posterior[0].p, posterior };
 }
