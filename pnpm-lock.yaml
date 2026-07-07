@@ -92,6 +92,9 @@ importers:
       '@techstark/opencv-js':
         specifier: 5.0.0-release.1
         version: 5.0.0-release.1
+      '@tombatossals/chords-db':
+        specifier: ^0.5.1
+        version: 0.5.1
       dexie:
         specifier: ^4.4.4
         version: 4.4.4
@@ -750,6 +753,9 @@ packages:
         optional: true
       '@types/react-dom':
         optional: true
+
+  '@tombatossals/chords-db@0.5.1':
+    resolution: {integrity: sha512-5kLLtwOxmnFfpVTYfYiw1Q22NJ8msb5JeyDLre09XnUFx2l6KSeqPtJQPsVPOak4BUenlsv/j2H65KBVhB6qgQ==}
 
   '@tonejs/midi@2.0.28':
     resolution: {integrity: sha512-RII6YpInPsOZ5t3Si/20QKpNqB1lZ2OCFJSOzJxz38YdY/3zqDr3uaml4JuCWkdixuPqP1/TBnXzhQ39csyoVg==}
@@ -2423,6 +2429,8 @@ snapshots:
     optionalDependencies:
       '@types/react': 18.3.31
       '@types/react-dom': 18.3.7(@types/react@18.3.31)
+
+  '@tombatossals/chords-db@0.5.1': {}
 
   '@tonejs/midi@2.0.28':
     dependencies:
