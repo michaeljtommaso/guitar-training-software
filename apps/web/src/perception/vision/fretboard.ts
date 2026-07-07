@@ -22,11 +22,17 @@
 export const NUM_STRINGS = 6;
 export const MAX_FRET = 5; // MVP: nut → fret 5 (open-chord window)
 
+/** Equal-tempered fret-line position normalized to an arbitrary window
+ *  [start, end] (0 at start's line, 1 at end's). Generalizes fretLineX. */
+export function fretX(n: number, start: number, end: number): number {
+  const pos = (f: number) => 1 - Math.pow(2, -f / 12);
+  return (pos(n) - pos(start)) / (pos(end) - pos(start));
+}
+
 /** Normalized x of fret LINE n (n = 0 is the nut). Real equal-tempered spacing,
  *  renormalized so fret line MAX_FRET === 1. */
 export function fretLineX(n: number): number {
-  const denom = 1 - Math.pow(2, -MAX_FRET / 12);
-  return (1 - Math.pow(2, -n / 12)) / denom;
+  return fretX(n, 0, MAX_FRET);
 }
 
 /** Normalized y of string `s` (1 = high e … 6 = low E). */
