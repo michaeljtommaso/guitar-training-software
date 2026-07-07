@@ -368,3 +368,21 @@ preset after a living artist needs care. Build from freely-licensed captures/IRs
 **Status:** logged as product direction; brainstorm shape before building. Related:
 finish TP-3 (pedalboard) / TP-4 (NAM) tone lanes per the tone work-packages plan.
 
+---
+
+## RESULT-004 — Batch-fix verified on real hardware (2026-07-07, second session)
+
+Owner re-tested after the `fix/phase0-batch` merge (built-in mic, real webcam):
+
+- **BUG-002 vision: CONFIRMED FIXED on real hardware.** Finger tracking works
+  "perfectly" — the headline UX moment is live for the first time on the owner's
+  actual setup.
+- **BUG-001 silence gate: big improvement, not yet perfect.** Chord detection
+  "pretty accurate"; the app still occasionally struggles to separate silence
+  from playing. Expected — `SILENCE_RMS = 0.005` / `NOISE_FLATNESS = 0.4`
+  (`dsp/chords.ts`) are Phase-0 guesses; the planned Phase-1 tuning pass against
+  the real mic (and later the interface) noise floor is the remaining lever.
+  Both are single exported constants; tuning is a one-line change.
+
+Merged to main at 6591a2e. Next: Phase C (explore mode, conversational coach,
+signature tones) + owner's UI-system import.
