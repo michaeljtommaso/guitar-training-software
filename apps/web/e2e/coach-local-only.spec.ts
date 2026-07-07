@@ -5,6 +5,7 @@
 // assert a streamed structured reply arrives over WebSocket, labelled as the
 // fake provider. Scenario 2 self-skips if the backend can't be launched.
 import { spawn, type ChildProcess } from "node:child_process";
+import { existsSync } from "node:fs";
 import http from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,7 +13,11 @@ import { expect, test } from "@playwright/test";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const BACKEND_DIR = join(REPO_ROOT, "services", "backend");
-const VENV_PYTHON = join(BACKEND_DIR, ".venv", "Scripts", "python.exe");
+const VENV_PYTHON = join(
+  BACKEND_DIR,
+  ".venv",
+  ...(process.platform === "win32" ? ["Scripts", "python.exe"] : ["bin", "python"]),
+);
 
 test("Local-only mode: answers from templates with the backend down, zero network", async ({
   page,
@@ -69,6 +74,8 @@ test.describe("fake-provider coaching over WebSocket (best-effort)", () => {
   let up = false;
 
   test.beforeAll(async () => {
+    // No venv (e.g. CI runner without a backend install) → best-effort skip.
+    if (!existsSync(VENV_PYTHON)) return;
     try {
       proc = spawn(
         VENV_PYTHON,
@@ -83,6 +90,11 @@ test.describe("fake-provider coaching over WebSocket (best-effort)", () => {
           stdio: "ignore",
         },
       );
+      // spawn() reports a missing/broken binary as an async "error" event, not
+      // a throw — without a listener it crashes the test instead of skipping.
+      proc.on("error", () => {
+        up = false;
+      });
       up = await waitForHealth(20000);
     } catch {
       up = false;
