@@ -18,7 +18,20 @@ export type HandDelegate = "GPU" | "CPU";
 /** Create a HandLandmarker in VIDEO running mode. Falls back to the CPU delegate
  *  if GPU creation fails (common in workers without a GPU context). */
 export async function createHandLandmarker(delegate: HandDelegate): Promise<HandLandmarker> {
-  const fileset = await FilesetResolver.forVisionTasks(WASM_PATH);
+  // BUG-002: pick the wasm-loader variant per environment.
+  //  - Production/preview build: the bundled worker is a real CLASSIC worker, so
+  //    MediaPipe loads the UMD glue (`vision_wasm_internal.js`) via importScripts,
+  //    which evals it in global scope and sets `self.ModuleFactory`. useModule=false.
+  //  - `vite dev`: the loader's importScripts call throws, so MediaPipe falls back
+  //    to a dynamic `import()` of the glue. The UMD glue's `var ModuleFactory`
+  //    stays module-scoped under `import()` → "ModuleFactory not set." The ES
+  //    module glue (`vision_wasm_module_internal.js`) instead does
+  //    `globalThis.ModuleFactory = …; export default …`, which works under
+  //    `import()`. useModule=true selects it. (A dev-only Vite middleware serves
+  //    that file raw so Vite doesn't reject the /public import — see vite.config.ts.)
+  // `import.meta.env.DEV` is statically inlined by Vite, so the production build
+  // calls forVisionTasks(WASM_PATH, false) — byte-for-byte the prior behavior.
+  const fileset = await FilesetResolver.forVisionTasks(WASM_PATH, import.meta.env.DEV);
   const opts = (d: HandDelegate) => ({
     baseOptions: { modelAssetPath: MODEL_PATH, delegate: d },
     runningMode: "VIDEO" as const,

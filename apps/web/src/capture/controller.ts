@@ -30,9 +30,12 @@ import { audioGlassToWorkerHistogram } from "../observability/latencyHistogram";
 import { solveHomography, type Point } from "../perception/vision/homography";
 import type { HandDetection } from "../perception/vision/handLandmarker";
 import captureProcessorUrl from "../perception/audio/capture-processor.ts?worker&url";
-// `?worker` (not the `new URL(..., import.meta.url)` pattern) so Vite BUNDLES the
-// worker's ESM imports into a self-contained CLASSIC script in dev too — the raw
-// `new URL` classic path is served unbundled in dev and dies on `import` (BUG-002).
+// Bundle the vision worker as a self-contained CLASSIC worker in BOTH dev and
+// build. `new URL(...)` + { type: "classic" } makes Vite dev serve the worker's
+// .ts source raw, so its ESM imports throw "Cannot use import statement outside
+// a module". The `?worker` suffix makes Vite compile+bundle the worker (default
+// iife/classic format) up front, which is exactly what the production build
+// already does — so dev and build now share one code path.
 import VisionWorker from "../perception/vision/visionWorker.ts?worker";
 import { buildToneChain, type ToneChainHandles } from "../tone/toneChain";
 import { useToneStore } from "../tone/toneStore";
@@ -191,22 +194,13 @@ export async function startCapture(
   };
 
   // --- vision worker topology ----------------------------------------------
-  // CLASSIC worker, imported via `?worker` so Vite bundles it. MediaPipe's
-  // HandLandmarker loads its wasm runtime (Emscripten glue, NOT an ES module) via
-  // importScripts, which only exists in a classic worker — a module worker fails
-  // to fetch/`import()` the wasm loader. But the classic `new URL(...,
-  // import.meta.url)` pattern is served UNBUNDLED in `vite dev`, so its ESM
-  // `import`s throw "Cannot use import statement outside a module" and the worker
-  // dies silently (BUG-002). The `?worker` import fixes that: Vite bundles the
-  // worker into a self-contained classic script in BOTH dev and build.
+  // CLASSIC worker (not module): MediaPipe's HandLandmarker loads its wasm
+  // runtime via importScripts, which only exists in classic workers — in a
+  // module worker it fails with "ModuleFactory not set." The `?worker` import
+  // (see top of file) has Vite bundle the worker's ESM imports into a classic
+  // script for BOTH dev and build, so the worker no longer dies at parse time
+  // in `vite dev`.
   const visionWorker = new VisionWorker();
-  // Never let a worker load/runtime failure be silent again (BUG-002 hid because
-  // there was no error handler): surface it to the console and the debug hook.
-  visionWorker.onerror = (event) => {
-    const detail = event.message ?? String(event);
-    console.error(`[vision] worker failed to load or crashed: ${detail}`);
-    if (window.__visionDebug) window.__visionDebug.status = `worker-error: ${detail}`;
-  };
   const offscreen = new OffscreenCanvas(1280, 720);
   visionWorker.postMessage({ type: "init", canvas: offscreen }, [offscreen]);
 
@@ -240,6 +234,17 @@ export async function startCapture(
       fusionIngest(msg.events, "vision", { wallMs: msg.wallMs });
     }
     else if (msg.type === "detectResult") pendingDetections.get(msg.id)?.(msg.hands);
+  };
+
+  // Defense-in-depth: a worker that dies at parse/load (BUG-002 hid for exactly
+  // this reason — the classic worker threw "Cannot use import statement outside
+  // a module" silently in dev) surfaces here instead of leaving Vision frames
+  // stuck at 0 with no clue. Unblock any awaiters so the app doesn't hang.
+  visionWorker.onerror = (e: ErrorEvent) => {
+    const detail = e.message || "worker load/runtime error";
+    console.error(`[vision] worker error: ${detail}`);
+    if (window.__visionDebug) window.__visionDebug.status = `error: ${detail}`;
+    readyResolve();
   };
 
   // Reduce a frame's §9.1 VisionEvents into the overlay hot state. Calibration
