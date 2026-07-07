@@ -151,3 +151,53 @@
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* Coach sub-tabs (field-testing debug logger, coach | log issue) — a small
+   pill switch above the ask box. Tight/quiet so it never crowds the coach
+   chat (spec: "must not crowd the coach"), tokens only. */
+.coach-column-subtabs {
+  display: flex;
+  gap: var(--sp-1);
+}
+
+.coach-column-subtabs button {
+  padding: 3px var(--sp-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.coach-column-subtabs button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.coach-column-log-confirm {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.coach-column-log-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.coach-column-log-quiet {
+  align-self: flex-start;
+  padding: 3px var(--sp-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+}
