@@ -28,6 +28,14 @@ export function resolveTier(tier: FeedbackTier, micLabel: string): "light" | "fu
   return classifyAudioInput(micLabel) === "interface" ? "full" : "light";
 }
 
+/** Monotonic setChord request id. chordVoicings() is async (lazy chords-db
+ *  chunk): a request that resolves after a newer pick — or after leaving
+ *  explore mode — must not write exploreHot/store state, or a late load would
+ *  paint explore dots over the practice view (spec §4: practice and explore
+ *  targets are never live simultaneously). setScale/setVoicing are fully
+ *  synchronous and need no guard. */
+let chordRequestId = 0;
+
 interface ExploreState {
   mode: "practice" | "explore";
   target: ExploreTarget;
@@ -51,12 +59,17 @@ export const useExploreStore = create<ExploreState>()((set, get) => ({
     set({ mode, ...(mode === "practice" ? { target: null } : null) });
   },
   async setChord(root, suffix) {
+    const req = ++chordRequestId;
+    // Post-await guard: still the latest request AND still in explore mode.
+    const fresh = () => req === chordRequestId && get().mode === "explore";
     try {
       const voicings = await chordVoicings(root, suffix);
+      if (!fresh()) return;
       const target: ExploreTarget = { kind: "chord", root, suffix, voicings, active: 0 };
       exploreHot.target = target;
       set({ target, loadError: null });
     } catch (err) {
+      if (!fresh()) return;
       set({ loadError: `chord library unavailable — ${String(err)}` });
     }
   },
