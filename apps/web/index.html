@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Guitar tutor</title>
+    <script>
+      // No-flash theme stamp (spec §1.4): dark by default, unless the user
+      // saved a light preference. Kept in sync with src/theme/theme.ts.
+      (function () {
+        try {
+          if (localStorage.getItem("gt-theme") !== "light") {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

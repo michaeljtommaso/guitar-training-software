@@ -1,17 +1,23 @@
 /*
- * Two-layer design tokens.
+ * Design tokens — v2 UI (spec 2026-07-07-v2-ui-design §4).
  *
- * Layer 1 (--raw-*): the raw palette. Never referenced directly from
- * component styles.
+ * Layer 1 (--raw-*): the perception status palette. Never referenced directly
+ * from component styles; kept as one level of var() indirection so the canvas
+ * mirror in ./statusColors.ts can be diffed against it (statusColors.test.ts).
  *
- * Layer 2 (semantic tokens, e.g. --bg / --text / --correct): what
- * components actually use. [data-theme="dark"] fully re-declares layer 2
- * against the same raw palette, so dark mode is one attribute flip on
- * <html> with zero per-component theme branches.
+ * Layer 2 (semantic tokens, e.g. --bg / --text / --accent): what components
+ * actually use. :root holds the LIGHT theme (derived); [data-theme="dark"]
+ * fully re-declares the color tokens against the PROTOTYPE dark palette, so a
+ * theme flip is one attribute on <html> with zero per-component branches.
+ *
+ * Structural tokens (radii / spacing / fonts / --pane-gap) are theme-invariant
+ * and declared once on :root.
+ *
+ * Hard rule (spec §4/§11): no new hardcoded colors outside this file.
  */
 
 :root {
-  /* ---- layer 1: raw palette ---- */
+  /* ---- layer 1: raw perception palette (pinned to statusColors.ts) ---- */
   --raw-white: #ffffff;
   --raw-gray-50: #f8fafc;
   --raw-gray-100: #f1f5f9;
@@ -30,29 +36,66 @@
   --raw-slate-300: #cbd5e1;
   --raw-slate-400: #94a3b8;
 
-  /* ---- layer 2: semantic tokens (light, default) ---- */
-  --bg: var(--raw-white);
-  --surface: var(--raw-gray-50);
-  --text: var(--raw-gray-900);
-  --text-muted: var(--raw-gray-600);
-  --border: var(--raw-gray-200);
-
+  /* ---- layer 2: perception status triad (canvas overlay) — LIGHT ---- */
+  /* Also serves as the v2 chrome status set; --warn doubles as the amber
+     chrome warn token (spec §4 status colors). */
   --correct: var(--raw-green-500);
   --warn: var(--raw-amber-500);
   --error: var(--raw-red-500);
   --uncertain: var(--raw-slate-400);
+
+  /* ---- layer 2: v2 semantic surface / text / accent — LIGHT (derived) ---- */
+  --bg: #faf6f0;
+  --surface: #ffffff;
+  --surface-raised: #f3ece2;
+  --border: #e2d7c8;
+  --text: #2a241d;
+  --text-muted: #7d7265;
+  --accent: #c07f2e;
+  --accent-ink: #fdf6ec;
+
+  /* v2 chrome status (spec §4) — darkened one step for light-on-surface AA */
+  --ok: #3f8f52;
+  --danger: #c0503f;
+  --info: #5b7183;
+
+  /* ---- structural tokens (theme-invariant) ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 40px;
+
+  --font-ui: "Hanken Grotesk", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --pane-gap: 16px;
 }
 
 [data-theme="dark"] {
-  /* ---- layer 2: semantic tokens (dark) ---- */
-  --bg: var(--raw-gray-900);
-  --surface: var(--raw-gray-800);
-  --text: var(--raw-gray-50);
-  --text-muted: var(--raw-gray-400);
-  --border: var(--raw-gray-600);
-
+  /* ---- perception status triad (canvas overlay) — DARK ---- */
   --correct: var(--raw-green-400);
   --warn: var(--raw-amber-400);
   --error: var(--raw-red-400);
   --uncertain: var(--raw-slate-300);
+
+  /* ---- v2 semantic surface / text / accent — DARK (prototype) ---- */
+  --bg: #171310;
+  --surface: #201a16;
+  --surface-raised: #282019;
+  --border: #352b22;
+  --text: #efe5d8;
+  --text-muted: #8d8175;
+  --accent: #e6a95c;
+  --accent-ink: #241a10;
+
+  /* v2 chrome status (spec §4) — prototype values */
+  --ok: #86c78f;
+  --danger: #d9776b;
+  --info: #9db4c9;
 }
