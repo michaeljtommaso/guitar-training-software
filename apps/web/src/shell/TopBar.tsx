@@ -150,10 +150,15 @@ export function TopBar({ theme, onToggleTheme, consoleOpen, onToggleConsole }: T
           </select>
         </label>
 
-        <span
+        {/* §3: post-wizard input/capture changes live in the drawer's Inputs
+            section — clicking the badge is the way there (T6). */}
+        <button
+          type="button"
           className={`topbar-input-badge${kind === "interface" ? " topbar-input-badge--interface" : ""}`}
           data-testid="topbar-input-badge"
           title={micLabel || "no input selected"}
+          aria-label="Input settings (opens console)"
+          onClick={onToggleConsole}
         >
           {inputTag} · {micLabel || "no input selected"}
           {feedbackRisk && (
@@ -164,7 +169,7 @@ export function TopBar({ theme, onToggleTheme, consoleOpen, onToggleConsole }: T
               aria-label="Feedback risk: mic input with monitoring on"
             />
           )}
-        </span>
+        </button>
 
         <span className="topbar-clock" data-testid="topbar-clock">
           {formatClock(now)}

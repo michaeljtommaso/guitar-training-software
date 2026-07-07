@@ -100,6 +100,9 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
+  /* It's a <button> since T6 (§3: badge click → drawer Inputs section). */
+  background: transparent;
+  cursor: pointer;
 }
 
 .topbar-input-badge--interface {
