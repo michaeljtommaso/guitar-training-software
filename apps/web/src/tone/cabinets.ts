@@ -6,7 +6,7 @@
 // CC0/CC-BY assets only). UI labels are descriptive, never trademarked amp/brand
 // names — the factual capture source lives in the manifest, not the UI.
 export interface Cabinet {
-  /** Stable key (also the cab-picker <option> value and the .wav basename). */
+  /** Stable key (also the cab-picker <option> value). */
   id: string;
   /** UI-facing descriptive name. No brand/trademark names. */
   label: string;

@@ -178,6 +178,10 @@ export function SetupWizard() {
             value={micId}
             onChange={(e) => {
               select({ micId: e.target.value });
+              // A measurement belongs to the device it was taken on — clear it
+              // so stale ms never gets advice-tiered against the new mic's kind.
+              setLatencyMs(null);
+              setLatencyMsg("");
               if (running) void start(cameraId, e.target.value);
             }}
           >

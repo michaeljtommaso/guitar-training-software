@@ -2,7 +2,7 @@
 // in useToneStore and the controller's subscription pushes it into the running
 // chain. This panel never reads post-tone audio (ADR-013) — only the latency
 // readout, which is a clock property.
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useCaptureStore } from "../capture/captureStore";
 import { classifyAudioInput } from "../capture/devices";
 import { TONE_PRESETS } from "./presets";
@@ -48,19 +48,34 @@ export function TonePanel({ tone }: { tone: ToneChainHandles }) {
     setCab("custom");
   };
 
+  // Monotonic token so rapid cab switches can't apply out of order (the fetch
+  // that RESOLVES last must not win over the cab SELECTED last) and a failed
+  // load can't clobber state.
+  const cabReqRef = useRef(0);
   const selectCab = async (value: string) => {
-    if (value === "synthetic") {
-      await tone.resetIR();
-      setIrName("");
-      setCab("synthetic");
-      return;
-    }
-    const bundled = BUNDLED_CABINETS.find((c) => c.id === value);
-    if (bundled) {
+    const req = ++cabReqRef.current;
+    try {
+      if (value === "synthetic") {
+        await tone.resetIR();
+        if (req !== cabReqRef.current) return; // superseded by a newer selection
+        setIrName("");
+        setCab("synthetic");
+        return;
+      }
+      const bundled = BUNDLED_CABINETS.find((c) => c.id === value);
+      if (!bundled) return;
       const res = await fetch(bundled.file);
-      await tone.loadIR(await res.arrayBuffer());
+      if (!res.ok) throw new Error(`fetch ${bundled.file}: HTTP ${res.status}`);
+      const buf = await res.arrayBuffer();
+      if (req !== cabReqRef.current) return; // superseded — don't touch the convolver
+      await tone.loadIR(buf);
+      if (req !== cabReqRef.current) return; // superseded mid-decode — leave UI to the winner
       setIrName(bundled.label);
       setCab(bundled.id);
+    } catch (err) {
+      // Convolver keeps the previous IR and the controlled <select> snaps back
+      // to `cab`, so the UI stays truthful; just don't swallow the evidence.
+      console.error(`[tone] cab load failed (${value}):`, err);
     }
   };
 
