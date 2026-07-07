@@ -30,6 +30,13 @@ import { audioGlassToWorkerHistogram } from "../observability/latencyHistogram";
 import { solveHomography, type Point } from "../perception/vision/homography";
 import type { HandDetection } from "../perception/vision/handLandmarker";
 import captureProcessorUrl from "../perception/audio/capture-processor.ts?worker&url";
+// Bundle the vision worker as a self-contained CLASSIC worker in BOTH dev and
+// build. `new URL(...)` + { type: "classic" } makes Vite dev serve the worker's
+// .ts source raw, so its ESM imports throw "Cannot use import statement outside
+// a module". The `?worker` suffix makes Vite compile+bundle the worker (default
+// iife/classic format) up front, which is exactly what the production build
+// already does — so dev and build now share one code path.
+import VisionWorker from "../perception/vision/visionWorker.ts?worker";
 import { buildToneChain, type ToneChainHandles } from "../tone/toneChain";
 import { useToneStore } from "../tone/toneStore";
 
@@ -189,12 +196,11 @@ export async function startCapture(
   // --- vision worker topology ----------------------------------------------
   // CLASSIC worker (not module): MediaPipe's HandLandmarker loads its wasm
   // runtime via importScripts, which only exists in classic workers — in a
-  // module worker it fails with "ModuleFactory not set." Vite still bundles the
-  // worker's ESM imports into a classic script at build time.
-  const visionWorker = new Worker(
-    new URL("../perception/vision/visionWorker.ts", import.meta.url),
-    { type: "classic" },
-  );
+  // module worker it fails with "ModuleFactory not set." The `?worker` import
+  // (see top of file) has Vite bundle the worker's ESM imports into a classic
+  // script for BOTH dev and build, so the worker no longer dies at parse time
+  // in `vite dev`.
+  const visionWorker = new VisionWorker();
   const offscreen = new OffscreenCanvas(1280, 720);
   visionWorker.postMessage({ type: "init", canvas: offscreen }, [offscreen]);
 
@@ -228,6 +234,17 @@ export async function startCapture(
       fusionIngest(msg.events, "vision", { wallMs: msg.wallMs });
     }
     else if (msg.type === "detectResult") pendingDetections.get(msg.id)?.(msg.hands);
+  };
+
+  // Defense-in-depth: a worker that dies at parse/load (BUG-002 hid for exactly
+  // this reason — the classic worker threw "Cannot use import statement outside
+  // a module" silently in dev) surfaces here instead of leaving Vision frames
+  // stuck at 0 with no clue. Unblock any awaiters so the app doesn't hang.
+  visionWorker.onerror = (e: ErrorEvent) => {
+    const detail = e.message || "worker load/runtime error";
+    console.error(`[vision] worker error: ${detail}`);
+    if (window.__visionDebug) window.__visionDebug.status = `error: ${detail}`;
+    readyResolve();
   };
 
   // Reduce a frame's §9.1 VisionEvents into the overlay hot state. Calibration
