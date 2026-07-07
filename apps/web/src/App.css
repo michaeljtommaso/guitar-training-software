@@ -1,10 +1,13 @@
+/* v2 shell: full-viewport column — surfaces (TopBar/PracticeScreen/Wizard/
+   footer) own their internal padding. The old centered content-width layout
+   (flex-start + 2rem padding) capped the whole app's width and height. */
 .app-shell {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 2rem;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
 }
 
 .wizard-tip {
@@ -286,7 +289,6 @@
 
 .fret-strip {
   width: 100%;
-  max-width: 720px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 0.5rem;
@@ -379,7 +381,6 @@
 .zoom-pane__stage {
   position: relative;
   width: 100%;
-  max-width: 720px;
   aspect-ratio: 4 / 1;
 }
 .zoom-pane__stage .fret-strip {
