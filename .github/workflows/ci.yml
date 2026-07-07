@@ -79,6 +79,10 @@ jobs:
       # The e2e webServer runs `pnpm build && vite preview` with fake camera/mic
       # (see apps/web/playwright.config.ts launch args).
       - run: pnpm --filter ./apps/web e2e
+      # BUG-002 guard: same fake-device drive, but against the DEV server, so the
+      # vision worker's dev-only wasm-loader path can't silently regress again
+      # (preview alone hid that the vision leg was dead in `vite dev`).
+      - run: pnpm --filter ./apps/web e2e:dev
 
   backend:
     runs-on: ubuntu-latest
