@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+<style>
+body { margin: 0; background: #ffffff; color: #0f172a; font-family: 'Hanken Grotesk', system-ui, sans-serif; }
+a { color: #2563eb; } a:hover { color: #1e40af; }
+button { font-family: inherit; font-size: inherit; }
+</style>
+</helmet>
+<main data-screen-label="Current UI — running session" style="min-height:100vh;display:flex;flex-direction:column;align-items:flex-start;gap:1rem;padding:2rem">
+  <h1 style="margin:0;font-size:2em;font-weight:600">Guitar tutor</h1>
+  <button type="button" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border:1px solid #e2e8f0;border-radius:0.5rem;background:#f8fafc;color:#0f172a;cursor:pointer">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+    Switch to dark mode
+  </button>
+
+  <section style="display:flex;flex-direction:column;gap:0.75rem;width:100%;max-width:720px">
+    <h2 style="margin:0;font-size:1.5em;font-weight:600">Capture setup</h2>
+    <p style="margin:0;color:#475569">Tip: a clip-on or secondary camera aimed straight at the fretboard gives the clearest view of your fretting hand.</p>
+    <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+      <label>Camera
+        <select style="padding:0.25rem 0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;background:#f8fafc;color:#0f172a;font-family:inherit">
+          <option>FaceTime HD Camera</option>
+          <option>Default camera</option>
+          <option>USB Camera (fretboard)</option>
+        </select>
+      </label>
+      <label>Microphone
+        <select style="padding:0.25rem 0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;background:#f8fafc;color:#0f172a;font-family:inherit">
+          <option>Scarlett 2i2 USB</option>
+          <option>Default microphone</option>
+          <option>MacBook Pro Microphone</option>
+        </select>
+      </label>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #22c55e;color:#22c55e">direct input</span>
+      <button type="button" style="padding:0.25rem 0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;background:#f8fafc;color:#0f172a">Stop</button>
+    </div>
+    <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+      <button type="button" style="padding:0.25rem 0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;background:#f8fafc;color:#0f172a">Calibrate (tap 4 corners)</button>
+      <button type="button" style="padding:0.25rem 0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;background:#f8fafc;color:#0f172a">Detect ChArUco board</button>
+      <button type="button" style="padding:0.25rem 0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;background:#f8fafc;color:#0f172a">Clear calibration</button>
+      <span style="margin:0;color:#475569">Calibrated from 4 taps (manual).</span>
+    </div>
+    <div style="position:relative;width:100%;background:#f8fafc;border:1px solid #e2e8f0">
+      <div style="display:block;width:100%;aspect-ratio:16/9;background:repeating-linear-gradient(45deg,#0b0f14,#0b0f14 12px,#111820 12px,#111820 24px);position:relative">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#64748b">live camera — fretboard + finger overlay renders here</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;width:100%;max-width:720px">
+      <span style="min-width:3.5rem;color:#475569;font-size:0.85rem">Input</span>
+      <span style="position:relative;display:inline-block;width:12rem;height:0.6rem;background:#ffffff;border:1px solid #e2e8f0;border-radius:0.3rem;overflow:hidden">
+        <span style="display:block;height:100%;width:100%;transform:scaleX(0.7);transform-origin:left center;background:#22c55e"></span>
+        <span style="position:absolute;top:0;left:82%;width:2px;height:100%;background:#0f172a"></span>
+      </span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:#475569">clip</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem">-18 dB · floor -62 dB</span>
+    </div>
+    <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+      <button type="button" style="padding:0.25rem 0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;background:#f8fafc;color:#0f172a">Measure round-trip</button>
+      <span style="margin:0;color:#475569">~34 ms round trip</span>
+      <span style="margin:0;color:#475569">Point a speaker (not headphones) at your mic to measure.</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;width:100%;max-width:720px">
+      <span style="min-width:3.5rem;color:#475569;font-size:0.85rem">Open strings</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #22c55e;color:#22c55e">E2</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #22c55e;color:#22c55e">A2</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #22c55e;color:#22c55e">D3</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #22c55e;color:#22c55e">G3</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #e2e8f0;color:#0f172a">B3</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #e2e8f0;color:#0f172a">E4</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem">4/6</span>
+      <button type="button">Reset</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:0.5rem;width:100%;max-width:720px;padding:0.75rem 1rem;border:1px solid #e2e8f0;border-radius:0.5rem;background:#f8fafc">
+      <h3 style="margin:0;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:#475569;font-weight:600">Tone (monitoring)</h3>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <label style="min-width:6rem;color:#475569;font-size:0.85rem">Monitor</label>
+        <select style="font-family:inherit"><option>Amp</option><option>Clean DI</option><option>Off</option></select>
+        <label style="min-width:6rem;color:#475569;font-size:0.85rem">Preset</label>
+        <select style="font-family:inherit"><option>Clean Chord Practice</option><option>Custom</option><option>Crunch Rhythm</option><option>Lead Sustain</option></select>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem"><label style="min-width:6rem;color:#475569;font-size:0.85rem">Trim (dB)</label><input type="range" min="-24" max="24" step="1" style="flex:1;min-width:8rem"><span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem;min-width:3rem;text-align:right">0</span></div>
+      <div style="display:flex;align-items:center;gap:0.75rem"><label style="min-width:6rem;color:#475569;font-size:0.85rem">Gate (dB)</label><input type="range" min="-90" max="-30" step="1" style="flex:1;min-width:8rem"><span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem;min-width:3rem;text-align:right">-60</span></div>
+      <div style="display:flex;align-items:center;gap:0.75rem"><label style="min-width:6rem;color:#475569;font-size:0.85rem">Drive</label><input type="range" min="0" max="1" step="0.01" style="flex:1;min-width:8rem"><span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem;min-width:3rem;text-align:right">0.50</span></div>
+      <div style="display:flex;align-items:center;gap:0.75rem"><label style="min-width:6rem;color:#475569;font-size:0.85rem">Bass (dB)</label><input type="range" min="-12" max="12" step="1" style="flex:1;min-width:8rem"><span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem;min-width:3rem;text-align:right">0</span></div>
+      <div style="display:flex;align-items:center;gap:0.75rem"><label style="min-width:6rem;color:#475569;font-size:0.85rem">Mid (dB)</label><input type="range" min="-12" max="12" step="1" style="flex:1;min-width:8rem"><span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem;min-width:3rem;text-align:right">0</span></div>
+      <div style="display:flex;align-items:center;gap:0.75rem"><label style="min-width:6rem;color:#475569;font-size:0.85rem">Treble (dB)</label><input type="range" min="-12" max="12" step="1" style="flex:1;min-width:8rem"><span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem;min-width:3rem;text-align:right">0</span></div>
+      <div style="display:flex;align-items:center;gap:0.75rem"><label style="min-width:6rem;color:#475569;font-size:0.85rem">Presence (dB)</label><input type="range" min="-12" max="12" step="1" style="flex:1;min-width:8rem"><span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem;min-width:3rem;text-align:right">0</span></div>
+      <div style="display:flex;align-items:center;gap:0.75rem"><label style="min-width:6rem;color:#475569;font-size:0.85rem">Volume (dB)</label><input type="range" min="-60" max="0" step="1" style="flex:1;min-width:8rem"><span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem;min-width:3rem;text-align:right">-30</span></div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <label style="min-width:6rem;color:#475569;font-size:0.85rem">Cab</label>
+        <select style="font-family:inherit"><option>Synthetic (default)</option></select>
+        <input type="file">
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span style="min-width:6rem;color:#475569;font-size:0.85rem">Latency</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem">5.8 ms output path</span>
+      </div>
+    </div>
+
+    <section style="display:flex;flex-direction:column;gap:0.5rem;width:100%;max-width:720px;padding:0.75rem 1rem;border:1px solid #e2e8f0;border-radius:0.5rem;background:#f8fafc">
+      <h3 style="margin:0;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:#475569;font-weight:600">Lesson (WP-4 fusion)</h3>
+      <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+        <select disabled style="padding:0.25rem 0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;background:#f8fafc;color:#0f172a;font-family:inherit"><option>Open chords: C major</option></select>
+        <button type="button" style="padding:0.25rem 0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;background:#f8fafc;color:#0f172a">Stop lesson</button>
+        <button type="button" style="padding:0.25rem 0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;background:#f8fafc;color:#0f172a">Next step (2/4)</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span style="min-width:3.5rem;color:#475569;font-size:0.85rem">Target</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem">C</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem">index→B f1 · middle→D f2 · ring→A f3</span>
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #94a3b8;color:#94a3b8">low E —</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #22c55e;color:#22c55e">A ok</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #f59e0b;color:#f59e0b">D check</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #ef4444;color:#ef4444">G off</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #22c55e;color:#22c55e">B ok</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:0.35rem;border:1px solid #22c55e;color:#22c55e">high e ok</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span style="min-width:3.5rem;color:#475569;font-size:0.85rem">Hint</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem;color:#f59e0b">Arch your ring finger — it may be muting the G string.</span>
+        <button type="button">Tip was wrong</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span style="min-width:3.5rem;color:#475569;font-size:0.85rem">Fusion</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem">diag 42 · hints 12 · dropped 0 · last muted_string 84%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span style="min-width:3.5rem;color:#475569;font-size:0.85rem">Latency</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem">hint p50 61.2 ms · p95 118.4 ms (n 12) · complaints 1/12 (8%)</span>
+      </div>
+    </section>
+
+    <dl style="display:grid;grid-template-columns:max-content max-content;gap:0.25rem 1rem;margin:0">
+      <dt style="color:#475569">Camera</dt><dd style="margin:0;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">FaceTime HD Camera</dd>
+      <dt style="color:#475569">Microphone</dt><dd style="margin:0;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">Scarlett 2i2 USB</dd>
+      <dt style="color:#475569">Backend probe</dt><dd style="margin:0;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">webgpu</dd>
+      <dt style="color:#475569">Frame driver</dt><dd style="margin:0;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">requestVideoFrameCallback</dd>
+      <dt style="color:#475569">Ring frames read</dt><dd style="margin:0;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">18432</dd>
+      <dt style="color:#475569">Samples consumed</dt><dd style="margin:0;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">942080</dd>
+      <dt style="color:#475569">Dropped frames</dt><dd style="margin:0;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">0</dd>
+      <dt style="color:#475569">Glass-to-worker latency</dt><dd style="margin:0;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">11.42 ms</dd>
+      <dt style="color:#475569">Glass-to-worker p50 / p95</dt><dd style="margin:0;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">10.87 / 14.02 ms (n 512)</dd>
+      <dt style="color:#475569">Vision frames</dt><dd style="margin:0;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">3120</dd>
+    </dl>
+
+    <section style="display:flex;flex-direction:column;gap:0.5rem;width:100%;max-width:720px;padding:0.75rem 1rem;border:1px solid #e2e8f0;border-radius:0.5rem;background:#f8fafc">
+      <h3 style="margin:0;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:#475569;font-weight:600">Audio perception (WP-2)</h3>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span style="min-width:3.5rem;color:#475569;font-size:0.85rem">Chord</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem">C · 62%</span>
+        <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem;color:#22c55e">onset 87</span>
+      </div>
+      <div style="display:grid;grid-template-columns:2rem 1fr 2rem;gap:0.15rem 0.5rem;align-items:center">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:#475569">C</span>
+        <span style="height:0.6rem;background:#ffffff;border:1px solid #e2e8f0;border-radius:0.3rem;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX(0.62);transform-origin:left center;background:#22c55e"></span></span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;text-align:right;color:#475569">62</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:#475569">Am</span>
+        <span style="height:0.6rem;background:#ffffff;border:1px solid #e2e8f0;border-radius:0.3rem;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX(0.14);transform-origin:left center;background:#94a3b8"></span></span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;text-align:right;color:#475569">14</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:#475569">G</span>
+        <span style="height:0.6rem;background:#ffffff;border:1px solid #e2e8f0;border-radius:0.3rem;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX(0.11);transform-origin:left center;background:#94a3b8"></span></span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;text-align:right;color:#475569">11</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:#475569">F</span>
+        <span style="height:0.6rem;background:#ffffff;border:1px solid #e2e8f0;border-radius:0.3rem;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX(0.08);transform-origin:left center;background:#94a3b8"></span></span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;text-align:right;color:#475569">8</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:#475569">Em</span>
+        <span style="height:0.6rem;background:#ffffff;border:1px solid #e2e8f0;border-radius:0.3rem;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX(0.05);transform-origin:left center;background:#94a3b8"></span></span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.75rem;text-align:right;color:#475569">5</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span style="min-width:3.5rem;color:#475569;font-size:0.85rem">Tuner</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem">G3 · 196.4 Hz</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem;color:#f59e0b">+3.2¢</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span style="min-width:3.5rem;color:#475569;font-size:0.85rem">Notes</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem">C3 E3 G3 C4 E4</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:0.85rem">bp 214</span>
+      </div>
+    </section>
+  </section>
+
+  <section style="border:1px solid #e2e8f0;border-radius:12px;padding:16px;max-width:480px;width:100%;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <span style="text-transform:uppercase;letter-spacing:0.08em;font-size:12px;opacity:0.7">Coach</span>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;user-select:none">
+        <input type="checkbox" checked="{{ localOnly }}" onChange="{{ toggleLocal }}">
+        Local-only mode
+      </label>
+    </div>
+    <p style="font-size:14px;opacity:0.85;margin:0">Last: muted string (84% conf) on C</p>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <textarea placeholder="Ask the coach, e.g. why does my C sound muffled?" style="width:100%;min-height:56px;resize:vertical;font:inherit;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:transparent;color:inherit"></textarea>
+      <button type="button" style="align-self:flex-start;padding:6px 14px;border-radius:8px;border:1px solid #e2e8f0;background:#2563eb;color:#fff;cursor:pointer">Ask coach</button>
+    </div>
+    <div style="border-top:1px solid #e2e8f0;padding-top:12px;font-size:15px;line-height:1.5">
+      Likely: a neighbouring finger is touching the G string. Arch your ring finger so the fingertip comes down vertically.
+      <div style="font-size:12px;opacity:0.7;margin-top:6px;font-variant-numeric:tabular-nums">On-device coach</div>
+    </div>
+  </section>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { localOnly: true };
+  renderVals() {
+    return {
+      localOnly: this.state.localOnly,
+      toggleLocal: () => this.setState((s) => ({ localOnly: !s.localOnly })),
+    };
+  }
+}
+</script>
+</body>
+</html>

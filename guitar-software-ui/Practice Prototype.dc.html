@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1a1714; --panel:#211d18; --panel2:#181512; --line:#2e2822; --text:#ece7df; --muted:#9a917f;
+  --accent:#e0a458; --accent-ink:#1a1714; --ok:#7dbd8e; --ok-line:#3a4a3e; --warn:#e0a458; --err:#dd6a55; --dim:#6b655c;
+  --stripe-a:#0d0b09; --stripe-b:#141110; --chipbg:rgba(13,11,9,0.6); --cam-tag:rgba(13,11,9,0.65); --shadow:rgba(0,0,0,0.5);
+}
+:root[data-theme="light"]{
+  --bg:#f6f3ec; --panel:#fffdf7; --panel2:#f0ece1; --line:#e9e3d5; --text:#38332b; --muted:#948b7a;
+  --accent:#c08b4f; --accent-ink:#fffdf7; --ok:#55a06f; --ok-line:#d5e3d6; --warn:#c98f3d; --err:#c65a4d; --dim:#b3ab9a;
+  --stripe-a:#edeade; --stripe-b:#f2efe4; --chipbg:rgba(255,253,247,0.75); --cam-tag:rgba(255,253,247,0.8); --shadow:rgba(90,80,60,0.25);
+}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif}
+a{color:var(--accent)}a:hover{color:var(--text)}
+button{font-family:inherit;font-size:inherit}
+@keyframes slideUp{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
+</style>
+</helmet>
+<div data-screen-label="Practice prototype" style="height:100vh;min-height:680px;position:relative;overflow:hidden;background:var(--bg);color:var(--text);display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-rows:56px minmax(0,1fr) 92px 36px;transition:background 0.3s ease">
+
+  <!-- header -->
+  <div style="grid-column:1;grid-row:1;display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px solid var(--line)">
+    <span style="font-size:14px;font-weight:500">Open chords · C major</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px">step {{ stepNum }}/4</span>
+    <button type="button" onClick="{{ nextStep }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)">next step →</button>
+    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ok);border:1px solid var(--ok-line);border-radius:999px;padding:3px 9px">DI · Scarlett 2i2</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">{{ timer }}</span>
+    <button type="button" onClick="{{ toggleTheme }}" title="Switch theme" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer" style-hover="color:var(--text);border-color:var(--muted)">{{ themeLabel }}</button>
+    <button type="button" onClick="{{ toggleConsole }}" title="Toggle console (`)" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:{{ consoleBtnColor }};background:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer" style-hover="border-color:var(--accent)">console `</button>
+  </div>
+
+  <!-- cameras -->
+  <div style="grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:12px;padding:14px 16px;min-height:0">
+    <div style="position:relative;flex:1;min-height:0;border-radius:10px;overflow:hidden;background:repeating-linear-gradient(45deg,var(--stripe-a),var(--stripe-a) 14px,var(--stripe-b) 14px,var(--stripe-b) 28px)">
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim)">CAM 01 — live camera · you playing</span></div>
+      <div style="position:absolute;left:14px;top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:var(--muted);background:var(--cam-tag);border-radius:999px;padding:4px 10px">CAM 01 · YOU</div>
+      <div style="position:absolute;left:24px;bottom:16px;display:flex;flex-direction:column;gap:2px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:var(--muted)">TARGET</span>
+        <span style="font-size:68px;line-height:1;font-weight:600;color:var(--text)">{{ chordLabel }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">{{ chordCaption }}</span>
+      </div>
+      <div style="position:absolute;right:20px;bottom:18px;display:flex;gap:8px">
+        <sc-for list="{{ pills }}" as="p" hint-placeholder-count="6">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid {{ p.color }};color:{{ p.color }};background:var(--chipbg);transition:color 0.4s ease,border-color 0.4s ease">{{ p.name }} {{ p.glyph }}</span>
+        </sc-for>
+      </div>
+    </div>
+    <div style="position:relative;height:196px;flex:none;border-radius:10px;overflow:hidden;background:repeating-linear-gradient(45deg,var(--stripe-a),var(--stripe-a) 14px,var(--stripe-b) 14px,var(--stripe-b) 28px)">
+      <div style="position:absolute;left:14px;top:8px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:var(--muted);background:var(--cam-tag);border-radius:999px;padding:4px 10px;z-index:3">CAM 02 · FRETBOARD — LIVE OVERLAY</div>
+      <div style="position:absolute;left:7%;top:40px;width:4px;height:144px;background:var(--muted);opacity:0.8;border-radius:2px"></div>
+      <div style="position:absolute;left:25.6%;top:40px;width:1px;height:144px;background:var(--dim);opacity:0.6"></div>
+      <div style="position:absolute;left:44.2%;top:40px;width:1px;height:144px;background:var(--dim);opacity:0.6"></div>
+      <div style="position:absolute;left:62.8%;top:40px;width:1px;height:144px;background:var(--dim);opacity:0.6"></div>
+      <div style="position:absolute;left:81.4%;top:40px;width:1px;height:144px;background:var(--dim);opacity:0.6"></div>
+      <div style="position:absolute;left:7%;right:6%;top:46px;height:1px;background:var(--dim);opacity:0.7"></div>
+      <div style="position:absolute;left:7%;right:6%;top:72px;height:1px;background:var(--dim);opacity:0.7"></div>
+      <div style="position:absolute;left:7%;right:6%;top:98px;height:1px;background:var(--dim);opacity:0.7"></div>
+      <div style="position:absolute;left:7%;right:6%;top:124px;height:2px;background:var(--dim);opacity:0.7"></div>
+      <div style="position:absolute;left:7%;right:6%;top:150px;height:2px;background:var(--dim);opacity:0.7"></div>
+      <div style="position:absolute;left:7%;right:6%;top:176px;height:2px;background:var(--dim);opacity:0.7"></div>
+      <sc-for list="{{ marks }}" as="m" hint-placeholder-count="5">
+        <div style="position:absolute;left:{{ m.left }};top:{{ m.top }};width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;background:{{ m.bg }};color:{{ m.fg }};border:2px solid {{ m.border }};transition:background 0.4s ease,border-color 0.4s ease,color 0.4s ease;z-index:2">{{ m.label }}</div>
+      </sc-for>
+      <sc-for list="{{ laneLabels }}" as="ll" hint-placeholder-count="6">
+        <span style="position:absolute;right:10px;top:{{ ll.top }};font-family:'JetBrains Mono',monospace;font-size:11px;color:{{ ll.color }};transition:color 0.4s ease;z-index:2">{{ ll.name }} {{ ll.glyph }}</span>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- hint band -->
+  <div style="grid-column:1;grid-row:3;display:flex;align-items:center;gap:24px;padding:0 32px;border-top:1px solid var(--line)">
+    <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+      <span style="font-size:23px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ hint }}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">{{ diagLine }}</span>
+    </div>
+    <button type="button" onClick="{{ tipWrong }}" style="margin-left:auto;flex:none;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim);background:none;border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer" style-hover="color:var(--err);border-color:var(--err)">tip was wrong</button>
+  </div>
+
+  <!-- coach -->
+  <div style="grid-column:2;grid-row:1/4;border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 10px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;color:var(--muted)">COACH</span>
+      <button type="button" onClick="{{ toggleLocal }}" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{{ localColor }};background:none;border:1px solid {{ localBorder }};border-radius:999px;padding:2px 8px;cursor:pointer">{{ localLabel }}</button>
+    </div>
+    <div style="padding:0 20px;font-size:12.5px;line-height:1.5;color:var(--muted)">{{ coachSummary }}</div>
+    <div style="margin:14px 20px 0;padding:14px 0 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.55;color:var(--text);overflow-y:auto;min-height:0">
+      {{ coachReply }}
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim);margin-top:8px">{{ coachSource }}</div>
+    </div>
+    <div style="flex:1"></div>
+    <div style="padding:0 20px 18px;display:flex;flex-direction:column;gap:8px">
+      <textarea placeholder="Why does my C sound muffled?" value="{{ coachQ }}" onChange="{{ onQChange }}" style="width:100%;min-height:60px;resize:none;font-family:'Space Grotesk',sans-serif;font-size:13px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);outline:none" style-focus="border-color:var(--accent)"></textarea>
+      <button type="button" onClick="{{ ask }}" style="align-self:flex-end;padding:7px 16px;border-radius:8px;border:none;background:var(--accent);color:var(--accent-ink);font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.08)">{{ askLabel }}</button>
+    </div>
+  </div>
+
+  <!-- footer telemetry strip -->
+  <div style="grid-column:1/-1;grid-row:4;display:flex;align-items:center;gap:16px;padding:0 20px;border-top:1px solid var(--line);overflow:hidden">
+    <sc-if value="{{ showDebug }}" hint-placeholder-val="{{ true }}">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ footerLine }}</span>
+    </sc-if>
+    <button type="button" onClick="{{ toggleConsole }}" style="margin-left:auto;flex:none;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;padding:2px" style-hover="color:var(--accent)">{{ consoleFooterLabel }}</button>
+  </div>
+
+  <!-- console drawer (1b rack) -->
+  <sc-if value="{{ consoleOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:14px;right:314px;bottom:44px;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 48px var(--shadow);padding:14px;display:grid;grid-template-columns:1.1fr 1fr 1.2fr 1fr 1fr;gap:12px;animation:slideUp 0.22s ease">
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">INPUT</span>
+        <div style="position:relative;height:8px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;overflow:hidden">
+          <span style="display:block;height:100%;width:100%;transform:scaleX({{ rmsPct }});transform-origin:left center;background:var(--ok);transition:transform 0.15s linear"></span>
+          <span style="position:absolute;top:0;left:{{ peakLeft }};width:2px;height:100%;background:var(--text)"></span>
+        </div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted)">{{ rmsLine }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim)">clip ○ · gate −70 dB</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">TUNER</span>
+        <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:24px;font-weight:600;color:var(--text)">{{ tunerNote }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">{{ tunerHz }}</span></div>
+        <div style="position:relative;height:6px;background:var(--panel2);border:1px solid var(--line);border-radius:3px">
+          <span style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--dim)"></span>
+          <span style="position:absolute;left:{{ centsLeft }};top:0;width:3px;height:100%;background:var(--warn);border-radius:1px;transition:left 0.15s linear"></span>
+        </div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--warn)">{{ centsStr }}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">CHORD POSTERIOR</span>
+        <div style="display:grid;grid-template-columns:26px 1fr 26px;gap:4px 8px;align-items:center">
+          <sc-for list="{{ posterior }}" as="pb" hint-placeholder-count="5">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:{{ pb.nameColor }}">{{ pb.label }}</span>
+            <span style="height:7px;background:var(--panel2);border:1px solid var(--line);border-radius:2px;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX({{ pb.p }});transform-origin:left center;background:{{ pb.fill }};transition:transform 0.4s ease"></span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;text-align:right;color:var(--muted)">{{ pb.pct }}</span>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">FUSION</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted)">
+          <span>diag <span style="color:var(--text)">{{ diagCount }}</span></span><span>hints <span style="color:var(--text)">{{ hintCount }}</span></span>
+          <span>drop <span style="color:var(--text)">0</span></span><span>compl <span style="color:var(--text)">{{ complaints }}</span></span>
+          <span>p50 <span style="color:var(--text)">61.2 ms</span></span><span>p95 <span style="color:var(--text)">118.4 ms</span></span>
+          <span style="grid-column:1/-1">last <span style="color:var(--warn)">{{ lastDiag }}</span></span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">PIPELINE · TONE</span>
+        <div style="display:flex;flex-direction:column;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted)">
+          <span>glass→wkr <span style="color:var(--text)">{{ gw }} ms</span></span>
+          <span>vision <span style="color:var(--text)">{{ vf }} fr</span> · ring <span style="color:var(--text)">{{ ring }}</span></span>
+          <span>backend <span style="color:var(--text)">webgpu · rVFC</span></span>
+          <span>monitor <span style="color:var(--ok)">AMP</span> · Clean Chord Practice</span>
+          <span>output path <span style="color:var(--text)">5.8 ms</span></span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 860}, &quot;defaultTheme&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;dark&quot;, &quot;light&quot;], &quot;default&quot;: &quot;dark&quot;, &quot;tsType&quot;: &quot;\&quot;dark\&quot;|\&quot;light\&quot;&quot;, &quot;section&quot;: &quot;Appearance&quot;}, &quot;consoleStartsOpen&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Behavior&quot;}, &quot;showDebugStrip&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Behavior&quot;}}">
+class Component extends DCLogic {
+  state = {
+    theme: "dark", consoleOpen: false, step: 0, phase: 0, tick: 0, seconds: 762,
+    rms: -18, cents: 3.2, gw: 11.4, vf: 3120, ring: 18432,
+    counts: { diag: 42, hints: 12, complaints: 1 },
+    coachQ: "", coachBusy: false, localOnly: true,
+    coachReply: "Likely: your ring finger is leaning into the G string. Arch the knuckle so the fingertip comes down vertically.",
+    coachSource: "on-device coach",
+  };
+
+  CHORDS = [
+    { label: "C", caption: "x 3 2 0 1 0", fingers: [{ s: 5, f: 3, n: 3 }, { s: 4, f: 2, n: 2 }, { s: 2, f: 1, n: 1 }], open: [3, 1], avoid: [6],
+      prob: { err: 3, warn: 4, code: "muted_string", note: "G3", hz: "196.4 Hz", hint: "Arch your ring finger — it's brushing the G string.", hint2: "Better — the G is starting to ring. Keep the arch." },
+      okNote: "C3", okHz: "130.8 Hz" },
+    { label: "Am", caption: "x 0 2 2 1 0", fingers: [{ s: 4, f: 2, n: 2 }, { s: 3, f: 2, n: 3 }, { s: 2, f: 1, n: 1 }], open: [5, 1], avoid: [6],
+      prob: { err: 2, warn: null, code: "behind_fret", note: "B3", hz: "246.9 Hz", hint: "Index finger is far behind fret 1 on B — slide it up against the fret.", hint2: "Closer — snug it right behind the fret wire." },
+      okNote: "A2", okHz: "110.0 Hz" },
+    { label: "Em", caption: "0 2 2 0 0 0", fingers: [{ s: 5, f: 2, n: 2 }, { s: 4, f: 2, n: 3 }], open: [6, 3, 2, 1], avoid: [],
+      prob: { err: 4, warn: null, code: "muted_string", note: "D3", hz: "146.8 Hz", hint: "Your ring finger is choking the D string — curl it tighter.", hint2: "Almost — the D is faint but sounding." },
+      okNote: "E2", okHz: "82.4 Hz" },
+    { label: "G", caption: "3 2 0 0 0 3", fingers: [{ s: 6, f: 3, n: 2 }, { s: 5, f: 2, n: 1 }, { s: 1, f: 3, n: 3 }], open: [4, 3, 2], avoid: [],
+      prob: { err: 1, warn: null, code: "muted_string", note: "G3", hz: "196.0 Hz", hint: "Pinky side is brushing the high e — angle your wrist out a touch.", hint2: "Better — high e is starting to clear." },
+      okNote: "G2", okHz: "98.0 Hz" },
+  ];
+
+  NAMES = { 1: "e", 2: "B", 3: "G", 4: "D", 5: "A", 6: "E" };
+  NOTE_TABLE = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  OPEN_MIDI = { 1: 64, 2: 59, 3: 55, 4: 50, 5: 45, 6: 40 };
+  LANE_TOP = { 1: 46, 2: 72, 3: 98, 4: 124, 5: 150, 6: 176 };
+  REPLIES = {
+    muted_string: "Likely: a neighbouring finger is leaning into that string. Arch the knuckle so the fingertip comes down vertically, and check your thumb is behind the neck, not over it.",
+    behind_fret: "Likely: the finger is sitting too far from the fret wire, so the note buzzes or dies. Slide it up until it almost touches the fret — you need far less pressure there.",
+    ok: "You're sounding clean. Try lifting the whole shape off and landing it again in one motion — reps of the landing are what build speed between chords.",
+  };
+
+  componentDidMount() {
+    const saved = (() => { try { return localStorage.getItem("gt-proto-theme"); } catch (e) { return null; } })();
+    const theme = saved || this.props.defaultTheme || "dark";
+    this.setState({ theme, consoleOpen: !!this.props.consoleStartsOpen });
+    this.applyTheme(theme);
+    this.fast = setInterval(() => {
+      this.setState((s) => ({
+        tick: s.tick + 1,
+        rms: -19 + 5 * Math.sin(s.tick / 4.5) + (Math.random() * 2 - 1),
+        cents: (s.phase >= 2 ? 0.8 : 3.2) + 2.5 * Math.sin(s.tick / 6) + (Math.random() - 0.5),
+        gw: Math.round((11 + Math.sin(s.tick / 7) * 1.6 + Math.random() * 0.6) * 10) / 10,
+        vf: s.vf + 2, ring: s.ring + 6,
+      }));
+    }, 160);
+    this.slow = setInterval(() => {
+      this.setState((s) => {
+        const phase = (s.phase + 1) % 4;
+        const c = { ...s.counts, diag: s.counts.diag + 1 };
+        if (phase === 0) c.hints += 1;
+        return { phase, counts: c };
+      });
+    }, 4200);
+    this.clock = setInterval(() => this.setState((s) => ({ seconds: s.seconds + 1 })), 1000);
+    this.onKey = (e) => { if (e.key === "`") this.setState((s) => ({ consoleOpen: !s.consoleOpen })); };
+    window.addEventListener("keydown", this.onKey);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.fast); clearInterval(this.slow); clearInterval(this.clock);
+    if (this.stream) clearInterval(this.stream);
+    window.removeEventListener("keydown", this.onKey);
+  }
+
+  applyTheme(t) {
+    if (t === "light") document.documentElement.setAttribute("data-theme", "light");
+    else document.documentElement.removeAttribute("data-theme");
+    try { localStorage.setItem("gt-proto-theme", t); } catch (e) {}
+  }
+
+  noteName(midi) { return this.NOTE_TABLE[midi % 12] + (Math.floor(midi / 12) - 1); }
+
+  statuses(chord, phase) {
+    const st = {};
+    for (let s = 1; s <= 6; s++) {
+      const played = chord.fingers.some((f) => f.s === s) || chord.open.includes(s);
+      if (chord.avoid.includes(s)) st[s] = "uncertain";
+      else if (!played) st[s] = "uncertain";
+      else st[s] = "correct";
+    }
+    if (phase === 0) { st[chord.prob.err] = "error"; if (chord.prob.warn) st[chord.prob.warn] = "warn"; }
+    else if (phase === 1) { st[chord.prob.err] = "warn"; }
+    return st;
+  }
+
+  renderVals() {
+    const s = this.state;
+    const chord = this.CHORDS[s.step];
+    const phase = s.phase;
+    const st = this.statuses(chord, phase);
+    const COLOR = { correct: "var(--ok)", warn: "var(--warn)", error: "var(--err)", uncertain: "var(--dim)" };
+    const GLYPH = { correct: "✓", warn: "!", error: "✕", uncertain: "—" };
+
+    const pills = [6, 5, 4, 3, 2, 1].map((n) => ({ name: this.NAMES[n], glyph: GLYPH[st[n]], color: COLOR[st[n]] }));
+    const laneLabels = [1, 2, 3, 4, 5, 6].map((n) => ({ name: this.NAMES[n], glyph: GLYPH[st[n]], color: COLOR[st[n]], top: (this.LANE_TOP[n] - 8) + "px" }));
+
+    const marks = [];
+    for (const f of chord.fingers) {
+      marks.push({ left: "calc(" + (7 + (f.f - 0.5) * 18.6) + "% - 12px)", top: (this.LANE_TOP[f.s] - 12) + "px", bg: COLOR[st[f.s]], fg: "var(--bg)", border: COLOR[st[f.s]], label: String(f.n) });
+    }
+    for (const o of chord.open) {
+      marks.push({ left: "calc(3.2% - 12px)", top: (this.LANE_TOP[o] - 12) + "px", bg: "transparent", fg: COLOR[st[o]], border: COLOR[st[o]], label: "0" });
+    }
+    for (const a of chord.avoid) {
+      marks.push({ left: "calc(3.2% - 12px)", top: (this.LANE_TOP[a] - 12) + "px", bg: "transparent", fg: "var(--dim)", border: "transparent", label: "×" });
+    }
+
+    const code = phase >= 2 ? "ok" : chord.prob.code;
+    const conf = phase === 0 ? 84 : phase === 1 ? 62 : 91;
+    const hint = phase === 0 ? chord.prob.hint : phase === 1 ? chord.prob.hint2 : "That's it — let it ring. Hold it for two more bars.";
+    const targetP = [0.55, 0.68, 0.86, 0.88][phase] + 0.02 * Math.sin(s.tick / 3);
+
+    const others = ["Am", "G", "F", "Em", "Dm"].filter((l) => l !== chord.label).slice(0, 4);
+    const w = [0.45, 0.28, 0.17, 0.1];
+    const posterior = [{ label: chord.label, p: targetP.toFixed(3), pct: Math.round(targetP * 100), fill: "var(--ok)", nameColor: "var(--text)" }]
+      .concat(others.map((l, i) => ({ label: l, p: ((1 - targetP) * w[i]).toFixed(3), pct: Math.round((1 - targetP) * w[i] * 100), fill: "var(--dim)", nameColor: "var(--muted)" })));
+
+    const rmsPct = Math.max(0, Math.min(1, (s.rms + 60) / 60));
+    const mm = Math.floor(s.seconds / 60), ss = String(s.seconds % 60).padStart(2, "0");
+    const rmsR = Math.round(s.rms);
+    const centsR = Math.round(s.cents * 10) / 10;
+
+    return {
+      stepNum: s.step + 1,
+      chordLabel: chord.label,
+      chordCaption: chord.caption,
+      pills, laneLabels, marks,
+      hint,
+      diagLine: code + " · conf " + conf + "% · hint p50 61 ms · fused audio+vision",
+      timer: mm + ":" + ss,
+      themeLabel: s.theme === "dark" ? "☾ dark" : "☀ light",
+      consoleBtnColor: s.consoleOpen ? "var(--accent)" : "var(--muted)",
+      consoleFooterLabel: s.consoleOpen ? "close console ▾" : "console ▴",
+      consoleOpen: s.consoleOpen,
+      showDebug: this.props.showDebugStrip ?? true,
+      footerLine: "webgpu · rVFC · glass→worker " + s.gw.toFixed(1) + " ms (p50 10.9 / p95 14.0) · vision " + s.vf + " fr · ring " + s.ring + " rd · drop 0 · diag " + s.counts.diag + " · hints " + s.counts.hints + " · in " + rmsR + " dB / floor −62 · tone AMP 5.8 ms",
+      rmsPct: rmsPct.toFixed(3),
+      peakLeft: Math.min(96, rmsPct * 100 + 10).toFixed(1) + "%",
+      rmsLine: rmsR + " dB · floor −62 dB",
+      tunerNote: phase >= 2 ? chord.okNote : chord.prob.note,
+      tunerHz: phase >= 2 ? chord.okHz : chord.prob.hz,
+      centsLeft: "calc(" + (50 + centsR * 1.4).toFixed(1) + "% - 1px)",
+      centsStr: (centsR >= 0 ? "+" : "") + centsR.toFixed(1) + "¢",
+      posterior,
+      diagCount: s.counts.diag, hintCount: s.counts.hints, complaints: s.counts.complaints,
+      lastDiag: code + " " + conf + "%",
+      gw: s.gw.toFixed(1), vf: s.vf, ring: s.ring,
+      coachSummary: "Last: " + code.replace(/_/g, " ") + " (" + conf + "%) on " + chord.label,
+      coachReply: s.coachReply, coachSource: s.coachSource,
+      coachQ: s.coachQ,
+      askLabel: s.coachBusy ? "Thinking…" : "Ask coach",
+      localLabel: s.localOnly ? "local-only" : "cloud ok",
+      localColor: s.localOnly ? "var(--ok)" : "var(--warn)",
+      localBorder: s.localOnly ? "var(--ok-line)" : "var(--warn)",
+      onQChange: (e) => this.setState({ coachQ: e.target.value }),
+      toggleTheme: () => { const t = s.theme === "dark" ? "light" : "dark"; this.applyTheme(t); this.setState({ theme: t }); },
+      toggleConsole: () => this.setState((p) => ({ consoleOpen: !p.consoleOpen })),
+      toggleLocal: () => this.setState((p) => ({ localOnly: !p.localOnly })),
+      nextStep: () => this.setState((p) => ({ step: (p.step + 1) % 4, phase: 0, counts: { ...p.counts, diag: p.counts.diag + 2, hints: p.counts.hints + 1 } })),
+      tipWrong: () => this.setState((p) => ({ counts: { ...p.counts, complaints: p.counts.complaints + 1 } })),
+      ask: () => {
+        if (s.coachBusy) return;
+        const full = this.REPLIES[code] || this.REPLIES.ok;
+        const words = full.split(" ");
+        let i = 0;
+        this.setState({ coachBusy: true, coachReply: "", coachSource: "" });
+        this.stream = setInterval(() => {
+          i += 2;
+          if (i >= words.length) {
+            clearInterval(this.stream);
+            this.setState({ coachBusy: false, coachReply: full, coachSource: this.state.localOnly ? "on-device coach" : "model reply (claude)", coachQ: "" });
+          } else {
+            this.setState({ coachReply: words.slice(0, i).join(" ") + "…" });
+          }
+        }, 70);
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

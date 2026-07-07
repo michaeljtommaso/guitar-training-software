@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1a1714; --panel:#211d18; --panel2:#181512; --line:#2e2822; --text:#ece7df; --muted:#9a917f;
+  --accent:#e0a458; --accent-ink:#1a1714; --ok:#7dbd8e; --ok-line:#3a4a3e; --warn:#e0a458; --err:#dd6a55; --dim:#6b655c;
+  --stripe-a:#0d0b09; --stripe-b:#141110; --chipbg:rgba(13,11,9,0.6); --cam-tag:rgba(13,11,9,0.65); --shadow:rgba(0,0,0,0.5);
+}
+:root[data-theme="light"]{
+  --bg:#f6f3ec; --panel:#fffdf7; --panel2:#f0ece1; --line:#e9e3d5; --text:#38332b; --muted:#948b7a;
+  --accent:#c08b4f; --accent-ink:#fffdf7; --ok:#55a06f; --ok-line:#d5e3d6; --warn:#c98f3d; --err:#c65a4d; --dim:#b3ab9a;
+  --stripe-a:#edeade; --stripe-b:#f2efe4; --chipbg:rgba(255,253,247,0.75); --cam-tag:rgba(255,253,247,0.8); --shadow:rgba(90,80,60,0.25);
+}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif}
+a{color:var(--accent)}a:hover{color:var(--text)}
+button{font-family:inherit;font-size:inherit}
+input[type="range"]{accent-color:#e0a458}
+@keyframes slideUp{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+</style>
+</helmet>
+<div style="height:100vh;min-height:680px;position:relative;overflow:hidden;background:var(--bg);color:var(--text)">
+
+<!-- ============ SETUP WIZARD (first run) ============ -->
+<sc-if value="{{ isSetup }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Setup wizard" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;animation:fadeIn 0.3s ease">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+    <span style="font-size:24px;font-weight:600">Guitar tutor</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">one-time setup · under a minute</span>
+  </div>
+  <div style="display:flex;gap:7px">
+    <sc-for list="{{ setupDots }}" as="d" hint-placeholder-count="3">
+      <span style="width:8px;height:8px;border-radius:50%;background:{{ d.bg }};border:1px solid {{ d.border }}"></span>
+    </sc-for>
+  </div>
+  <div style="width:560px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 28px;display:flex;flex-direction:column;gap:16px">
+
+    <sc-if value="{{ isSetupStep0 }}" hint-placeholder-val="{{ false }}">
+      <span style="font-size:17px;font-weight:600">Camera &amp; input</span>
+      <span style="font-size:13px;line-height:1.5;color:var(--muted)">One camera sees the whole scene — the tutor crops a zoomed fretboard view from the same feed, so frame yourself with the neck clearly visible. Plug your guitar into a USB interface for the most accurate feedback; a bare mic works too.</span>
+      <label style="display:flex;flex-direction:column;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:var(--muted)">CAMERA
+        <select style="font-family:'Space Grotesk',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text)"><option>FaceTime HD Camera</option><option>USB Camera</option></select>
+      </label>
+      <label style="display:flex;flex-direction:column;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:var(--muted)">AUDIO INPUT
+        <div style="display:flex;gap:10px;align-items:center">
+          <select style="flex:1;font-family:'Space Grotesk',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text)"><option>Scarlett 2i2 USB</option><option>MacBook Pro Microphone</option></select>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ok);border:1px solid var(--ok-line);border-radius:999px;padding:3px 9px">direct input</span>
+        </div>
+      </label>
+      <sc-if value="{{ captureOn }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:10px">
+          <div style="position:relative;flex:2;height:110px;border-radius:8px;overflow:hidden;background:repeating-linear-gradient(45deg,var(--stripe-a),var(--stripe-a) 12px,var(--stripe-b) 12px,var(--stripe-b) 24px)"><span style="position:absolute;left:10px;bottom:8px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted)">full scene</span></div>
+          <div style="position:relative;flex:3;height:110px;border-radius:8px;overflow:hidden;background:repeating-linear-gradient(45deg,var(--stripe-a),var(--stripe-a) 12px,var(--stripe-b) 12px,var(--stripe-b) 24px)"><span style="position:absolute;left:10px;bottom:8px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted)">fretboard zoom · auto-crop</span></div>
+        </div>
+      </sc-if>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" onClick="{{ startCapture }}" style="padding:8px 16px;border-radius:8px;border:1px solid var(--line);background:{{ startCaptureBg }};color:{{ startCaptureFg }};font-weight:600;cursor:pointer" style-hover="filter:brightness(1.08)">{{ startCaptureLabel }}</button>
+        <button type="button" onClick="{{ setupNext }}" style="padding:8px 16px;border-radius:8px;border:none;background:{{ continueBg }};color:{{ continueFg }};font-weight:600;cursor:{{ continueCursor }}">Continue →</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSetupStep1 }}" hint-placeholder-val="{{ false }}">
+      <span style="font-size:17px;font-weight:600">Signal check</span>
+      <span style="font-size:13px;line-height:1.5;color:var(--muted)">Play each open string once, low E to high e. A chip lights when the string reads clean.</span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:var(--muted)">INPUT</span>
+        <div style="position:relative;flex:1;height:9px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;overflow:hidden">
+          <span style="display:block;height:100%;width:100%;transform:scaleX({{ rmsPct }});transform-origin:left center;background:var(--ok);transition:transform 0.15s linear"></span>
+        </div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">{{ rmsLine }}</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <sc-for list="{{ openChips }}" as="oc" hint-placeholder-count="6">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid {{ oc.color }};color:{{ oc.color }};transition:color 0.3s ease,border-color 0.3s ease">{{ oc.name }}</span>
+        </sc-for>
+        <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">{{ seenCount }}/6</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button type="button" onClick="{{ measureLatency }}" style="padding:6px 13px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--text);font-size:12.5px;cursor:pointer" style-hover="border-color:var(--accent)">{{ probeLabel }}</button>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">{{ latencyMsg }}</span>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" onClick="{{ setupBack }}" style="padding:8px 16px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer">← Back</button>
+        <button type="button" onClick="{{ setupNext }}" style="padding:8px 16px;border-radius:8px;border:none;background:var(--accent);color:var(--accent-ink);font-weight:600;cursor:pointer" style-hover="filter:brightness(1.08)">Continue →</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSetupStep2 }}" hint-placeholder-val="{{ false }}">
+      <span style="font-size:17px;font-weight:600">You're set</span>
+      <div style="display:flex;flex-direction:column;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">
+        <span><span style="color:var(--ok)">✓</span> FaceTime HD Camera — full scene</span>
+        <span><span style="color:var(--ok)">✓</span> fretboard zoom crop — calibrated</span>
+        <span><span style="color:var(--ok)">✓</span> Scarlett 2i2 · direct input · −18 dB</span>
+        <span><span style="color:var(--ok)">✓</span> open strings {{ seenCount }}/6 · round trip ~34 ms</span>
+      </div>
+      <span style="font-size:13px;line-height:1.5;color:var(--muted)">You won't see this again — it's all saved. Re-run it anytime from the footer of the console.</span>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" onClick="{{ setupBack }}" style="padding:8px 16px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer">← Back</button>
+        <button type="button" onClick="{{ finishSetup }}" style="padding:8px 20px;border-radius:8px;border:none;background:var(--accent);color:var(--accent-ink);font-weight:600;cursor:pointer" style-hover="filter:brightness(1.08)">Start practicing</button>
+      </div>
+    </sc-if>
+  </div>
+  <button type="button" onClick="{{ finishSetup }}" style="background:none;border:none;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim);cursor:pointer" style-hover="color:var(--muted)">skip setup for now</button>
+</div>
+</sc-if>
+
+<!-- ============ PRACTICE CONSOLE ============ -->
+<sc-if value="{{ isPractice }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Practice console" style="position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-rows:56px minmax(0,1fr) 92px 36px">
+
+  <div style="grid-column:1;grid-row:1;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--line)">
+    <button type="button" onClick="{{ toggleLessonPanel }}" style="display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--line);border-radius:8px;padding:5px 12px;color:var(--text);font-size:13.5px;font-weight:500;cursor:pointer" style-hover="border-color:var(--accent)">{{ lessonTitle }} <span style="font-size:10px;color:var(--muted)">▾</span></button>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px">step {{ stepNum }}/{{ stepCount }}</span>
+    <button type="button" onClick="{{ nextStep }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer" style-hover="border-color:var(--accent);color:var(--accent)">next step →</button>
+    <button type="button" onClick="{{ toggleTonePanel }}" style="margin-left:auto;display:flex;align-items:center;gap:7px;background:none;border:1px solid var(--line);border-radius:8px;padding:5px 12px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;cursor:pointer" style-hover="border-color:var(--accent);color:var(--text)">tone · {{ presetShort }} <span style="font-size:10px">▾</span></button>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ok);border:1px solid var(--ok-line);border-radius:999px;padding:3px 9px">DI · Scarlett 2i2</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">{{ timer }}</span>
+    <button type="button" onClick="{{ toggleTheme }}" title="Switch theme" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer" style-hover="color:var(--text);border-color:var(--muted)">{{ themeLabel }}</button>
+    <button type="button" onClick="{{ toggleConsole }}" title="Toggle console (`)" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:{{ consoleBtnColor }};background:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer" style-hover="border-color:var(--accent)">console `</button>
+  </div>
+
+  <div style="grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:12px;padding:14px 16px;min-height:0">
+    <div style="position:relative;flex:1;min-height:0;border-radius:10px;overflow:hidden;background:repeating-linear-gradient(45deg,var(--stripe-a),var(--stripe-a) 14px,var(--stripe-b) 14px,var(--stripe-b) 28px)">
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim)">live camera — full scene · you playing</span></div>
+      <div style="position:absolute;left:14px;top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:var(--muted);background:var(--cam-tag);border-radius:999px;padding:4px 10px">CAMERA · FULL SCENE</div>
+      <div style="position:absolute;left:24px;bottom:16px;display:flex;flex-direction:column;gap:2px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:var(--muted)">TARGET</span>
+        <span style="font-size:68px;line-height:1;font-weight:600;color:var(--text)">{{ chordLabel }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">{{ chordCaption }}</span>
+      </div>
+      <div style="position:absolute;right:20px;bottom:18px;display:flex;gap:8px">
+        <sc-for list="{{ pills }}" as="p" hint-placeholder-count="6">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid {{ p.color }};color:{{ p.color }};background:var(--chipbg);transition:color 0.4s ease,border-color 0.4s ease">{{ p.name }} {{ p.glyph }}</span>
+        </sc-for>
+      </div>
+    </div>
+    <div style="position:relative;height:196px;flex:none;border-radius:10px;overflow:hidden;background:repeating-linear-gradient(45deg,var(--stripe-a),var(--stripe-a) 14px,var(--stripe-b) 14px,var(--stripe-b) 28px)">
+      <div style="position:absolute;left:14px;top:8px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:var(--muted);background:var(--cam-tag);border-radius:999px;padding:4px 10px;z-index:3">FRETBOARD ZOOM — LIVE OVERLAY</div>
+      <div style="position:absolute;left:7%;top:40px;width:4px;height:144px;background:var(--muted);opacity:0.8;border-radius:2px"></div>
+      <div style="position:absolute;left:25.6%;top:40px;width:1px;height:144px;background:var(--dim);opacity:0.6"></div>
+      <div style="position:absolute;left:44.2%;top:40px;width:1px;height:144px;background:var(--dim);opacity:0.6"></div>
+      <div style="position:absolute;left:62.8%;top:40px;width:1px;height:144px;background:var(--dim);opacity:0.6"></div>
+      <div style="position:absolute;left:81.4%;top:40px;width:1px;height:144px;background:var(--dim);opacity:0.6"></div>
+      <div style="position:absolute;left:7%;right:6%;top:46px;height:1px;background:var(--dim);opacity:0.7"></div>
+      <div style="position:absolute;left:7%;right:6%;top:72px;height:1px;background:var(--dim);opacity:0.7"></div>
+      <div style="position:absolute;left:7%;right:6%;top:98px;height:1px;background:var(--dim);opacity:0.7"></div>
+      <div style="position:absolute;left:7%;right:6%;top:124px;height:2px;background:var(--dim);opacity:0.7"></div>
+      <div style="position:absolute;left:7%;right:6%;top:150px;height:2px;background:var(--dim);opacity:0.7"></div>
+      <div style="position:absolute;left:7%;right:6%;top:176px;height:2px;background:var(--dim);opacity:0.7"></div>
+      <sc-for list="{{ marks }}" as="m" hint-placeholder-count="5">
+        <div style="position:absolute;left:{{ m.left }};top:{{ m.top }};width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;background:{{ m.bg }};color:{{ m.fg }};border:2px solid {{ m.border }};transition:background 0.4s ease,border-color 0.4s ease,color 0.4s ease;z-index:2">{{ m.label }}</div>
+      </sc-for>
+      <sc-for list="{{ laneLabels }}" as="ll" hint-placeholder-count="6">
+        <span style="position:absolute;right:10px;top:{{ ll.top }};font-family:'JetBrains Mono',monospace;font-size:11px;color:{{ ll.color }};transition:color 0.4s ease;z-index:2">{{ ll.name }} {{ ll.glyph }}</span>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="grid-column:1;grid-row:3;display:flex;align-items:center;gap:24px;padding:0 32px;border-top:1px solid var(--line)">
+    <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+      <span style="font-size:23px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ hint }}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">{{ diagLine }}</span>
+    </div>
+    <button type="button" onClick="{{ tipWrong }}" style="margin-left:auto;flex:none;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim);background:none;border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer" style-hover="color:var(--err);border-color:var(--err)">tip was wrong</button>
+  </div>
+
+  <div style="grid-column:2;grid-row:1/4;border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 10px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;color:var(--muted)">COACH</span>
+      <button type="button" onClick="{{ toggleLocal }}" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{{ localColor }};background:none;border:1px solid {{ localBorder }};border-radius:999px;padding:2px 8px;cursor:pointer">{{ localLabel }}</button>
+    </div>
+    <div style="padding:0 20px;font-size:12.5px;line-height:1.5;color:var(--muted)">{{ coachSummary }}</div>
+    <div style="margin:14px 20px 0;padding:14px 0 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.55;color:var(--text);overflow-y:auto;min-height:0">
+      {{ coachReply }}
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim);margin-top:8px">{{ coachSource }}</div>
+    </div>
+    <div style="flex:1"></div>
+    <div style="padding:0 20px 18px;display:flex;flex-direction:column;gap:8px">
+      <textarea placeholder="Why does my C sound muffled?" value="{{ coachQ }}" onChange="{{ onQChange }}" style="width:100%;min-height:60px;resize:none;font-family:'Space Grotesk',sans-serif;font-size:13px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);outline:none" style-focus="border-color:var(--accent)"></textarea>
+      <button type="button" onClick="{{ ask }}" style="align-self:flex-end;padding:7px 16px;border-radius:8px;border:none;background:var(--accent);color:var(--accent-ink);font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.08)">{{ askLabel }}</button>
+    </div>
+  </div>
+
+  <div style="grid-column:1/-1;grid-row:4;display:flex;align-items:center;gap:16px;padding:0 20px;border-top:1px solid var(--line);overflow:hidden">
+    <sc-if value="{{ showDebug }}" hint-placeholder-val="{{ true }}">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ footerLine }}</span>
+    </sc-if>
+    <button type="button" onClick="{{ openSetup }}" style="margin-left:auto;flex:none;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);background:none;border:none;cursor:pointer;padding:2px" style-hover="color:var(--accent)">setup wizard</button>
+    <button type="button" onClick="{{ toggleConsole }}" style="flex:none;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;padding:2px" style-hover="color:var(--accent)">{{ consoleFooterLabel }}</button>
+  </div>
+
+  <sc-if value="{{ anyPanelOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closePanels }}" style="position:absolute;inset:0;z-index:35"></div>
+  </sc-if>
+
+  <!-- lesson dropdown -->
+  <sc-if value="{{ lessonOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:16px;top:52px;width:330px;z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 48px var(--shadow);padding:8px;animation:slideUp 0.18s ease">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted);padding:8px 10px 6px">LESSONS</div>
+      <sc-for list="{{ lessonRows }}" as="lr" hint-placeholder-count="3">
+        <div onClick="{{ lr.onClick }}" style="display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:7px;cursor:{{ lr.cursor }};background:{{ lr.bg }}" style-hover="background:var(--panel2)">
+          <span style="font-size:13.5px;font-weight:500;color:{{ lr.titleColor }}">{{ lr.title }}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim)">{{ lr.meta }}</span>
+        </div>
+      </sc-for>
+      <div onClick="{{ openLessonsPage }}" style="padding:10px;border-top:1px solid var(--line);margin-top:6px;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer" style-hover="filter:brightness(1.15)">Browse all lessons →</div>
+    </div>
+  </sc-if>
+
+  <!-- tone dropdown -->
+  <sc-if value="{{ toneOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;right:320px;top:52px;width:310px;z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 48px var(--shadow);padding:14px;display:flex;flex-direction:column;gap:12px;animation:slideUp 0.18s ease">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">TONE · MONITOR</span>
+        <div style="display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden">
+          <sc-for list="{{ monitorOpts }}" as="mo" hint-placeholder-count="3">
+            <button type="button" onClick="{{ mo.onClick }}" style="padding:4px 10px;font-family:'JetBrains Mono',monospace;font-size:10px;border:none;cursor:pointer;background:{{ mo.bg }};color:{{ mo.fg }}">{{ mo.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <sc-for list="{{ presetRows }}" as="pr" hint-placeholder-count="4">
+          <div onClick="{{ pr.onClick }}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;background:{{ pr.bg }}" style-hover="background:var(--panel2)">
+            <span style="width:6px;height:6px;border-radius:50%;background:{{ pr.dot }}"></span>
+            <span style="font-size:13px;color:{{ pr.color }}">{{ pr.name }}</span>
+            <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim)">{{ pr.sub }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px;border-top:1px solid var(--line);padding-top:11px">
+        <sc-for list="{{ miniKnobs }}" as="mk" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:56px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted)">{{ mk.label }}</span>
+            <input type="range" min="{{ mk.min }}" max="{{ mk.max }}" step="{{ mk.step }}" value="{{ mk.val }}" onChange="{{ mk.onChange }}" style="flex:1">
+            <span style="width:44px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text)">{{ mk.disp }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:11px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim)">output path 5.8 ms</span>
+        <button type="button" onClick="{{ openAmpsPage }}" style="background:none;border:none;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer;padding:0" style-hover="filter:brightness(1.15)">Open amp studio →</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- console drawer -->
+  <sc-if value="{{ consoleOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:14px;right:314px;bottom:44px;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 48px var(--shadow);padding:14px;display:grid;grid-template-columns:1.1fr 1fr 1.2fr 1fr 1fr;gap:12px;animation:slideUp 0.22s ease">
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">INPUT</span>
+        <div style="position:relative;height:8px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;overflow:hidden">
+          <span style="display:block;height:100%;width:100%;transform:scaleX({{ rmsPct }});transform-origin:left center;background:var(--ok);transition:transform 0.15s linear"></span>
+          <span style="position:absolute;top:0;left:{{ peakLeft }};width:2px;height:100%;background:var(--text)"></span>
+        </div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted)">{{ rmsLine }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim)">clip ○ · gate −70 dB</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">TUNER</span>
+        <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:24px;font-weight:600;color:var(--text)">{{ tunerNote }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">{{ tunerHz }}</span></div>
+        <div style="position:relative;height:6px;background:var(--panel2);border:1px solid var(--line);border-radius:3px">
+          <span style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--dim)"></span>
+          <span style="position:absolute;left:{{ centsLeft }};top:0;width:3px;height:100%;background:var(--warn);border-radius:1px;transition:left 0.15s linear"></span>
+        </div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--warn)">{{ centsStr }}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">CHORD POSTERIOR</span>
+        <div style="display:grid;grid-template-columns:26px 1fr 26px;gap:4px 8px;align-items:center">
+          <sc-for list="{{ posterior }}" as="pb" hint-placeholder-count="5">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:{{ pb.nameColor }}">{{ pb.label }}</span>
+            <span style="height:7px;background:var(--panel2);border:1px solid var(--line);border-radius:2px;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX({{ pb.p }});transform-origin:left center;background:{{ pb.fill }};transition:transform 0.4s ease"></span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;text-align:right;color:var(--muted)">{{ pb.pct }}</span>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">FUSION</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted)">
+          <span>diag <span style="color:var(--text)">{{ diagCount }}</span></span><span>hints <span style="color:var(--text)">{{ hintCount }}</span></span>
+          <span>drop <span style="color:var(--text)">0</span></span><span>compl <span style="color:var(--text)">{{ complaints }}</span></span>
+          <span>p50 <span style="color:var(--text)">61.2 ms</span></span><span>p95 <span style="color:var(--text)">118.4 ms</span></span>
+          <span style="grid-column:1/-1">last <span style="color:var(--warn)">{{ lastDiag }}</span></span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">PIPELINE · TONE</span>
+        <div style="display:flex;flex-direction:column;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted)">
+          <span>glass→wkr <span style="color:var(--text)">{{ gw }} ms</span></span>
+          <span>vision <span style="color:var(--text)">{{ vf }} fr</span> · ring <span style="color:var(--text)">{{ ring }}</span></span>
+          <span>backend <span style="color:var(--text)">webgpu · rVFC</span></span>
+          <span>monitor <span style="color:var(--ok)">{{ monitorLabel }}</span> · {{ presetShort }}</span>
+          <span>output path <span style="color:var(--text)">5.8 ms</span></span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ============ AMP STUDIO ============ -->
+<sc-if value="{{ isAmps }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Amp studio" style="position:absolute;inset:0;display:flex;flex-direction:column;animation:fadeIn 0.25s ease">
+  <div style="display:flex;align-items:center;gap:14px;height:56px;flex:none;padding:0 20px;border-bottom:1px solid var(--line)">
+    <button type="button" onClick="{{ backToPractice }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer" style-hover="color:var(--text);border-color:var(--muted)">← practice</button>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.18em;color:var(--text)">AMP STUDIO</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim)">the tutor always hears the clean DI — tone is monitoring only</span>
+    <button type="button" onClick="{{ toggleTheme }}" style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer" style-hover="color:var(--text)">{{ themeLabel }}</button>
+  </div>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:330px minmax(0,1fr);gap:16px;padding:16px 20px">
+    <div style="overflow-y:auto;display:flex;flex-direction:column;gap:14px;min-height:0">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted)">AMPS &amp; TONES</span>
+      <sc-for list="{{ builtinCards }}" as="bc" hint-placeholder-count="3">
+        <div onClick="{{ bc.onClick }}" style="display:flex;flex-direction:column;gap:5px;padding:13px 15px;border-radius:10px;border:1px solid {{ bc.border }};background:var(--panel);cursor:pointer" style-hover="border-color:var(--accent)">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:14.5px;font-weight:600;color:{{ bc.titleColor }}">{{ bc.name }}</span><span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:{{ bc.tagColor }}">{{ bc.tag }}</span></div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim)">{{ bc.sub }}</span>
+        </div>
+      </sc-for>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:var(--muted);margin-top:6px">YOUR PRESETS</span>
+      <sc-if value="{{ hasSaved }}" hint-placeholder-val="{{ false }}">
+        <sc-for list="{{ savedCards }}" as="svc" hint-placeholder-count="1">
+          <div onClick="{{ svc.onClick }}" style="display:flex;flex-direction:column;gap:5px;padding:13px 15px;border-radius:10px;border:1px solid {{ svc.border }};background:var(--panel);cursor:pointer" style-hover="border-color:var(--accent)">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:14.5px;font-weight:600;color:{{ svc.titleColor }}">{{ svc.name }}</span>
+              <button type="button" onClick="{{ svc.onDelete }}" style="margin-left:auto;background:none;border:none;color:var(--dim);font-size:13px;cursor:pointer;padding:0 2px" style-hover="color:var(--err)">×</button>
+            </div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim)">{{ svc.sub }}</span>
+          </div>
+        </sc-for>
+      </sc-if>
+      <sc-if value="{{ noSaved }}" hint-placeholder-val="{{ true }}">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);padding:2px 2px">nothing saved yet — dial in a tone and save it</span>
+      </sc-if>
+      <div style="display:flex;gap:8px;margin-top:2px">
+        <input placeholder="Preset name…" value="{{ presetName }}" onChange="{{ onPresetName }}" style="flex:1;font-family:'Space Grotesk',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);outline:none">
+        <button type="button" onClick="{{ savePreset }}" style="padding:8px 15px;border-radius:8px;border:none;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:13px;cursor:pointer" style-hover="filter:brightness(1.08)">Save</button>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;min-height:0;overflow-y:auto">
+      <div style="display:flex;align-items:center;gap:6px;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow-x:auto">
+        <sc-for list="{{ chain }}" as="ch" hint-placeholder-count="7">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:7px 12px;border-radius:6px;border:1px solid {{ ch.border }};color:{{ ch.color }};white-space:nowrap">{{ ch.label }}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim)">{{ ch.arrow }}</span>
+        </sc-for>
+        <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim);white-space:nowrap">{{ currentPresetLine }}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px 18px;padding:18px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+        <sc-for list="{{ knobs }}" as="k" hint-placeholder-count="8">
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:var(--muted)">{{ k.label }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--text)">{{ k.disp }}</span></div>
+            <input type="range" min="{{ k.min }}" max="{{ k.max }}" step="{{ k.step }}" value="{{ k.val }}" onChange="{{ k.onChange }}" style="width:100%">
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;gap:22px;padding:14px 18px;background:var(--panel);border:1px solid var(--line);border-radius:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:var(--muted)">MONITOR</span>
+          <div style="display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden">
+            <sc-for list="{{ monitorOpts }}" as="mo2" hint-placeholder-count="3">
+              <button type="button" onClick="{{ mo2.onClick }}" style="padding:5px 12px;font-family:'JetBrains Mono',monospace;font-size:10.5px;border:none;cursor:pointer;background:{{ mo2.bg }};color:{{ mo2.fg }}">{{ mo2.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:var(--muted)">CAB</span>
+          <div style="display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden">
+            <sc-for list="{{ cabOpts }}" as="co" hint-placeholder-count="2">
+              <button type="button" onClick="{{ co.onClick }}" style="padding:5px 12px;font-family:'JetBrains Mono',monospace;font-size:10.5px;border:none;cursor:pointer;background:{{ co.bg }};color:{{ co.fg }}">{{ co.label }}</button>
+            </sc-for>
+          </div>
+          <button type="button" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);background:none;border:1px dashed var(--line);border-radius:7px;padding:5px 10px;cursor:pointer" style-hover="color:var(--muted)">load IR file…</button>
+        </div>
+        <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim)">headphones recommended · output path 5.8 ms</span>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ LESSONS ============ -->
+<sc-if value="{{ isLessons }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Lessons" style="position:absolute;inset:0;display:flex;flex-direction:column;animation:fadeIn 0.25s ease">
+  <div style="display:flex;align-items:center;gap:14px;height:56px;flex:none;padding:0 20px;border-bottom:1px solid var(--line)">
+    <button type="button" onClick="{{ backToPractice }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer" style-hover="color:var(--text);border-color:var(--muted)">← practice</button>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.18em;color:var(--text)">LESSONS</span>
+    <button type="button" onClick="{{ toggleTheme }}" style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer" style-hover="color:var(--text)">{{ themeLabel }}</button>
+  </div>
+  <div style="flex:1;min-height:0;overflow-y:auto;padding:24px 20px">
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:1040px;margin:0 auto">
+      <sc-for list="{{ lessonCards }}" as="lc" hint-placeholder-count="4">
+        <div onClick="{{ lc.onClick }}" style="display:flex;flex-direction:column;gap:9px;padding:20px 22px;border-radius:12px;border:1px solid {{ lc.border }};background:var(--panel);cursor:{{ lc.cursor }};opacity:{{ lc.opacity }}" style-hover="border-color:var(--accent)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:16.5px;font-weight:600">{{ lc.title }}</span>
+            <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px">{{ lc.level }}</span>
+          </div>
+          <span style="font-size:13px;line-height:1.5;color:var(--muted)">{{ lc.desc }}</span>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text)">{{ lc.chips }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim)">{{ lc.steps }} steps</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim)">tone · {{ lc.tone }}</span>
+            <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:{{ lc.stateColor }}">{{ lc.state }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 860}, &quot;startScreen&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;auto&quot;, &quot;setup&quot;, &quot;practice&quot;, &quot;amps&quot;, &quot;lessons&quot;], &quot;default&quot;: &quot;auto&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Navigation&quot;}, &quot;defaultTheme&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;dark&quot;, &quot;light&quot;], &quot;default&quot;: &quot;dark&quot;, &quot;tsType&quot;: &quot;\&quot;dark\&quot;|\&quot;light\&quot;&quot;, &quot;section&quot;: &quot;Appearance&quot;}, &quot;consoleStartsOpen&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Behavior&quot;}, &quot;showDebugStrip&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Behavior&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: "practice", setupStep: 0, captureOn: false, stringsSeen: 0, probing: false, latencyMsg: "",
+    theme: "dark", consoleOpen: false, toneOpen: false, lessonOpen: false,
+    lessonIdx: 0, step: 0, phase: 0, tick: 0, seconds: 762,
+    rms: -18, cents: 3.2, gw: 11.4, vf: 3120, ring: 18432,
+    counts: { diag: 42, hints: 12, complaints: 1 },
+    tonePreset: "Clean Chord Practice",
+    tone: { trim: 0, gate: -70, drive: 0.08, bass: 0, mid: 0, treble: 2, presence: 0, volume: -12 },
+    monitor: "amp", cab: "synthetic",
+    savedPresets: [], presetName: "",
+    coachQ: "", coachBusy: false, localOnly: true,
+    coachReply: "Likely: your ring finger is leaning into the G string. Arch the knuckle so the fingertip comes down vertically.",
+    coachSource: "on-device coach",
+  };
+
+  CHORDS = [
+    { label: "C", caption: "x 3 2 0 1 0", fingers: [{ s: 5, f: 3, n: 3 }, { s: 4, f: 2, n: 2 }, { s: 2, f: 1, n: 1 }], open: [3, 1], avoid: [6],
+      prob: { err: 3, warn: 4, code: "muted_string", note: "G3", hz: "196.4 Hz", hint: "Arch your ring finger — it's brushing the G string.", hint2: "Better — the G is starting to ring. Keep the arch." },
+      okNote: "C3", okHz: "130.8 Hz" },
+    { label: "Am", caption: "x 0 2 2 1 0", fingers: [{ s: 4, f: 2, n: 2 }, { s: 3, f: 2, n: 3 }, { s: 2, f: 1, n: 1 }], open: [5, 1], avoid: [6],
+      prob: { err: 2, warn: null, code: "behind_fret", note: "B3", hz: "246.9 Hz", hint: "Index finger is far behind fret 1 on B — slide it up against the fret.", hint2: "Closer — snug it right behind the fret wire." },
+      okNote: "A2", okHz: "110.0 Hz" },
+    { label: "Em", caption: "0 2 2 0 0 0", fingers: [{ s: 5, f: 2, n: 2 }, { s: 4, f: 2, n: 3 }], open: [6, 3, 2, 1], avoid: [],
+      prob: { err: 4, warn: null, code: "muted_string", note: "D3", hz: "146.8 Hz", hint: "Your ring finger is choking the D string — curl it tighter.", hint2: "Almost — the D is faint but sounding." },
+      okNote: "E2", okHz: "82.4 Hz" },
+    { label: "G", caption: "3 2 0 0 0 3", fingers: [{ s: 6, f: 3, n: 2 }, { s: 5, f: 2, n: 1 }, { s: 1, f: 3, n: 3 }], open: [4, 3, 2], avoid: [],
+      prob: { err: 1, warn: null, code: "muted_string", note: "G3", hz: "196.0 Hz", hint: "Pinky side is brushing the high e — angle your wrist out a touch.", hint2: "Better — high e is starting to clear." },
+      okNote: "G2", okHz: "98.0 Hz" },
+  ];
+
+  LESSONS = [
+    { id: "c-major", title: "Open chords · C major", steps: [0, 1, 2, 3], tone: "Clean Chord Practice", level: "Beginner", desc: "The first four shapes — C, Am, Em, G — with clean switching between them." },
+    { id: "am-em", title: "Two-chord groove · Am ↔ Em", steps: [1, 2], tone: "Clean Chord Practice", level: "Beginner", desc: "Fast switching between the two easiest minor shapes. Timing over perfection." },
+    { id: "g-c", title: "Cowboy classics · G & C", steps: [3, 0], tone: "Crunch Rhythm", level: "Beginner", desc: "The campfire pair, played with a light crunch to hear your muting." },
+    { id: "f-barre", title: "Barre primer · F", steps: [], tone: "Lead Sustain", level: "Intermediate", soon: true, desc: "Your first barre shape, one string-group at a time." },
+  ];
+
+  PRESETS = {
+    "Clean Chord Practice": { trim: 0, gate: -70, drive: 0.08, bass: 0, mid: 0, treble: 2, presence: 0, volume: -12 },
+    "Crunch Rhythm": { trim: 0, gate: -60, drive: 0.45, bass: 2, mid: -2, treble: 3, presence: 2, volume: -12 },
+    "Lead Sustain": { trim: 0, gate: -60, drive: 0.7, bass: 0, mid: 3, treble: 1, presence: 3, volume: -12 },
+  };
+
+  KNOBS = [
+    { key: "trim", label: "TRIM", min: -24, max: 24, step: 1, unit: " dB" },
+    { key: "gate", label: "GATE", min: -90, max: -30, step: 1, unit: " dB" },
+    { key: "drive", label: "DRIVE", min: 0, max: 1, step: 0.01, unit: "" },
+    { key: "bass", label: "BASS", min: -12, max: 12, step: 1, unit: " dB" },
+    { key: "mid", label: "MID", min: -12, max: 12, step: 1, unit: " dB" },
+    { key: "treble", label: "TREBLE", min: -12, max: 12, step: 1, unit: " dB" },
+    { key: "presence", label: "PRESENCE", min: -12, max: 12, step: 1, unit: " dB" },
+    { key: "volume", label: "VOLUME", min: -60, max: 0, step: 1, unit: " dB" },
+  ];
+
+  NAMES = { 1: "e", 2: "B", 3: "G", 4: "D", 5: "A", 6: "E" };
+  LANE_TOP = { 1: 46, 2: 72, 3: 98, 4: 124, 5: 150, 6: 176 };
+  OPEN_STRINGS = ["E2", "A2", "D3", "G3", "B3", "E4"];
+  REPLIES = {
+    muted_string: "Likely: a neighbouring finger is leaning into that string. Arch the knuckle so the fingertip comes down vertically, and check your thumb is behind the neck, not over it.",
+    behind_fret: "Likely: the finger is sitting too far from the fret wire, so the note buzzes or dies. Slide it up until it almost touches the fret — you need far less pressure there.",
+    ok: "You're sounding clean. Try lifting the whole shape off and landing it again in one motion — reps of the landing are what build speed between chords.",
+  };
+
+  componentDidMount() {
+    const ls = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const theme = ls("gt-proto-theme") || this.props.defaultTheme || "dark";
+    let screen = "practice";
+    const startScreen = this.props.startScreen;
+    if (startScreen && startScreen !== "auto") screen = startScreen;
+    else if (!ls("gt-setup-done")) screen = "setup";
+    let saved = [];
+    try { saved = JSON.parse(ls("gt-saved-presets") || "[]"); } catch (e) {}
+    this.setState({ theme, screen, savedPresets: saved, consoleOpen: !!this.props.consoleStartsOpen });
+    this.applyTheme(theme);
+    this.fast = setInterval(() => {
+      this.setState((s) => {
+        const next = {
+          tick: s.tick + 1,
+          rms: -19 + 5 * Math.sin(s.tick / 4.5) + (Math.random() * 2 - 1),
+          cents: (s.phase >= 2 ? 0.8 : 3.2) + 2.5 * Math.sin(s.tick / 6) + (Math.random() - 0.5),
+          gw: Math.round((11 + Math.sin(s.tick / 7) * 1.6 + Math.random() * 0.6) * 10) / 10,
+          vf: s.vf + 2, ring: s.ring + 6,
+        };
+        if (s.screen === "setup" && s.setupStep === 1 && s.captureOn && s.stringsSeen < 6 && s.tick % 8 === 0) {
+          next.stringsSeen = s.stringsSeen + 1;
+        }
+        return next;
+      });
+    }, 160);
+    this.slow = setInterval(() => {
+      this.setState((s) => {
+        if (s.screen !== "practice") return {};
+        const phase = (s.phase + 1) % 4;
+        const c = { ...s.counts, diag: s.counts.diag + 1 };
+        if (phase === 0) c.hints += 1;
+        return { phase, counts: c };
+      });
+    }, 4200);
+    this.clock = setInterval(() => this.setState((s) => ({ seconds: s.seconds + 1 })), 1000);
+    this.onKey = (e) => { if (e.key === "`" && this.state.screen === "practice") this.setState((s) => ({ consoleOpen: !s.consoleOpen })); };
+    window.addEventListener("keydown", this.onKey);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.fast); clearInterval(this.slow); clearInterval(this.clock);
+    if (this.stream) clearInterval(this.stream);
+    window.removeEventListener("keydown", this.onKey);
+  }
+
+  applyTheme(t) {
+    if (t === "light") document.documentElement.setAttribute("data-theme", "light");
+    else document.documentElement.removeAttribute("data-theme");
+    try { localStorage.setItem("gt-proto-theme", t); } catch (e) {}
+  }
+
+  persistPresets(list) { try { localStorage.setItem("gt-saved-presets", JSON.stringify(list)); } catch (e) {} }
+
+  statuses(chord, phase) {
+    const st = {};
+    for (let s = 1; s <= 6; s++) {
+      const played = chord.fingers.some((f) => f.s === s) || chord.open.includes(s);
+      if (chord.avoid.includes(s)) st[s] = "uncertain";
+      else if (!played) st[s] = "uncertain";
+      else st[s] = "correct";
+    }
+    if (phase === 0) { st[chord.prob.err] = "error"; if (chord.prob.warn) st[chord.prob.warn] = "warn"; }
+    else if (phase === 1) { st[chord.prob.err] = "warn"; }
+    return st;
+  }
+
+  toneSub(p) { return "drive " + Math.round(p.drive * 100) + "% · treble " + (p.treble >= 0 ? "+" : "") + p.treble + " · mid " + (p.mid >= 0 ? "+" : "") + p.mid; }
+
+  applyPreset(name, params) { this.setState({ tonePreset: name, tone: { ...params } }); }
+
+  renderVals() {
+    const s = this.state;
+    const lesson = this.LESSONS[s.lessonIdx];
+    const chordIdx = lesson.steps.length ? lesson.steps[s.step % lesson.steps.length] : 0;
+    const chord = this.CHORDS[chordIdx];
+    const phase = s.phase;
+    const st = this.statuses(chord, phase);
+    const COLOR = { correct: "var(--ok)", warn: "var(--warn)", error: "var(--err)", uncertain: "var(--dim)" };
+    const GLYPH = { correct: "✓", warn: "!", error: "✕", uncertain: "—" };
+
+    const pills = [6, 5, 4, 3, 2, 1].map((n) => ({ name: this.NAMES[n], glyph: GLYPH[st[n]], color: COLOR[st[n]] }));
+    const laneLabels = [1, 2, 3, 4, 5, 6].map((n) => ({ name: this.NAMES[n], glyph: GLYPH[st[n]], color: COLOR[st[n]], top: (this.LANE_TOP[n] - 8) + "px" }));
+    const marks = [];
+    for (const f of chord.fingers) marks.push({ left: "calc(" + (7 + (f.f - 0.5) * 18.6) + "% - 12px)", top: (this.LANE_TOP[f.s] - 12) + "px", bg: COLOR[st[f.s]], fg: "var(--bg)", border: COLOR[st[f.s]], label: String(f.n) });
+    for (const o of chord.open) marks.push({ left: "calc(3.2% - 12px)", top: (this.LANE_TOP[o] - 12) + "px", bg: "transparent", fg: COLOR[st[o]], border: COLOR[st[o]], label: "0" });
+    for (const a of chord.avoid) marks.push({ left: "calc(3.2% - 12px)", top: (this.LANE_TOP[a] - 12) + "px", bg: "transparent", fg: "var(--dim)", border: "transparent", label: "×" });
+
+    const code = phase >= 2 ? "ok" : chord.prob.code;
+    const conf = phase === 0 ? 84 : phase === 1 ? 62 : 91;
+    const hint = phase === 0 ? chord.prob.hint : phase === 1 ? chord.prob.hint2 : "That's it — let it ring. Hold it for two more bars.";
+    const targetP = [0.55, 0.68, 0.86, 0.88][phase] + 0.02 * Math.sin(s.tick / 3);
+    const others = ["Am", "G", "F", "Em", "Dm"].filter((l) => l !== chord.label).slice(0, 4);
+    const w = [0.45, 0.28, 0.17, 0.1];
+    const posterior = [{ label: chord.label, p: targetP.toFixed(3), pct: Math.round(targetP * 100), fill: "var(--ok)", nameColor: "var(--text)" }]
+      .concat(others.map((l, i) => ({ label: l, p: ((1 - targetP) * w[i]).toFixed(3), pct: Math.round((1 - targetP) * w[i] * 100), fill: "var(--dim)", nameColor: "var(--muted)" })));
+
+    const rmsPct = Math.max(0, Math.min(1, (s.rms + 60) / 60));
+    const mm = Math.floor(s.seconds / 60), ss = String(s.seconds % 60).padStart(2, "0");
+    const rmsR = Math.round(s.rms);
+    const centsR = Math.round(s.cents * 10) / 10;
+
+    const fmt = (k) => (k.key === "drive" ? s.tone.drive.toFixed(2) : s.tone[k.key] + k.unit);
+    const knobs = this.KNOBS.map((k) => ({
+      label: k.label, min: k.min, max: k.max, step: k.step, val: s.tone[k.key], disp: fmt(k),
+      onChange: (e) => this.setState((p) => ({ tone: { ...p.tone, [k.key]: Number(e.target.value) }, tonePreset: "Custom" })),
+    }));
+    const miniKnobs = knobs.filter((k) => k.label === "DRIVE" || k.label === "VOLUME");
+
+    const monitorOpts = ["off", "dry", "amp"].map((m) => ({
+      label: m.toUpperCase(),
+      bg: s.monitor === m ? "var(--accent)" : "transparent",
+      fg: s.monitor === m ? "var(--accent-ink)" : "var(--muted)",
+      onClick: () => this.setState({ monitor: m }),
+    }));
+    const cabOpts = [{ id: "synthetic", label: "SYNTHETIC" }, { id: "custom", label: "CUSTOM IR" }].map((c) => ({
+      label: c.label,
+      bg: s.cab === c.id ? "var(--accent)" : "transparent",
+      fg: s.cab === c.id ? "var(--accent-ink)" : "var(--muted)",
+      onClick: () => this.setState({ cab: c.id }),
+    }));
+
+    const builtinCards = Object.keys(this.PRESETS).map((name) => ({
+      name, tag: "built-in", tagColor: "var(--dim)",
+      border: s.tonePreset === name ? "var(--accent)" : "var(--line)",
+      titleColor: s.tonePreset === name ? "var(--accent)" : "var(--text)",
+      sub: this.toneSub(this.PRESETS[name]),
+      onClick: () => this.applyPreset(name, this.PRESETS[name]),
+    }));
+    const savedCards = s.savedPresets.map((p, i) => ({
+      name: p.name,
+      border: s.tonePreset === p.name ? "var(--accent)" : "var(--line)",
+      titleColor: s.tonePreset === p.name ? "var(--accent)" : "var(--text)",
+      sub: this.toneSub(p.params),
+      onClick: () => this.applyPreset(p.name, p.params),
+      onDelete: (e) => { e.stopPropagation(); const list = s.savedPresets.filter((_, j) => j !== i); this.persistPresets(list); this.setState({ savedPresets: list }); },
+    }));
+
+    const presetRows = Object.keys(this.PRESETS).concat(s.savedPresets.map((p) => p.name)).map((name) => {
+      const params = this.PRESETS[name] || (s.savedPresets.find((p) => p.name === name) || {}).params;
+      return {
+        name, sub: params ? Math.round(params.drive * 100) + "%" : "",
+        bg: s.tonePreset === name ? "var(--panel2)" : "transparent",
+        color: s.tonePreset === name ? "var(--accent)" : "var(--text)",
+        dot: s.tonePreset === name ? "var(--accent)" : "var(--line)",
+        onClick: () => this.applyPreset(name, params),
+      };
+    });
+    if (s.tonePreset === "Custom") presetRows.push({ name: "Custom", sub: Math.round(s.tone.drive * 100) + "%", bg: "var(--panel2)", color: "var(--accent)", dot: "var(--accent)", onClick: () => {} });
+
+    const chainBlocks = ["IN", "GATE", "DRIVE", "EQ", "CAB", "LIMITER", "OUT"];
+    const chain = chainBlocks.map((b, i) => ({
+      label: b === "DRIVE" ? "DRIVE " + Math.round(s.tone.drive * 100) + "%" : b === "GATE" ? "GATE " + s.tone.gate : b,
+      border: b === "IN" || b === "OUT" ? "var(--line)" : "var(--accent)",
+      color: b === "IN" || b === "OUT" ? "var(--dim)" : "var(--text)",
+      arrow: i < chainBlocks.length - 1 ? "→" : "",
+    }));
+
+    const lessonRows = this.LESSONS.slice(0, 3).map((l, i) => ({
+      title: l.title,
+      meta: l.steps.map((ci) => this.CHORDS[ci].label).join(" · ") + " · " + l.steps.length + " steps",
+      bg: i === s.lessonIdx ? "var(--panel2)" : "transparent",
+      titleColor: i === s.lessonIdx ? "var(--accent)" : "var(--text)",
+      cursor: "pointer",
+      onClick: () => { this.applyPreset(l.tone, this.PRESETS[l.tone]); this.setState({ lessonIdx: i, step: 0, phase: 0, lessonOpen: false }); },
+    }));
+
+    const lessonCards = this.LESSONS.map((l, i) => ({
+      title: l.title, level: l.level, desc: l.desc,
+      chips: l.soon ? "F" : l.steps.map((ci) => this.CHORDS[ci].label).join(" · "),
+      steps: l.soon ? "—" : String(l.steps.length),
+      tone: l.tone,
+      border: i === s.lessonIdx && !l.soon ? "var(--accent)" : "var(--line)",
+      opacity: l.soon ? "0.5" : "1",
+      cursor: l.soon ? "default" : "pointer",
+      state: l.soon ? "coming soon" : i === s.lessonIdx ? "practicing now" : "start →",
+      stateColor: l.soon ? "var(--dim)" : i === s.lessonIdx ? "var(--accent)" : "var(--muted)",
+      onClick: l.soon ? () => {} : () => { this.applyPreset(l.tone, this.PRESETS[l.tone]); this.setState({ lessonIdx: i, step: 0, phase: 0, screen: "practice" }); },
+    }));
+
+    const seen = s.stringsSeen;
+    const openChips = this.OPEN_STRINGS.map((n, i) => ({ name: n, color: i < seen ? "var(--ok)" : "var(--line)" }));
+    const setupDots = [0, 1, 2].map((i) => ({ bg: i <= s.setupStep ? "var(--accent)" : "transparent", border: i <= s.setupStep ? "var(--accent)" : "var(--line)" }));
+
+    return {
+      isSetup: s.screen === "setup", isPractice: s.screen === "practice", isAmps: s.screen === "amps", isLessons: s.screen === "lessons",
+      isSetupStep0: s.setupStep === 0, isSetupStep1: s.setupStep === 1, isSetupStep2: s.setupStep === 2,
+      setupDots, captureOn: s.captureOn, openChips, seenCount: seen,
+      startCaptureLabel: s.captureOn ? "Capturing ✓" : "Start capture",
+      startCaptureBg: s.captureOn ? "transparent" : "var(--accent)",
+      startCaptureFg: s.captureOn ? "var(--ok)" : "var(--accent-ink)",
+      continueBg: s.captureOn ? "var(--accent)" : "var(--panel2)",
+      continueFg: s.captureOn ? "var(--accent-ink)" : "var(--dim)",
+      continueCursor: s.captureOn ? "pointer" : "default",
+      probeLabel: s.probing ? "Measuring…" : "Measure round-trip",
+      latencyMsg: s.latencyMsg,
+      startCapture: () => this.setState({ captureOn: true }),
+      setupNext: () => { if (this.state.setupStep === 0 && !this.state.captureOn) return; this.setState((p) => ({ setupStep: Math.min(2, p.setupStep + 1) })); },
+      setupBack: () => this.setState((p) => ({ setupStep: Math.max(0, p.setupStep - 1) })),
+      finishSetup: () => { try { localStorage.setItem("gt-setup-done", "1"); } catch (e) {} this.setState({ screen: "practice" }); },
+      measureLatency: () => { if (s.probing) return; this.setState({ probing: true, latencyMsg: "" }); setTimeout(() => this.setState({ probing: false, latencyMsg: "~34 ms round trip" }), 1200); },
+      openSetup: () => this.setState({ screen: "setup", setupStep: 0, captureOn: false, stringsSeen: 0, latencyMsg: "" }),
+
+      lessonTitle: lesson.title,
+      stepNum: (s.step % Math.max(1, lesson.steps.length)) + 1,
+      stepCount: Math.max(1, lesson.steps.length),
+      chordLabel: chord.label, chordCaption: chord.caption,
+      pills, laneLabels, marks, hint,
+      diagLine: code + " · conf " + conf + "% · hint p50 61 ms · fused audio+vision",
+      timer: mm + ":" + ss,
+      themeLabel: s.theme === "dark" ? "☾ dark" : "☀ light",
+      consoleBtnColor: s.consoleOpen ? "var(--accent)" : "var(--muted)",
+      consoleFooterLabel: s.consoleOpen ? "close console ▾" : "console ▴",
+      consoleOpen: s.consoleOpen,
+      toneOpen: s.toneOpen, lessonOpen: s.lessonOpen,
+      anyPanelOpen: s.toneOpen || s.lessonOpen,
+      closePanels: () => this.setState({ toneOpen: false, lessonOpen: false }),
+      toggleTonePanel: () => this.setState((p) => ({ toneOpen: !p.toneOpen, lessonOpen: false })),
+      toggleLessonPanel: () => this.setState((p) => ({ lessonOpen: !p.lessonOpen, toneOpen: false })),
+      openAmpsPage: () => this.setState({ screen: "amps", toneOpen: false }),
+      openLessonsPage: () => this.setState({ screen: "lessons", lessonOpen: false }),
+      backToPractice: () => this.setState({ screen: "practice" }),
+      showDebug: this.props.showDebugStrip ?? true,
+      footerLine: "webgpu · rVFC · glass→worker " + s.gw.toFixed(1) + " ms (p50 10.9 / p95 14.0) · vision " + s.vf + " fr · ring " + s.ring + " rd · drop 0 · diag " + s.counts.diag + " · hints " + s.counts.hints + " · in " + rmsR + " dB / floor −62 · tone " + s.monitor.toUpperCase() + " 5.8 ms",
+      rmsPct: rmsPct.toFixed(3),
+      peakLeft: Math.min(96, rmsPct * 100 + 10).toFixed(1) + "%",
+      rmsLine: rmsR + " dB · floor −62 dB",
+      tunerNote: phase >= 2 ? chord.okNote : chord.prob.note,
+      tunerHz: phase >= 2 ? chord.okHz : chord.prob.hz,
+      centsLeft: "calc(" + (50 + centsR * 1.4).toFixed(1) + "% - 1px)",
+      centsStr: (centsR >= 0 ? "+" : "") + centsR.toFixed(1) + "¢",
+      posterior,
+      diagCount: s.counts.diag, hintCount: s.counts.hints, complaints: s.counts.complaints,
+      lastDiag: code + " " + conf + "%",
+      gw: s.gw.toFixed(1), vf: s.vf, ring: s.ring,
+      monitorLabel: s.monitor.toUpperCase(),
+
+      presetShort: s.tonePreset.length > 20 ? s.tonePreset.slice(0, 19) + "…" : s.tonePreset,
+      currentPresetLine: s.tonePreset + " · monitor " + s.monitor.toUpperCase(),
+      knobs, miniKnobs, monitorOpts, cabOpts, presetRows, builtinCards, savedCards, chain,
+      hasSaved: s.savedPresets.length > 0, noSaved: s.savedPresets.length === 0,
+      presetName: s.presetName,
+      onPresetName: (e) => this.setState({ presetName: e.target.value }),
+      savePreset: () => {
+        const name = this.state.presetName.trim();
+        if (!name) return;
+        const list = this.state.savedPresets.filter((p) => p.name !== name).concat([{ name, params: { ...this.state.tone } }]);
+        this.persistPresets(list);
+        this.setState({ savedPresets: list, presetName: "", tonePreset: name });
+      },
+      lessonRows, lessonCards,
+
+      coachSummary: "Last: " + code.replace(/_/g, " ") + " (" + conf + "%) on " + chord.label,
+      coachReply: s.coachReply, coachSource: s.coachSource, coachQ: s.coachQ,
+      askLabel: s.coachBusy ? "Thinking…" : "Ask coach",
+      localLabel: s.localOnly ? "local-only" : "cloud ok",
+      localColor: s.localOnly ? "var(--ok)" : "var(--warn)",
+      localBorder: s.localOnly ? "var(--ok-line)" : "var(--warn)",
+      onQChange: (e) => this.setState({ coachQ: e.target.value }),
+      toggleTheme: () => { const t = s.theme === "dark" ? "light" : "dark"; this.applyTheme(t); this.setState({ theme: t }); },
+      toggleConsole: () => this.setState((p) => ({ consoleOpen: !p.consoleOpen })),
+      toggleLocal: () => this.setState((p) => ({ localOnly: !p.localOnly })),
+      nextStep: () => this.setState((p) => ({ step: (p.step + 1) % Math.max(1, this.LESSONS[p.lessonIdx].steps.length), phase: 0, counts: { ...p.counts, diag: p.counts.diag + 2, hints: p.counts.hints + 1 } })),
+      tipWrong: () => this.setState((p) => ({ counts: { ...p.counts, complaints: p.counts.complaints + 1 } })),
+      ask: () => {
+        if (s.coachBusy) return;
+        const full = this.REPLIES[code] || this.REPLIES.ok;
+        const words = full.split(" ");
+        let i = 0;
+        this.setState({ coachBusy: true, coachReply: "", coachSource: "" });
+        this.stream = setInterval(() => {
+          i += 2;
+          if (i >= words.length) {
+            clearInterval(this.stream);
+            this.setState({ coachBusy: false, coachReply: full, coachSource: this.state.localOnly ? "on-device coach" : "model reply (claude)", coachQ: "" });
+          } else {
+            this.setState({ coachReply: words.slice(0, i).join(" ") + "…" });
+          }
+        }, 70);
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

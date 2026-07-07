@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f0eee9;font-family:system-ui,sans-serif}
+a{color:#2a78d6}a:hover{color:#1c5aa8}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55)}
+.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+</style>
+</helmet>
+
+<div style="padding:32px 44px 4px;max-width:1000px">
+  <div style="font:600 15px/1.3 system-ui,sans-serif;color:#1a1a1a">Guitar tutor — practice screen explorations</div>
+  <p style="font:400 12.5px/1.6 system-ui,sans-serif;color:rgba(0,0,0,.55);margin:8px 0 0">
+    Context: everything below shows the same live moment — lesson "Open chords: C major", step 2/4, target C, ring finger muting the G string.
+    Assumptions from your answers: video is the hero · fretboard viz secondary · coach as a sidebar companion · debug telemetry stays visible (treated differently per option) · fresh palette, no Slate/Tailwind defaults.
+    The four options vary layout, visual temperature, and the feedback metaphor (overlay pills vs rack modules vs fretboard diagram vs string lanes).
+    A faithful recreation of today's UI lives in <a href="Current UI (recreation).dc.html">Current UI (recreation)</a> for reference.
+  </p>
+</div>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Practice screen — four directions</span></div>
+<div class="dv-opts">
+
+<!-- ================= 1a BACKSTAGE ================= -->
+<div class="dv-opt" id="1a">
+  <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Backstage — warm dark, video hero, feedback overlaid, one big hint</div>
+  <div class="dv-card" style="width:1240px">
+    <div data-screen-label="1a Backstage" style="width:1240px;background:#1a1714;color:#ece7df;font-family:'Space Grotesk',sans-serif;display:grid;grid-template-columns:1fr 300px;grid-template-rows:56px 470px 96px 40px">
+      <div style="grid-column:1;grid-row:1;display:flex;align-items:center;gap:14px;padding:0 20px;border-bottom:1px solid #2e2822">
+        <span style="font-size:14px;font-weight:500">Open chords · C major</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#9a917f;border:1px solid #2e2822;border-radius:999px;padding:3px 9px">step 2/4</span>
+        <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#7dbd8e;border:1px solid #3a4a3e;border-radius:999px;padding:3px 9px">DI · Scarlett 2i2</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#9a917f">12:42</span>
+      </div>
+      <div style="grid-column:1;grid-row:2;padding:16px 16px 0">
+        <div style="position:relative;width:100%;height:100%;border-radius:10px;overflow:hidden;background:repeating-linear-gradient(45deg,#0d0b09,#0d0b09 14px,#141110 14px,#141110 28px)">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5c554a">live camera — fretboard + finger overlay</span></div>
+          <div style="position:absolute;left:24px;bottom:18px;display:flex;flex-direction:column;gap:2px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;color:#9a917f">TARGET</span>
+            <span style="font-size:80px;line-height:1;font-weight:600;color:#ece7df">C</span>
+          </div>
+          <div style="position:absolute;right:24px;bottom:22px;display:flex;gap:8px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid #6b655c;color:#6b655c;background:rgba(13,11,9,0.6)">E —</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid #7dbd8e;color:#7dbd8e;background:rgba(13,11,9,0.6)">A ✓</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid #e0a458;color:#e0a458;background:rgba(13,11,9,0.6)">D !</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid #dd6a55;color:#dd6a55;background:rgba(13,11,9,0.6)">G ✕</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid #7dbd8e;color:#7dbd8e;background:rgba(13,11,9,0.6)">B ✓</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid #7dbd8e;color:#7dbd8e;background:rgba(13,11,9,0.6)">e ✓</span>
+          </div>
+        </div>
+      </div>
+      <div style="grid-column:1;grid-row:3;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:0 36px">
+        <span style="font-size:25px;font-weight:500;color:#ece7df">Arch your ring finger — it's brushing the G string.</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#9a917f">muted_string · conf 84% · hint p50 61 ms · <span style="color:#6b655c">tip was wrong?</span></span>
+      </div>
+      <div style="grid-column:2;grid-row:1/4;border-left:1px solid #2e2822;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 10px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;color:#9a917f">COACH</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7dbd8e;border:1px solid #3a4a3e;border-radius:999px;padding:2px 8px">local-only</span>
+        </div>
+        <div style="padding:0 20px;font-size:12.5px;line-height:1.5;color:#9a917f">Last: muted string (84%) on C</div>
+        <div style="margin:14px 20px 0;padding:14px 0 0;border-top:1px solid #2e2822;font-size:13.5px;line-height:1.55;color:#ece7df">
+          Likely: your ring finger is leaning into the G string. Arch the knuckle so the fingertip comes down vertically.
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#6b655c;margin-top:8px">on-device coach</div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="padding:0 20px 18px;display:flex;flex-direction:column;gap:8px">
+          <textarea placeholder="Why does my C sound muffled?" style="width:100%;min-height:60px;resize:none;font-family:'Space Grotesk',sans-serif;font-size:13px;padding:10px;border-radius:8px;border:1px solid #2e2822;background:#211d18;color:#ece7df"></textarea>
+          <button type="button" style="align-self:flex-end;padding:7px 16px;border-radius:8px;border:none;background:#e0a458;color:#1a1714;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Ask coach</button>
+        </div>
+      </div>
+      <div style="grid-column:1/-1;grid-row:4;display:flex;align-items:center;padding:0 20px;border-top:1px solid #2e2822;overflow:hidden">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b655c;white-space:nowrap">webgpu · rVFC · glass→worker 11.4 ms (p50 10.9 / p95 14.0, n 512) · vision 3120 fr · ring 18432 rd · drop 0 · diag 42 · hints 12 · tuner G3 +3.2¢ · notes C3 E3 G3 C4 E4 · in −18 dB / floor −62</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 1b CONSOLE ================= -->
+<div class="dv-opt" id="1b">
+  <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Console — pro-audio rack, dense mono, every meter a module</div>
+  <div class="dv-card" style="width:1240px">
+    <div data-screen-label="1b Console" style="width:1240px;background:#0f1216;color:#d7dfe9;font-family:'IBM Plex Mono',monospace">
+      <div style="display:flex;align-items:center;gap:16px;height:44px;padding:0 16px;border-bottom:1px solid #2a323d">
+        <span style="font-size:11px;letter-spacing:0.18em;color:#7d8a99">GUITAR TUTOR</span>
+        <span style="font-size:11px;color:#52d98b">● CAPTURE</span>
+        <span style="font-size:11px;color:#d7dfe9">00:12:42</span>
+        <span style="margin-left:auto;font-size:10.5px;color:#7d8a99">Open chords: C major · step 2/4</span>
+        <span style="font-size:10.5px;color:#52d98b;border:1px solid #2b4a39;padding:2px 8px;border-radius:2px">DI · Scarlett 2i2</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 300px 260px;gap:12px;padding:12px">
+        <div style="border:1px solid #2a323d;border-radius:3px;background:#12161c;display:flex;flex-direction:column;overflow:hidden">
+          <div style="position:relative;height:392px;background:repeating-linear-gradient(45deg,#0a0d11,#0a0d11 14px,#0e1218 14px,#0e1218 28px)">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font-size:11px;color:#4a5563">live camera — fretboard + finger overlay</span></div>
+            <div style="position:absolute;left:14px;top:12px;font-size:10px;letter-spacing:0.16em;color:#7d8a99">CAM 01 · CALIBRATED</div>
+            <div style="position:absolute;right:14px;top:12px;display:flex;flex-direction:column;align-items:flex-end;gap:0">
+              <span style="font-size:10px;letter-spacing:0.16em;color:#7d8a99">TARGET</span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:44px;line-height:1.1;font-weight:600;color:#d7dfe9">C</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px 14px;border-top:1px solid #2a323d">
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><span style="font-size:10px;color:#7d8a99">E</span><span style="display:block;width:100%;height:14px;border-radius:2px;background:#39414d"></span></div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><span style="font-size:10px;color:#7d8a99">A</span><span style="display:block;width:100%;height:14px;border-radius:2px;background:#52d98b"></span></div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><span style="font-size:10px;color:#7d8a99">D</span><span style="display:block;width:100%;height:14px;border-radius:2px;background:#e2b155"></span></div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><span style="font-size:10px;color:#7d8a99">G</span><span style="display:block;width:100%;height:14px;border-radius:2px;background:#e2604e"></span></div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><span style="font-size:10px;color:#7d8a99">B</span><span style="display:block;width:100%;height:14px;border-radius:2px;background:#52d98b"></span></div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><span style="font-size:10px;color:#7d8a99">e</span><span style="display:block;width:100%;height:14px;border-radius:2px;background:#52d98b"></span></div>
+          </div>
+          <div style="padding:12px 14px;border-top:1px solid #2a323d;font-size:13.5px;color:#e2b155">▸ Arch your ring finger — it's brushing the G string. <span style="color:#4a5563;font-size:10.5px">muted_string 84% · 61 ms</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="border:1px solid #2a323d;border-radius:3px;background:#151a20;padding:12px">
+            <div style="font-size:10px;letter-spacing:0.16em;color:#7d8a99;margin-bottom:10px">INPUT</div>
+            <div style="position:relative;height:8px;background:#0f1216;border:1px solid #2a323d;border-radius:2px;overflow:hidden">
+              <span style="display:block;height:100%;width:100%;transform:scaleX(0.7);transform-origin:left center;background:#52d98b"></span>
+              <span style="position:absolute;top:0;left:82%;width:2px;height:100%;background:#d7dfe9"></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10.5px;color:#7d8a99"><span>−18 dB · floor −62</span><span>clip ○</span></div>
+          </div>
+          <div style="border:1px solid #2a323d;border-radius:3px;background:#151a20;padding:12px">
+            <div style="font-size:10px;letter-spacing:0.16em;color:#7d8a99;margin-bottom:8px">TUNER</div>
+            <div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;color:#d7dfe9">G3</span><span style="font-size:12px;color:#7d8a99">196.4 Hz</span><span style="margin-left:auto;font-size:13px;color:#e2b155">+3.2¢</span></div>
+            <div style="position:relative;height:6px;margin-top:10px;background:#0f1216;border:1px solid #2a323d;border-radius:2px">
+              <span style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:#4a5563"></span>
+              <span style="position:absolute;left:56%;top:0;width:3px;height:100%;background:#e2b155;border-radius:1px"></span>
+            </div>
+          </div>
+          <div style="border:1px solid #2a323d;border-radius:3px;background:#151a20;padding:12px">
+            <div style="font-size:10px;letter-spacing:0.16em;color:#7d8a99;margin-bottom:10px">CHORD POSTERIOR</div>
+            <div style="display:grid;grid-template-columns:26px 1fr 26px;gap:5px 8px;align-items:center;font-size:10.5px">
+              <span style="color:#d7dfe9">C</span><span style="height:7px;background:#0f1216;border:1px solid #2a323d;border-radius:2px;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX(0.62);transform-origin:left center;background:#52d98b"></span></span><span style="text-align:right;color:#7d8a99">62</span>
+              <span style="color:#7d8a99">Am</span><span style="height:7px;background:#0f1216;border:1px solid #2a323d;border-radius:2px;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX(0.14);transform-origin:left center;background:#39414d"></span></span><span style="text-align:right;color:#7d8a99">14</span>
+              <span style="color:#7d8a99">G</span><span style="height:7px;background:#0f1216;border:1px solid #2a323d;border-radius:2px;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX(0.11);transform-origin:left center;background:#39414d"></span></span><span style="text-align:right;color:#7d8a99">11</span>
+              <span style="color:#7d8a99">F</span><span style="height:7px;background:#0f1216;border:1px solid #2a323d;border-radius:2px;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX(0.08);transform-origin:left center;background:#39414d"></span></span><span style="text-align:right;color:#7d8a99">8</span>
+              <span style="color:#7d8a99">Em</span><span style="height:7px;background:#0f1216;border:1px solid #2a323d;border-radius:2px;overflow:hidden;display:block"><span style="display:block;height:100%;width:100%;transform:scaleX(0.05);transform-origin:left center;background:#39414d"></span></span><span style="text-align:right;color:#7d8a99">5</span>
+            </div>
+          </div>
+          <div style="border:1px solid #2a323d;border-radius:3px;background:#151a20;padding:12px">
+            <div style="font-size:10px;letter-spacing:0.16em;color:#7d8a99;margin-bottom:10px">FUSION</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:10.5px;color:#7d8a99">
+              <span>diag <span style="color:#d7dfe9">42</span></span><span>hints <span style="color:#d7dfe9">12</span></span>
+              <span>dropped <span style="color:#d7dfe9">0</span></span><span>last <span style="color:#e2b155">muted_string 84%</span></span>
+              <span>p50 <span style="color:#d7dfe9">61.2 ms</span></span><span>p95 <span style="color:#d7dfe9">118.4 ms</span></span>
+              <span>glass→wkr <span style="color:#d7dfe9">11.4 ms</span></span><span>vision <span style="color:#d7dfe9">3120 fr</span></span>
+            </div>
+          </div>
+          <div style="border:1px solid #2a323d;border-radius:3px;background:#151a20;padding:12px">
+            <div style="font-size:10px;letter-spacing:0.16em;color:#7d8a99;margin-bottom:8px">TONE</div>
+            <div style="font-size:10.5px;color:#7d8a99;line-height:1.7">monitor <span style="color:#52d98b">AMP</span> · Clean Chord Practice<br>output path <span style="color:#d7dfe9">5.8 ms</span></div>
+          </div>
+        </div>
+        <div style="border:1px solid #2a323d;border-radius:3px;background:#151a20;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 12px 8px">
+            <span style="font-size:10px;letter-spacing:0.16em;color:#7d8a99">COACH</span>
+            <span style="font-size:9.5px;color:#52d98b;border:1px solid #2b4a39;padding:2px 6px;border-radius:2px">LOCAL</span>
+          </div>
+          <div style="padding:0 12px;font-size:11px;line-height:1.6;color:#7d8a99">Last: muted string (84%) on C</div>
+          <div style="margin:10px 12px 0;padding-top:10px;border-top:1px solid #2a323d;font-family:'Instrument Sans',sans-serif;font-size:13px;line-height:1.55;color:#d7dfe9">
+            Likely: your ring finger is leaning into the G string. Arch the knuckle so the fingertip comes down vertically.
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4a5563;margin-top:8px">on-device coach</div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="padding:12px;display:flex;flex-direction:column;gap:8px">
+            <textarea placeholder="Why does my C sound muffled?" style="width:100%;min-height:64px;resize:none;font-family:'Instrument Sans',sans-serif;font-size:12.5px;padding:9px;border-radius:2px;border:1px solid #2a323d;background:#0f1216;color:#d7dfe9"></textarea>
+            <button type="button" style="align-self:stretch;padding:8px;border-radius:2px;border:1px solid #2b4a39;background:#16211b;color:#52d98b;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;cursor:pointer">ASK COACH</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 1c PRACTICE ROOM ================= -->
+<div class="dv-opt" id="1c">
+  <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Practice room — calm light, fretboard diagram as second read, quiet debug footer</div>
+  <div class="dv-card" style="width:1180px">
+    <div data-screen-label="1c Practice room" style="width:1180px;background:#f7f5f1;color:#23211d;font-family:'Instrument Sans',sans-serif;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;padding:26px 28px 18px">
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:18px;font-weight:600">Open chords · C major</span>
+          <span style="display:flex;gap:5px;align-items:center">
+            <span style="width:7px;height:7px;border-radius:50%;background:#3d7f8f"></span>
+            <span style="width:7px;height:7px;border-radius:50%;background:#3d7f8f"></span>
+            <span style="width:7px;height:7px;border-radius:50%;border:1px solid #c9c2b4"></span>
+            <span style="width:7px;height:7px;border-radius:50%;border:1px solid #c9c2b4"></span>
+          </span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8377">step 2 of 4</span>
+          <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#4d9d6a;background:#fff;border:1px solid #d9e5da;border-radius:999px;padding:3px 10px">DI input · −18 dB</span>
+        </div>
+        <div style="position:relative;border-radius:16px;overflow:hidden;border:1px solid #e7e2d9;box-shadow:0 1px 4px rgba(35,33,29,0.05);height:400px;background:repeating-linear-gradient(45deg,#eceade,#eceade 14px,#f1efe5 14px,#f1efe5 28px)">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#a49c8c">live camera — fretboard + finger overlay</span></div>
+          <div style="position:absolute;left:18px;top:16px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8377;background:rgba(247,245,241,0.85);border-radius:999px;padding:4px 11px">calibrated · webgpu</div>
+        </div>
+        <div style="background:#ffffff;border:1px solid #e7e2d9;border-radius:16px;padding:18px 24px 14px">
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8a8377">TARGET</span>
+            <span style="font-size:22px;font-weight:600">C major</span>
+            <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8377">x 3 2 0 1 0</span>
+          </div>
+          <div style="position:relative;width:740px;height:196px;margin:6px auto 0">
+            <div style="position:absolute;left:96px;top:20px;width:6px;height:140px;background:#5a5348;border-radius:2px"></div>
+            <div style="position:absolute;left:222px;top:20px;width:2px;height:140px;background:#ddd7ca"></div>
+            <div style="position:absolute;left:348px;top:20px;width:2px;height:140px;background:#ddd7ca"></div>
+            <div style="position:absolute;left:474px;top:20px;width:2px;height:140px;background:#ddd7ca"></div>
+            <div style="position:absolute;left:600px;top:20px;width:2px;height:140px;background:#ddd7ca"></div>
+            <div style="position:absolute;left:726px;top:20px;width:2px;height:140px;background:#ddd7ca"></div>
+            <div style="position:absolute;left:100px;right:0;top:20px;height:1px;background:#b9b0a2"></div>
+            <div style="position:absolute;left:100px;right:0;top:48px;height:1px;background:#b9b0a2"></div>
+            <div style="position:absolute;left:100px;right:0;top:76px;height:1px;background:#b9b0a2"></div>
+            <div style="position:absolute;left:100px;right:0;top:104px;height:2px;background:#aaa192"></div>
+            <div style="position:absolute;left:100px;right:0;top:132px;height:2px;background:#aaa192"></div>
+            <div style="position:absolute;left:100px;right:0;top:160px;height:2px;background:#aaa192"></div>
+            <span style="position:absolute;left:8px;top:13px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8377">e</span>
+            <span style="position:absolute;left:8px;top:41px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8377">B</span>
+            <span style="position:absolute;left:8px;top:69px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8377">G</span>
+            <span style="position:absolute;left:8px;top:97px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8377">D</span>
+            <span style="position:absolute;left:8px;top:125px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8377">A</span>
+            <span style="position:absolute;left:8px;top:153px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8377">E</span>
+            <span style="position:absolute;left:46px;top:12px;font-size:13px;color:#4d9d6a">✓</span>
+            <span style="position:absolute;left:46px;top:40px;font-size:13px;color:#4d9d6a">✓</span>
+            <span style="position:absolute;left:46px;top:68px;font-size:13px;color:#c65a4d">✕</span>
+            <span style="position:absolute;left:46px;top:96px;font-size:13px;color:#c98f3d">!</span>
+            <span style="position:absolute;left:46px;top:124px;font-size:13px;color:#4d9d6a">✓</span>
+            <span style="position:absolute;left:46px;top:152px;font-size:13px;color:#a49c8c">×</span>
+            <div style="position:absolute;left:148px;top:36px;width:24px;height:24px;border-radius:50%;background:#3d7f8f;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12px">1</div>
+            <div style="position:absolute;left:274px;top:92px;width:24px;height:24px;border-radius:50%;background:#3d7f8f;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12px">2</div>
+            <div style="position:absolute;left:400px;top:120px;width:24px;height:24px;border-radius:50%;background:#c65a4d;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12px">3</div>
+            <span style="position:absolute;left:155px;top:172px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a49c8c">1</span>
+            <span style="position:absolute;left:281px;top:172px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a49c8c">2</span>
+            <span style="position:absolute;left:407px;top:172px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a49c8c">3</span>
+            <span style="position:absolute;left:533px;top:172px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a49c8c">4</span>
+            <span style="position:absolute;left:659px;top:172px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a49c8c">5</span>
+          </div>
+        </div>
+        <div style="text-align:center;display:flex;flex-direction:column;gap:4px">
+          <span style="font-size:19px;color:#23211d">Arch your ring finger — it's brushing the G string.</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a49c8c">muted_string · 84% · answered in 61 ms · tuner G3 +3.2¢</span>
+        </div>
+        <div style="border-top:1px solid #e7e2d9;padding-top:10px;overflow:hidden">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#a49c8c;white-space:nowrap">cam FaceTime HD · mic Scarlett 2i2 (DI) · webgpu · rVFC · glass→worker 11.4 ms (p50 10.9 / p95 14.0, n 512) · vision 3120 fr · ring 18432 rd · drop 0 · diag 42 · hints 12 · complaints 1/12</span>
+        </div>
+      </div>
+      <div style="background:#ffffff;border:1px solid #e7e2d9;border-radius:16px;padding:20px;display:flex;flex-direction:column;align-self:stretch">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8a8377">COACH</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#4d9d6a;border:1px solid #d9e5da;border-radius:999px;padding:2px 8px">local-only</span>
+        </div>
+        <p style="font-size:13px;line-height:1.5;color:#8a8377;margin:10px 0 0">Last: muted string (84%) on C</p>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e7e2d9;font-size:14px;line-height:1.55">
+          Likely: your ring finger is leaning into the G string. Arch the knuckle so the fingertip comes down vertically.
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#a49c8c;margin-top:8px">on-device coach</div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+          <textarea placeholder="Why does my C sound muffled?" style="width:100%;min-height:60px;resize:none;font-family:'Instrument Sans',sans-serif;font-size:13px;padding:10px;border-radius:10px;border:1px solid #e7e2d9;background:#f7f5f1;color:#23211d"></textarea>
+          <button type="button" style="align-self:flex-end;padding:8px 18px;border-radius:10px;border:none;background:#3d7f8f;color:#fff;font-family:'Instrument Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Ask coach</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 1d LANES ================= -->
+<div class="dv-opt" id="1d">
+  <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Lanes — novel: six string lanes as the primary feedback surface</div>
+  <div class="dv-card" style="width:1240px">
+    <div data-screen-label="1d Lanes" style="width:1240px;background:#161c2b;color:#e8ebf2;font-family:'Instrument Sans',sans-serif;display:grid;grid-template-columns:1fr 280px;grid-template-rows:auto auto 36px">
+      <div style="grid-column:1;grid-row:1;display:grid;grid-template-columns:420px 1fr;gap:24px;padding:20px 24px 12px">
+        <div style="position:relative;height:250px;border-radius:10px;overflow:hidden;background:repeating-linear-gradient(45deg,#0e1220,#0e1220 14px,#121728 14px,#121728 28px)">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4d5771">live camera</span></div>
+          <div style="position:absolute;left:12px;bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8792a8">CAM 01 · calibrated · DI −18 dB</div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:center;gap:10px;min-width:0">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:#8792a8">TARGET · OPEN CHORDS · STEP 2/4</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:18px">
+            <span style="font-size:64px;line-height:1;font-weight:600">C</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8792a8">x 3 2 0 1 0</span>
+          </div>
+          <span style="font-size:18px;line-height:1.45;color:#e8ebf2">Arch your ring finger — it's brushing the <span style="color:#d95f4f">G string</span>.</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8792a8">muted_string · 84% · 61 ms · tuner G3 +3.2¢ <span style="color:#d9a24e">▲</span></span>
+        </div>
+      </div>
+      <div style="grid-column:1;grid-row:2;padding:8px 24px 20px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:grid;grid-template-columns:72px 1fr 150px;gap:12px;align-items:center;height:44px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5fb98a;text-align:right">e</span>
+          <div style="position:relative;height:30px;background:#1f2739;border-radius:6px;border-left:3px solid #5fb98a">
+            <span style="position:absolute;left:20%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:40%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:60%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:80%;top:0;width:1px;height:100%;background:#2b3550"></span>
+            <span style="position:absolute;left:8px;top:4px;width:22px;height:22px;border-radius:50%;border:2px solid #5fb98a;color:#5fb98a;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px">0</span>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#5fb98a">E4 · ok</span>
+        </div>
+        <div style="display:grid;grid-template-columns:72px 1fr 150px;gap:12px;align-items:center;height:44px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5fb98a;text-align:right">B</span>
+          <div style="position:relative;height:30px;background:#1f2739;border-radius:6px;border-left:3px solid #5fb98a">
+            <span style="position:absolute;left:20%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:40%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:60%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:80%;top:0;width:1px;height:100%;background:#2b3550"></span>
+            <span style="position:absolute;left:calc(10% - 11px);top:4px;width:22px;height:22px;border-radius:50%;background:#e07856;color:#161c2b;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500">1</span>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#5fb98a">C4 · ok</span>
+        </div>
+        <div style="display:grid;grid-template-columns:72px 1fr 150px;gap:12px;align-items:center;height:44px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#d95f4f;text-align:right">G</span>
+          <div style="position:relative;height:30px;background:rgba(217,95,79,0.10);border-radius:6px;border-left:3px solid #d95f4f">
+            <span style="position:absolute;left:20%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:40%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:60%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:80%;top:0;width:1px;height:100%;background:#2b3550"></span>
+            <span style="position:absolute;left:8px;top:4px;width:22px;height:22px;border-radius:50%;border:2px solid #d95f4f;color:#d95f4f;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px">0</span>
+            <span style="position:absolute;left:44px;top:7px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#d95f4f">muted — arch your ring finger</span>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#d95f4f">— · muted</span>
+        </div>
+        <div style="display:grid;grid-template-columns:72px 1fr 150px;gap:12px;align-items:center;height:44px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#d9a24e;text-align:right">D</span>
+          <div style="position:relative;height:30px;background:#1f2739;border-radius:6px;border-left:3px solid #d9a24e">
+            <span style="position:absolute;left:20%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:40%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:60%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:80%;top:0;width:1px;height:100%;background:#2b3550"></span>
+            <span style="position:absolute;left:calc(30% - 11px);top:4px;width:22px;height:22px;border-radius:50%;background:#e07856;color:#161c2b;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500">2</span>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#d9a24e">E3 · check</span>
+        </div>
+        <div style="display:grid;grid-template-columns:72px 1fr 150px;gap:12px;align-items:center;height:44px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5fb98a;text-align:right">A</span>
+          <div style="position:relative;height:30px;background:#1f2739;border-radius:6px;border-left:3px solid #5fb98a">
+            <span style="position:absolute;left:20%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:40%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:60%;top:0;width:1px;height:100%;background:#2b3550"></span><span style="position:absolute;left:80%;top:0;width:1px;height:100%;background:#2b3550"></span>
+            <span style="position:absolute;left:calc(50% - 11px);top:4px;width:22px;height:22px;border-radius:50%;background:#e07856;color:#161c2b;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500">3</span>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#5fb98a">C3 · ok</span>
+        </div>
+        <div style="display:grid;grid-template-columns:72px 1fr 150px;gap:12px;align-items:center;height:44px;opacity:0.45">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8792a8;text-align:right">E</span>
+          <div style="position:relative;height:30px;background:#1f2739;border-radius:6px;border-left:3px solid #4d5771">
+            <span style="position:absolute;left:8px;top:5px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#8792a8">×</span>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#8792a8">don't play</span>
+        </div>
+      </div>
+      <div style="grid-column:2;grid-row:1/3;border-left:1px solid #2b3550;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 18px 8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:#8792a8">COACH</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#5fb98a;border:1px solid #2c4a3d;border-radius:999px;padding:2px 8px">local-only</span>
+        </div>
+        <div style="padding:0 18px;font-size:12.5px;line-height:1.5;color:#8792a8">Last: muted string (84%) on C</div>
+        <div style="margin:12px 18px 0;padding-top:12px;border-top:1px solid #2b3550;font-size:13.5px;line-height:1.55">
+          Likely: your ring finger is leaning into the G string. Arch the knuckle so the fingertip comes down vertically.
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#4d5771;margin-top:8px">on-device coach</div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="padding:0 18px 18px;display:flex;flex-direction:column;gap:8px">
+          <textarea placeholder="Why does my C sound muffled?" style="width:100%;min-height:60px;resize:none;font-family:'Instrument Sans',sans-serif;font-size:13px;padding:10px;border-radius:8px;border:1px solid #2b3550;background:#1f2739;color:#e8ebf2"></textarea>
+          <button type="button" style="align-self:flex-end;padding:7px 16px;border-radius:8px;border:none;background:#e07856;color:#161c2b;font-family:'Instrument Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Ask coach</button>
+        </div>
+      </div>
+      <div style="grid-column:1/-1;grid-row:3;display:flex;align-items:center;padding:0 24px;border-top:1px solid #2b3550;overflow:hidden">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#4d5771;white-space:nowrap">webgpu · rVFC · glass→worker 11.4 ms (p50 10.9 / p95 14.0, n 512) · vision 3120 fr · ring 18432 rd · drop 0 · diag 42 · hints 12 · notes C3 E3 G3 C4 E4 · in −18 dB / floor −62 · tone AMP 5.8 ms</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "more like <a class="dv-oid" href="#1a">1a</a> but with <a class="dv-oid" href="#1c">1c</a>'s fretboard diagram" · "make <a class="dv-oid" href="#1b">1b</a>'s rack collapsible" · "new directions"</p>
+</section>
+</x-dc>
+</body>
+</html>
