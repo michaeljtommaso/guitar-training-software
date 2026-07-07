@@ -18,10 +18,21 @@ export const LIGHT_CONF = 0.5;
 export const HOLD_MS = 1500;
 /** Full-tier note match tolerance (semitones). */
 export const SEMITONE_TOL = 1;
+/** Scale full-tier octave handling (spec §6): exact-octave midi match is the
+ *  PRIMARY signal; when this flag is on, an octave-agnostic pitch-class
+ *  fallback also lights positions whose pitch class was heard in any octave.
+ *  DECISION: enabled — Basic Pitch commonly reports guitar notes an octave
+ *  off (strong harmonics), so exact-octave-only under-lights in practice;
+ *  flip to false to try exact-octave-only on hardware (same tuning-friendly
+ *  convention as SILENCE_RMS). */
+export const SCALE_PC_FALLBACK = true;
 
 export interface HeardState {
   chordHeard: boolean;
   strings?: Array<"ok" | "pending" | "muted-expected">;
+  /** full tier + scale target: position midis heard within HOLD_MS (includes
+   *  pitch-class fallback matches when SCALE_PC_FALLBACK is on). */
+  scaleHitMidis?: number[];
 }
 
 /** The 8-template label the audio leg emits for a chord we can listen for, or
@@ -55,7 +66,8 @@ export class ExploreFeedback {
   heard(target: ExploreTarget, tier: "light" | "full", tMs: number): HeardState {
     if (!target) return { chordHeard: false };
     const chordHeard = this.chordHeardFor(target, tMs);
-    if (tier === "light" || target.kind !== "chord") return { chordHeard };
+    if (tier === "light") return { chordHeard };
+    if (target.kind === "scale") return { chordHeard, scaleHitMidis: this.scaleHits(target.positions, tMs) };
     const v = target.voicings[target.active];
     if (!v) return { chordHeard };
     const strings = v.frets.map((fret, i) => {
@@ -68,6 +80,23 @@ export class ExploreFeedback {
       return "pending" as const;
     });
     return { chordHeard, strings };
+  }
+
+  /** Position midis considered heard: exact-octave primary, pitch-class
+   *  fallback per SCALE_PC_FALLBACK (see the constant's doc comment). */
+  private scaleHits(positions: Array<{ midi: number }>, tMs: number): number[] {
+    const exact = new Set<number>();
+    const pcs = new Set<number>();
+    for (const [midi, at] of this.noteHits) {
+      if (tMs - at > HOLD_MS) continue;
+      exact.add(midi);
+      pcs.add(((midi % 12) + 12) % 12);
+    }
+    const hits = new Set<number>();
+    for (const p of positions) {
+      if (exact.has(p.midi) || (SCALE_PC_FALLBACK && pcs.has(((p.midi % 12) + 12) % 12))) hits.add(p.midi);
+    }
+    return [...hits].sort((a, b) => a - b);
   }
 
   private chordHeardFor(target: NonNullable<ExploreTarget>, tMs: number): boolean {

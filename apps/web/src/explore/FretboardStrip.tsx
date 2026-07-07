@@ -91,20 +91,27 @@ export function FretboardStrip({ target, window: win, heard }: FretboardStripPro
       {target?.kind === "scale" &&
         target.positions
           .filter((p) => p.fret >= a && p.fret <= b)
-          .map((p) => (
-            <g key={`sc${p.string}-${p.fret}`}>
-              <circle
-                data-dot={p.isRoot ? "root" : "scale"}
-                cx={dotX(p.fret)}
-                cy={y(p.string)}
-                r={8}
-                className={p.isRoot ? "root" : "scale-dot"}
-              />
-              <text x={dotX(p.fret)} y={y(p.string) + 3} textAnchor="middle" className="degree">
-                {p.degree}
-              </text>
-            </g>
-          ))}
+          .map((p) => {
+            // Full-tier lighting (spec §6): feedback.ts already resolved exact-
+            // octave + pitch-class fallback into position midis, so a plain
+            // membership test is all the renderer needs.
+            const hit = heard?.scaleHitMidis?.includes(p.midi) ?? false;
+            return (
+              <g key={`sc${p.string}-${p.fret}`}>
+                <circle
+                  data-dot={p.isRoot ? "root" : "scale"}
+                  data-hit={hit ? "true" : undefined}
+                  cx={dotX(p.fret)}
+                  cy={y(p.string)}
+                  r={8}
+                  className={(p.isRoot ? "root" : "scale-dot") + (hit ? " hit" : "")}
+                />
+                <text x={dotX(p.fret)} y={y(p.string) + 3} textAnchor="middle" className="degree">
+                  {p.degree}
+                </text>
+              </g>
+            );
+          })}
       {/* full-tier ticks */}
       {heard?.strings?.map((st, i) => (
         <text key={`t${i}`} data-tick={st} x={W - PAD_X + 14} y={y(i + 1) + 4} className={`tick ${st}`}>
