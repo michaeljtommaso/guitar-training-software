@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { detectF0Yin, YinTunerSource } from "./tuner";
 import { centsBetween } from "./pitch";
-import { sineWave, harmonicNote } from "./synth";
+import { sineWave, harmonicNote, whiteNoise, resetNoiseSeed } from "./synth";
 
 const SR = 48000;
 
@@ -39,5 +39,20 @@ describe("YIN tuner (synthetic)", () => {
 
   it("returns null on silence", () => {
     expect(detectF0Yin(new Float32Array(4096), SR)).toBeNull();
+  });
+
+  // BUG-001 req 2: the tuner must not lock onto the mic noise floor / low hum.
+  // YinTunerSource gates on frame RMS below the shared silence floor.
+  it("returns no reading for a periodic-but-sub-floor-quiet signal", () => {
+    const tuner = new YinTunerSource();
+    // A clean 85 Hz sine (YIN would happily lock on) but at amp 0.001 →
+    // rms ≈ 7e-4, far below the 0.005 silence floor. Phantom 'E2 · 85 Hz'.
+    expect(tuner.detect(sineWave(85, 0.2, SR, 0.001), SR)).toBeNull();
+  });
+
+  it("returns no reading for near-silent noise below the silence floor", () => {
+    resetNoiseSeed();
+    const tuner = new YinTunerSource();
+    expect(tuner.detect(whiteNoise(0.2, SR, 0.01), SR)).toBeNull();
   });
 });

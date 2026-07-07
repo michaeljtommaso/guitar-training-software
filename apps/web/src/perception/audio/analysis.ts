@@ -73,8 +73,11 @@ export class AudioAnalyzer {
     const events: AudioEvent[] = [];
 
     // --- onset (short window, every hop) -------------------------------------
+    // Gate the onset on the SHORT-window RMS so an idle-mic noise floor can't
+    // fire phantom onsets (BUG-001 req 1); the detector's own threshold is
+    // purely relative and clears on noise flicker alone.
     const mag = this.spec.compute(window);
-    const on = this.onset.process(mag, tMs);
+    const on = this.onset.process(mag, tMs, rms(window));
     if (on) {
       events.push({ t: on.t, kind: "onset", strength: on.strength, conf: on.conf });
       this.state.lastOnsetT = on.t;

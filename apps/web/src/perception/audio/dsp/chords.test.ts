@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { MagnitudeSpectrum, rms, spectralFlatness } from "./fft";
 import { computeChroma } from "./chroma";
-import { classifyChroma, ChordMatcher, CHORD_LABELS } from "./chords";
+import { classifyChroma, ChordMatcher, CHORD_LABELS, SILENCE_RMS } from "./chords";
 import { chordSignal, whiteNoise, silence, resetNoiseSeed, OPEN_CHORD_FREQS } from "./synth";
 
 const SR = 48000;
@@ -48,6 +48,27 @@ describe("chord template match (synthetic)", () => {
   it("classifies white noise as noise", () => {
     resetNoiseSeed();
     expect(classifySignal(whiteNoise(0.5, SR, 0.5)).label).toBe("noise");
+  });
+
+  // BUG-001 req 3: a gated (silence/noise) frame must NOT be presented as a
+  // confident chord spread — the posterior is omitted at the data layer.
+  it("omits the posterior when gated to silence", () => {
+    expect(classifySignal(silence(0.5, SR)).posterior).toHaveLength(0);
+  });
+
+  it("omits the posterior when gated to noise", () => {
+    resetNoiseSeed();
+    expect(classifySignal(whiteNoise(0.5, SR, 0.5)).posterior).toHaveLength(0);
+  });
+
+  // BUG-001 req 1: the silence floor is a single shared source of truth.
+  it("exports SILENCE_RMS as the shared silence floor and gates on it", () => {
+    const belowFloor = SILENCE_RMS * 0.5;
+    const aboveFloor = SILENCE_RMS * 2;
+    const chroma = new Float32Array(12);
+    chroma[4] = 1; // arbitrary tonal chroma
+    expect(classifyChroma(chroma, belowFloor, 0).label).toBe("silence");
+    expect(classifyChroma(chroma, aboveFloor, 0).label).not.toBe("silence");
   });
 
   it("posterior sums to 1 and is sorted", () => {

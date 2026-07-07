@@ -102,6 +102,23 @@ describe("clock bridging — cross-leg diagnosis through the REAL ingest path", 
   });
 });
 
+describe("silence gate at the fusion ingest point (BUG-001 / RESULT-002 Problem 1)", () => {
+  afterEach(() => stopLesson());
+
+  it("a silence/noise-derived audio stream inside a live lesson produces NO diagnoses and NO hints", () => {
+    expect(startLesson("open_chords_c_major")).toBe(true);
+    // Idle mic during a lesson: the analyzer gates every frame to silence/noise.
+    fusionIngest([chord(300, "silence", 1)], "audio", { wallMs: wallAt(300), audioMs: 300 });
+    fusionIngest([chord(600, "noise", 1)], "audio", { wallMs: wallAt(600), audioMs: 600 });
+    fusionIngest([chord(900, "silence", 1)], "audio", { wallMs: wallAt(900), audioMs: 900 });
+    fusionIngest([chord(1200, "noise", 1)], "audio", { wallMs: wallAt(1200), audioMs: 1200 });
+    const snap = getFusionSnapshot();
+    expect(snap.counts.diagnoses).toBe(0);
+    expect(snap.counts.hints).toBe(0);
+    expect(snap.hint).toBeNull();
+  });
+});
+
 describe("false-feedback complaint metric (WP-7, §16)", () => {
   afterEach(() => stopLesson());
 

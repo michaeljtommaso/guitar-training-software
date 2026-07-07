@@ -3,6 +3,8 @@
 // manual step, so YIN (de Cheveigné & Kawahara 2002) is the shipped fallback —
 // robust enough for a single-note tuner and fully on-device.
 import { nearestString } from "./pitch";
+import { rms } from "./fft";
+import { SILENCE_RMS } from "./chords";
 
 export interface F0Estimate {
   f0: number;
@@ -102,10 +104,22 @@ export interface TunerSource {
   detect(signal: Float32Array, sampleRate: number): TuningReading | null;
 }
 
+export interface YinTunerOptions extends YinOptions {
+  /** Frame RMS below this → no reading (silence gate). Defaults to the shared
+   *  {@link SILENCE_RMS}. */
+  silenceRms?: number;
+}
+
 export class YinTunerSource implements TunerSource {
-  constructor(private readonly opts: YinOptions = {}) {}
+  private readonly silenceRms: number;
+  constructor(private readonly opts: YinTunerOptions = {}) {
+    this.silenceRms = opts.silenceRms ?? SILENCE_RMS;
+  }
 
   detect(signal: Float32Array, sampleRate: number): TuningReading | null {
+    // Silence gate (BUG-001 req 2): below the floor, YIN otherwise locks onto
+    // the low-frequency mic hum and reports a phantom reading (e.g. E2 · 85 Hz).
+    if (rms(signal) < this.silenceRms) return null;
     const est = detectF0Yin(signal, sampleRate, this.opts);
     if (!est) return null;
     const ns = nearestString(est.f0);

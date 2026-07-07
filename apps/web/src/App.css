@@ -183,6 +183,16 @@
   display: contents;
 }
 
+/* BUG-001: greyed placeholder shown instead of chord bars when the frame is
+   gated to silence/noise (posterior omitted at the data layer). */
+.chord-posterior-idle {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  opacity: 0.6;
+  min-height: 0.6rem;
+}
+
 .posterior-name {
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.8rem;
