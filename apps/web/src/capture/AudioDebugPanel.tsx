@@ -19,6 +19,11 @@ export function AudioDebugPanel() {
   const chord = a?.chord ?? null;
   const tuning = a?.tuning ?? null;
   const onsetRecent = Number.isFinite(snap.lastOnsetT);
+  // BUG-001 req 3: a gated (silence/noise) frame carries an empty posterior, so
+  // it must NOT render as a confident chord spread — show a greyed state instead
+  // of dancing bars over pure noise.
+  const gated = chord !== null && (chord.label === "silence" || chord.label === "noise");
+  const hasPosterior = (chord?.posterior?.length ?? 0) > 0;
 
   return (
     <section className="audio-debug">
@@ -34,20 +39,26 @@ export function AudioDebugPanel() {
         </span>
       </div>
 
-      <div className="chord-posterior">
-        {(chord?.posterior ?? []).map((p) => (
-          <div key={p.label} className="posterior-bar">
-            <span className="posterior-name">{p.label}</span>
-            <span className="posterior-track">
-              <span
-                className={`posterior-fill ${chord && chord.label === p.label ? "top" : ""}`}
-                style={{ transform: `scaleX(${p.p.toFixed(3)})` }}
-              />
-            </span>
-            <span className="posterior-pct">{(p.p * 100).toFixed(0)}</span>
-          </div>
-        ))}
-      </div>
+      {hasPosterior ? (
+        <div className="chord-posterior">
+          {chord!.posterior.map((p) => (
+            <div key={p.label} className="posterior-bar">
+              <span className="posterior-name">{p.label}</span>
+              <span className="posterior-track">
+                <span
+                  className={`posterior-fill ${chord!.label === p.label ? "top" : ""}`}
+                  style={{ transform: `scaleX(${p.p.toFixed(3)})` }}
+                />
+              </span>
+              <span className="posterior-pct">{(p.p * 100).toFixed(0)}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="chord-posterior-idle">
+          {gated ? (chord!.label === "noise" ? "noise — no tonal chord" : "silence") : "—"}
+        </div>
+      )}
 
       <div className="audio-row">
         <span className="audio-label">Tuner</span>
