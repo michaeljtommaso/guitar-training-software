@@ -30,6 +30,11 @@ test("Local-only mode: answers from templates with the backend down, zero networ
     if (u.includes("/ws/coach") || u.includes("/api/") || /:8000\b/.test(u)) backendReqs.push(u);
   });
 
+  // v2 UI: the coach lives in the practice screen's CoachColumn (same
+  // useCoach behavior + testids as the old CoachPanel); skip the first-run
+  // wizard by seeding the setup flag. Purely page-local — the zero-network
+  // assertion below is untouched.
+  await page.addInitScript(() => localStorage.setItem("gt-setup-done", "true"));
   await page.goto("/");
 
   // Default ON (privacy-first).
@@ -111,6 +116,8 @@ test.describe("fake-provider coaching over WebSocket (best-effort)", () => {
     const sockets: string[] = [];
     page.on("websocket", (ws) => sockets.push(ws.url()));
 
+    // v2 UI: coach column is on the practice route — skip the wizard.
+    await page.addInitScript(() => localStorage.setItem("gt-setup-done", "true"));
     await page.goto("/");
     // Turn Local-only OFF to allow the network coach.
     await page.getByTestId("coach-local-only").uncheck();

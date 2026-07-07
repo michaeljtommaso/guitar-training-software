@@ -11,12 +11,26 @@ import { expect, test } from "@playwright/test";
 //         Zod schema,
 //   (iv)  event-ingest → hint-emit latency (main-thread, per ingest batch) is
 //         measured and printed. This is NOT glass-to-glass latency.
+//
+// v2 UI: the wizard is skipped by seeding `gt-setup-done` (the wizard walk
+// itself is covered by capture-smoke.spec.ts); capture starts from the
+// practice screen's start card (spec §9). LessonPanel's lesson-select +
+// lesson-start collapsed into the TopBar picker — selecting a lesson STARTS
+// it, selecting "No lesson" (value "") STOPS it (spec §3). The target chord
+// readout moved to the camera pane's TARGET card.
+
+/** Boot to the practice screen with capture running (fake devices). */
+async function bootPractice(page: import("@playwright/test").Page) {
+  await page.addInitScript(() => localStorage.setItem("gt-setup-done", "true"));
+  await page.goto("/");
+  await page.getByTestId("capture-start").click();
+  await page.waitForFunction(() => window.__captureDebug !== undefined);
+}
+
 test("fusion lesson: diagnoses flow, hints are rate-limited, session log lands in IndexedDB", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: "Start capture" }).click();
-  await page.waitForFunction(() => window.__captureDebug !== undefined);
+  await bootPractice(page);
 
   // Audio pipeline alive before the lesson starts.
   await expect
@@ -25,11 +39,10 @@ test("fusion lesson: diagnoses flow, hints are rate-limited, session log lands i
     })
     .toBeGreaterThan(0);
 
-  // Select and start the C-major lesson.
-  await page.getByTestId("lesson-select").selectOption("open_chords_c_major");
-  await page.getByTestId("lesson-start").click();
+  // Select the C-major lesson in the TopBar picker — selection starts it.
+  await page.getByTestId("topbar-lesson-picker").selectOption("open_chords_c_major");
   await page.waitForFunction(() => window.__fusionDebug !== undefined);
-  await expect(page.getByTestId("lesson-target")).toHaveText("C");
+  await expect(page.getByTestId("target-card").locator(".target-card-name")).toHaveText("C");
 
   // (i) Diagnoses flow from the live event stream.
   await expect
@@ -82,8 +95,9 @@ test("fusion lesson: diagnoses flow, hints are rate-limited, session log lands i
   expect(snap.counts.diagnoses).toBeGreaterThan(0);
 
   // (iii) Stop the lesson (final flush) → session log in REAL IndexedDB,
-  // re-validated against the Zod schema inside the page.
-  await page.getByTestId("lesson-stop").click();
+  // re-validated against the Zod schema inside the page. "No lesson" in the
+  // TopBar picker is the v2 stop control (same stopLesson() path).
+  await page.getByTestId("topbar-lesson-picker").selectOption("");
   await expect
     .poll(
       () => page.evaluate(() => window.__fusionDebug!.validateStoredSessions().then((r) => r.count)),
@@ -114,9 +128,8 @@ test("fusion lesson: diagnoses flow, hints are rate-limited, session log lands i
 // timing. Calibration is a SYNTHETIC identity homography (clearly labeled, no
 // accuracy claim) set exactly where a real calibration writes it.
 test("overlay: lesson target dots draw over video + a confident diagnosis flashes", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: "Start capture" }).click();
-  await page.waitForFunction(() => window.__captureDebug !== undefined && window.__overlayDebug !== undefined);
+  await bootPractice(page);
+  await page.waitForFunction(() => window.__overlayDebug !== undefined);
 
   // Audio alive → the wall↔audio clock anchor can form (needed to rebase vision).
   await expect
@@ -125,11 +138,10 @@ test("overlay: lesson target dots draw over video + a confident diagnosis flashe
     })
     .toBeGreaterThan(0);
 
-  // Start the C-major lesson.
-  await page.getByTestId("lesson-select").selectOption("open_chords_c_major");
-  await page.getByTestId("lesson-start").click();
+  // Start the C-major lesson from the TopBar picker.
+  await page.getByTestId("topbar-lesson-picker").selectOption("open_chords_c_major");
   await page.waitForFunction(() => window.__fusionDebug !== undefined);
-  await expect(page.getByTestId("lesson-target")).toHaveText("C");
+  await expect(page.getByTestId("target-card").locator(".target-card-name")).toHaveText("C");
 
   // Active but NOT calibrated → the overlay shows the nudge and draws NO dots
   // (never fake positions without a homography).
@@ -174,5 +186,6 @@ test("overlay: lesson target dots draw over video + a confident diagnosis flashe
   expect(flash).not.toBeNull();
   expect(["error", "correct"]).toContain(flash!.color);
 
-  await page.getByTestId("lesson-stop").click();
+  // Stop the lesson ("No lesson" = v2 stop control).
+  await page.getByTestId("topbar-lesson-picker").selectOption("");
 });

@@ -1,17 +1,23 @@
 import { expect, test } from "@playwright/test";
 
 // Explore-mode e2e (fake devices). Mirrors fusion-lesson.spec.ts's boot
-// sequence exactly: goto "/", click "Start capture", wait for
-// window.__captureDebug, then confirm the audio pipeline is alive before
-// touching anything else. No lesson runs here — flipping to explore mode
-// stops any active lesson (exploreStore.setMode rule, spec §4) — and the
-// schematic FretboardStrip is deliberately camera-free (spec §5.1), so this
-// scenario needs no calibration to prove the picker → strip path works.
+// sequence exactly: seed `gt-setup-done` (v2 UI — the coach/explore chrome
+// lives on the practice route), goto "/", start capture from the practice
+// start card, wait for window.__captureDebug, then confirm the audio pipeline
+// is alive before touching anything else. No lesson runs here — flipping to
+// explore mode stops any active lesson (exploreStore.setMode rule, spec §4) —
+// and the schematic FretboardStrip is deliberately camera-free (spec §5.1),
+// so this scenario needs no calibration to prove the picker → strip path
+// works. v2 relocations: the lesson picker is the TopBar's combined
+// `topbar-lesson-picker` (old LessonPanel `lesson-select`), the explore
+// pickers live in the CoachColumn, and the strip renders in the ZoomPane
+// slot (spec §8) — all `explore-*`/`fretboard-strip` testids unchanged.
 test("explore mode: Am voicing renders on the strip; toggle round-trips to practice", async ({
   page,
 }) => {
+  await page.addInitScript(() => localStorage.setItem("gt-setup-done", "true"));
   await page.goto("/");
-  await page.getByRole("button", { name: "Start capture" }).click();
+  await page.getByTestId("capture-start").click();
   await page.waitForFunction(() => window.__captureDebug !== undefined);
 
   // Audio pipeline alive before touching mode (same liveness gate
@@ -22,8 +28,8 @@ test("explore mode: Am voicing renders on the strip; toggle round-trips to pract
     })
     .toBeGreaterThan(0);
 
-  // Practice mode's lesson panel is there by default; the toggle only wraps.
-  await expect(page.getByTestId("lesson-select")).toBeVisible();
+  // Practice mode's lesson picker is there by default; the toggle only wraps.
+  await expect(page.getByTestId("topbar-lesson-picker")).toBeVisible();
 
   await page.getByTestId("mode-explore").click();
   await page.getByTestId("explore-root").selectOption("A");
@@ -31,9 +37,11 @@ test("explore mode: Am voicing renders on the strip; toggle round-trips to pract
 
   // Am's real (unmocked) chords-db open voicing is x02210 → project order
   // [0,1,2,2,0,-1]: 3 fingered strings, 2 open, 1 muted (pinned in
-  // theory/chords.test.ts against the same real db).
+  // theory/chords.test.ts against the same real db). The strip now renders
+  // inside the ZoomPane slot (spec §8) — same testids, same dot counts.
   const strip = page.getByTestId("fretboard-strip");
   await expect(strip).toBeVisible();
+  expect(await page.getByTestId("zoom-pane").getByTestId("fretboard-strip").count()).toBe(1);
   await expect(strip.locator("[data-dot='finger']")).toHaveCount(3);
   await expect(strip.locator("[data-dot='open']")).toHaveCount(2);
   await expect(strip.locator("[data-dot='muted']")).toHaveCount(1);
@@ -54,9 +62,9 @@ test("explore mode: Am voicing renders on the strip; toggle round-trips to pract
   const calibrated = await page.evaluate(() => window.__captureDebug!.visionHot.H !== null);
   expect(calibrated).toBe(false);
 
-  // Switching back to practice restores the lesson panel; the toggle itself
+  // Switching back to practice restores the lesson picker; the toggle itself
   // (both buttons) stays visible in either mode.
   await page.getByTestId("mode-practice").click();
   await expect(page.getByTestId("mode-explore")).toBeVisible();
-  await expect(page.getByTestId("lesson-select")).toBeVisible();
+  await expect(page.getByTestId("topbar-lesson-picker")).toBeVisible();
 });
