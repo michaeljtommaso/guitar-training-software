@@ -15,6 +15,7 @@ import { CoachColumn } from "./CoachColumn";
 import { useExploreStore } from "../explore/exploreStore";
 import { useCoachStore } from "../coach/coachStore";
 import { chordVoicings } from "../theory/chords";
+import { getEntries } from "../debuglog/debugLog";
 
 describe("CoachColumn — practice mode (coach chat)", () => {
   beforeEach(() => {
@@ -47,6 +48,109 @@ describe("CoachColumn — practice mode (coach chat)", () => {
   it("does not render explore controls in practice mode", () => {
     render(<CoachColumn />);
     expect(screen.queryByTestId("explore-root")).not.toBeInTheDocument();
+  });
+});
+
+describe("CoachColumn — log issue mode (field-testing debug logger)", () => {
+  beforeEach(() => {
+    useExploreStore.getState().setMode("practice");
+    useCoachStore.setState({ localOnly: true, hydrated: false });
+    localStorage.removeItem("gt-debug-log");
+  });
+  afterEach(() => {
+    useExploreStore.getState().setMode("practice");
+    localStorage.removeItem("gt-debug-log");
+  });
+
+  it("defaults to the coach sub-tab, unchanged from before (existing behavior stays green)", () => {
+    render(<CoachColumn />);
+    expect(screen.getByTestId("coach-tab-coach")).toBeInTheDocument();
+    expect(screen.getByTestId("coach-tab-log")).toBeInTheDocument();
+    expect(screen.getByLabelText("Question for the coach")).toBeInTheDocument();
+    expect(screen.queryByTestId("debug-log-submit")).not.toBeInTheDocument();
+  });
+
+  it("switching to the log-issue sub-tab hides the coach ask box and shows the log-issue form", () => {
+    render(<CoachColumn />);
+    fireEvent.click(screen.getByTestId("coach-tab-log"));
+    expect(screen.queryByLabelText("Question for the coach")).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/what went wrong/i)).toBeInTheDocument();
+    expect(screen.getByTestId("debug-log-submit")).toBeInTheDocument();
+  });
+
+  it("submitting a note appends an entry, clears the textarea, and shows the logged confirmation with the running count", () => {
+    render(<CoachColumn />);
+    fireEvent.click(screen.getByTestId("coach-tab-log"));
+
+    const textarea = screen.getByPlaceholderText(/what went wrong/i) as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: "chord detector froze on Am" } });
+    fireEvent.click(screen.getByTestId("debug-log-submit"));
+
+    expect(getEntries()).toHaveLength(1);
+    expect(getEntries()[0].note).toBe("chord detector froze on Am");
+    expect(textarea.value).toBe("");
+    expect(screen.getByTestId("debug-log-count")).toHaveTextContent("logged ✓ (1 total)");
+  });
+
+  it("the download/clear actions are hidden at zero entries and appear once N > 0", () => {
+    render(<CoachColumn />);
+    fireEvent.click(screen.getByTestId("coach-tab-log"));
+
+    expect(screen.queryByTestId("debug-log-download")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("debug-log-clear")).not.toBeInTheDocument();
+
+    const textarea = screen.getByPlaceholderText(/what went wrong/i);
+    fireEvent.change(textarea, { target: { value: "note one" } });
+    fireEvent.click(screen.getByTestId("debug-log-submit"));
+
+    expect(screen.getByTestId("debug-log-download")).toHaveTextContent("download log (1)");
+    expect(screen.getByTestId("debug-log-clear")).toBeInTheDocument();
+  });
+
+  it("clear empties the log after confirm, and hides the actions again", () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<CoachColumn />);
+    fireEvent.click(screen.getByTestId("coach-tab-log"));
+
+    const textarea = screen.getByPlaceholderText(/what went wrong/i);
+    fireEvent.change(textarea, { target: { value: "note one" } });
+    fireEvent.click(screen.getByTestId("debug-log-submit"));
+    expect(getEntries()).toHaveLength(1);
+
+    fireEvent.click(screen.getByTestId("debug-log-clear"));
+    expect(getEntries()).toHaveLength(0);
+    expect(screen.queryByTestId("debug-log-download")).not.toBeInTheDocument();
+
+    vi.restoreAllMocks();
+  });
+
+  it("clear does nothing when the user declines the confirm", () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<CoachColumn />);
+    fireEvent.click(screen.getByTestId("coach-tab-log"));
+
+    const textarea = screen.getByPlaceholderText(/what went wrong/i);
+    fireEvent.change(textarea, { target: { value: "note one" } });
+    fireEvent.click(screen.getByTestId("debug-log-submit"));
+
+    fireEvent.click(screen.getByTestId("debug-log-clear"));
+    expect(getEntries()).toHaveLength(1);
+
+    vi.restoreAllMocks();
+  });
+
+  it("switching back to the coach sub-tab still renders the coach chat untouched", async () => {
+    render(<CoachColumn />);
+    fireEvent.click(screen.getByTestId("coach-tab-log"));
+    fireEvent.click(screen.getByTestId("coach-tab-coach"));
+
+    expect(screen.getByLabelText("Question for the coach")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Question for the coach"), {
+      target: { value: "why does my C sound muffled?" },
+    });
+    fireEvent.click(screen.getByTestId("coach-ask"));
+    await waitFor(() => expect(screen.getByTestId("coach-reply")).toBeInTheDocument());
+    expect(screen.getByTestId("coach-source")).toHaveTextContent(/on-device/i);
   });
 });
 
