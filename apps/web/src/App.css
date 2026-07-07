@@ -432,6 +432,48 @@
   box-shadow: 0 0 0 2px var(--correct);
 }
 
+/* ---- T4 ZoomPane: hybrid live-crop / schematic fretboard zoom (spec §6) ---- */
+.zoom-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1, 0.5rem);
+  width: 100%;
+}
+.zoom-pane__header {
+  font-family: var(--font-mono, "IBM Plex Mono", monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+/* The strip and the live canvas share one box; the canvas fades in over the
+   strip so a lost calibration crossfades to the schematic (spec §6.6). */
+.zoom-pane__stage {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 4 / 1;
+}
+.zoom-pane__stage .fret-strip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.zoom-pane__live {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-md, 0.5rem);
+  opacity: 0; /* raised imperatively per frame by the crossfade */
+  transition: opacity 120ms linear;
+  pointer-events: none;
+}
+.zoom-pane--preview .zoom-pane__stage {
+  max-width: 480px;
+}
+
 /* ---- WP-5 explore mode: practice/explore + chord/scale toggles ---- */
 .mode-toggle button.active,
 .explore-panel button.active {
