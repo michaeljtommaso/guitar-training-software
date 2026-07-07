@@ -12,7 +12,8 @@ import { FINGERTIP_LANDMARKS } from "../perception/vision/fingerMapping";
 import { perStringStatus } from "../perception/vision/demoTarget";
 import { decayConfidence, overlayOpacity } from "../perception/vision/degradation";
 import { fusionHot } from "../fusion/fusionStore";
-import { planTargets, fingerInitial, type TargetDot } from "./targetDots";
+import { exploreHot } from "../explore/exploreStore";
+import { planTargets, exploreDots, fingerInitial, type TargetDot } from "./targetDots";
 import { FLASH_MS } from "./flash";
 import type { StatusKey } from "../theme/statusColors";
 
@@ -62,6 +63,17 @@ export function drawVision(
     if (plan.dots.length) drawTargetDots(ctx, plan.dots, palette, redFlash);
   } catch {
     // singular homography mid-frame — skip dots, keep the rest of the overlay
+  }
+
+  // Explore-mode target dots: ONLY when no lesson is active and an explore
+  // target is set. Same calibration gate as the lesson dots (ADR-007: no
+  // calibration → no dots). Filled, neutral, label-carrying; never flashes.
+  if (!fusionHot.active && exploreHot.target && vh.H) {
+    try {
+      drawExploreDots(ctx, exploreDots(exploreHot.target, vh.H, w, h), palette);
+    } catch {
+      // singular homography mid-frame — skip explore dots, keep the overlay
+    }
   }
 
   drawHalos(ctx, w, h, vh, palette);
@@ -162,6 +174,53 @@ function drawTargetDots(
     if (dot.finger) {
       ctx.fillStyle = color;
       ctx.fillText(fingerInitial(dot.finger), dot.X, dot.Y + 1);
+    }
+  }
+  ctx.restore();
+}
+
+/** Explore-mode target dots: distinct from lesson dots — FILLED discs (lesson
+ *  dots are hollow rings), a neutral/info tint (NOT the R/Y/G status palette,
+ *  since explore is exploratory, not graded), and the dot's own label (finger
+ *  number or scale degree). No red-flash emphasis in explore. */
+function drawExploreDots(ctx: CanvasRenderingContext2D, dots: TargetDot[], palette: StatusPalette): void {
+  if (!dots.length) return;
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "12px 'IBM Plex Mono', monospace";
+  const color = palette.uncertain; // neutral/info — explore is not graded
+  for (const dot of dots) {
+    if (dot.kind === "avoid") {
+      const r = 7;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(dot.X - r, dot.Y - r);
+      ctx.lineTo(dot.X + r, dot.Y + r);
+      ctx.moveTo(dot.X + r, dot.Y - r);
+      ctx.lineTo(dot.X - r, dot.Y + r);
+      ctx.stroke();
+      continue;
+    }
+    if (dot.kind === "open") {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.arc(dot.X, dot.Y, 7, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      continue;
+    }
+    // Fingered dot: FILLED disc + label (finger number / scale degree).
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(dot.X, dot.Y, 14, 0, Math.PI * 2);
+    ctx.fill();
+    if (dot.label) {
+      ctx.fillStyle = "#000"; // readable on the filled neutral disc
+      ctx.fillText(dot.label, dot.X, dot.Y + 1);
     }
   }
   ctx.restore();
