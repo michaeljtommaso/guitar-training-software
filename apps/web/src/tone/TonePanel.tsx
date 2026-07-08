@@ -2,7 +2,7 @@
 // in useToneStore and the controller's subscription pushes it into the running
 // chain. This panel never reads post-tone audio (ADR-013) — only the latency
 // readout, which is a clock property.
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { useCaptureStore } from "../capture/captureStore";
 import { classifyAudioInput } from "../capture/devices";
 import { BUNDLED_CABINETS } from "./cabinets";
@@ -99,23 +99,28 @@ export function TonePanel({ tone }: { tone: ToneChainHandles }) {
       {feedbackRisk && (
         <p className="wizard-error">Mic input + speakers can feedback — use headphones.</p>
       )}
-      {KNOBS.map((k) => (
-        <div className="audio-row" key={k.key}>
-          <label className="audio-label" htmlFor={`tone-${k.key}`}>{k.label}</label>
-          <input
-            id={`tone-${k.key}`}
-            type="range"
-            min={k.min}
-            max={k.max}
-            step={k.step}
-            value={params[k.key]}
-            onChange={(e) => set({ [k.key]: Number(e.target.value) })}
-          />
-          <span className="audio-value">
-            {k.step < 1 ? params[k.key].toFixed(2) : params[k.key]}
-          </span>
-        </div>
-      ))}
+      {KNOBS.map((k) => {
+        const val = params[k.key];
+        // Filled-range %, consumed by the slider's track gradient (--fill).
+        const pct = ((val - k.min) / (k.max - k.min)) * 100;
+        return (
+          <div className="audio-row" key={k.key}>
+            <label className="audio-label" htmlFor={`tone-${k.key}`}>{k.label}</label>
+            <input
+              id={`tone-${k.key}`}
+              className="ui-slider"
+              type="range"
+              min={k.min}
+              max={k.max}
+              step={k.step}
+              value={val}
+              style={{ "--fill": `${pct}%` } as CSSProperties}
+              onChange={(e) => set({ [k.key]: Number(e.target.value) })}
+            />
+            <span className="audio-value">{k.step < 1 ? val.toFixed(2) : val}</span>
+          </div>
+        );
+      })}
       <div className="audio-row">
         <label className="audio-label" htmlFor="tone-cab">Cab</label>
         <select

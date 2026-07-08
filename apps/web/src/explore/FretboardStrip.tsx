@@ -3,7 +3,7 @@
 // Layout: string 1 (high e) on TOP (prototype convention); x from the shared
 // equal-tempered fretX(); finger dots use the lessons' 70%-behind-the-fret
 // convention.
-import { fretX } from "../perception/vision/fretboard";
+import { fretX, STRIP_W, STRIP_H } from "../perception/vision/fretboard";
 import type { ExploreTarget } from "./exploreStore";
 import type { HeardState } from "./feedback";
 
@@ -13,11 +13,20 @@ export interface FretboardStripProps {
   heard?: HeardState;
 }
 
-const W = 720;
-const H = 180;
+const W = STRIP_W;
+const H = STRIP_H; // tunable via STRIP_H (fretboard.ts) — the single source
 const PAD_X = 34;
-const PAD_Y = 18;
+const PAD_Y = Math.round(H * 0.14); // proportional vertical padding
 const BEHIND = 0.7; // keep in sync with overlay/targetDots.ts
+
+// Dot radii scale with the string spacing, so multi-finger voicings on adjacent
+// strings never overlap no matter what STRIP_H is set to (the overlap bug was a
+// fixed radius that exceeded the spacing once the strip was made short).
+const SPACING = (H - 2 * PAD_Y) / 5;
+const R_FINGER = SPACING * 0.42;
+const R_OPEN = SPACING * 0.34;
+const R_SCALE = SPACING * 0.4;
+const R_BARRE = SPACING * 0.34;
 
 export function FretboardStrip({ target, window: win, heard }: FretboardStripProps) {
   const [a, b] =
@@ -57,11 +66,11 @@ export function FretboardStrip({ target, window: win, heard }: FretboardStripPro
           <rect
             key={`b${bf}`}
             data-dot="barre"
-            x={dotX(bf) - 7}
-            y={y(Math.min(...rows)) - 9}
-            width={14}
-            height={y(Math.max(...rows)) - y(Math.min(...rows)) + 18}
-            rx={7}
+            x={dotX(bf) - R_BARRE}
+            y={y(Math.min(...rows)) - R_BARRE}
+            width={2 * R_BARRE}
+            height={y(Math.max(...rows)) - y(Math.min(...rows)) + 2 * R_BARRE}
+            rx={R_BARRE}
             className="barre"
           />
         );
@@ -70,18 +79,18 @@ export function FretboardStrip({ target, window: win, heard }: FretboardStripPro
         const s = i + 1;
         if (f < 0) {
           return (
-            <text key={`m${s}`} data-dot="muted" x={PAD_X - 16} y={y(s) + 4} className="muted">
+            <text key={`m${s}`} data-dot="muted" x={PAD_X - 13} y={y(s) + 3} className="muted">
               ×
             </text>
           );
         }
         if (f === 0) {
-          return <circle key={`o${s}`} data-dot="open" cx={PAD_X - 14} cy={y(s)} r={5} className="open" />;
+          return <circle key={`o${s}`} data-dot="open" cx={PAD_X - 12} cy={y(s)} r={R_OPEN} className="open" />;
         }
         return (
           <g key={`d${s}`}>
-            <circle data-dot="finger" cx={dotX(f)} cy={y(s)} r={9} className="finger" />
-            <text x={dotX(f)} y={y(s) + 3.5} textAnchor="middle" className="finger-num">
+            <circle data-dot="finger" cx={dotX(f)} cy={y(s)} r={R_FINGER} className="finger" />
+            <text x={dotX(f)} y={y(s) + 2.5} textAnchor="middle" className="finger-num">
               {v.fingers[i] || ""}
             </text>
           </g>
@@ -103,10 +112,10 @@ export function FretboardStrip({ target, window: win, heard }: FretboardStripPro
                   data-hit={hit ? "true" : undefined}
                   cx={dotX(p.fret)}
                   cy={y(p.string)}
-                  r={8}
+                  r={R_SCALE}
                   className={(p.isRoot ? "root" : "scale-dot") + (hit ? " hit" : "")}
                 />
-                <text x={dotX(p.fret)} y={y(p.string) + 3} textAnchor="middle" className="degree">
+                <text x={dotX(p.fret)} y={y(p.string) + 2} textAnchor="middle" className="degree">
                   {p.degree}
                 </text>
               </g>
@@ -114,7 +123,7 @@ export function FretboardStrip({ target, window: win, heard }: FretboardStripPro
           })}
       {/* full-tier ticks */}
       {heard?.strings?.map((st, i) => (
-        <text key={`t${i}`} data-tick={st} x={W - PAD_X + 14} y={y(i + 1) + 4} className={`tick ${st}`}>
+        <text key={`t${i}`} data-tick={st} x={W - PAD_X + 13} y={y(i + 1) + 3} className={`tick ${st}`}>
           {st === "ok" ? "✓" : st === "muted-expected" ? "–" : "·"}
         </text>
       ))}

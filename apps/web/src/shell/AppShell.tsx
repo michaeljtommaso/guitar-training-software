@@ -77,9 +77,16 @@ function ZoomPaneSlot({ capture }: { capture: CaptureHost }) {
   const heard = useExploreHeard(mode);
 
   if (mode === "explore") {
-    return <ZoomPane video={capture.videoEl} fallbackTarget={exploreTarget} heard={heard} />;
+    return (
+      <ZoomPane
+        video={capture.videoEl}
+        fallbackTarget={exploreTarget}
+        heard={heard}
+        headerAside={<HintBar />}
+      />
+    );
   }
-  return <ZoomPane video={capture.videoEl} lessonTarget={fusionHot.target} />;
+  return <ZoomPane video={capture.videoEl} lessonTarget={fusionHot.target} headerAside={<HintBar />} />;
 }
 
 export function AppShell() {
@@ -118,10 +125,25 @@ export function AppShell() {
       ? capture.handles.tone.latencyMs()
       : undefined;
 
+  // One ConsoleDrawer definition, docked differently per route: a static third
+  // grid column inside the practice screen (spec v2-ui), or the fixed slide-up
+  // overlay on the wizard route. It's always mounted on the live route so its
+  // own backtick/Escape hotkey keeps working while closed.
+  const consoleDrawer = (dock: "bottom" | "column") => (
+    <ConsoleDrawer
+      open={drawerOpen}
+      onOpenChange={setDrawerOpen}
+      handles={capture.handles}
+      onStopCapture={capture.stop}
+      onRestartCapture={restartCapture}
+      dock={dock}
+    />
+  );
+
   return (
     <main className="app-shell" data-testid="app-shell">
       {setupDone ? (
-        <div data-testid="route-practice">
+        <div className="route-view" data-testid="route-practice">
           <PracticeScreen
             capture={capture}
             topBar={
@@ -132,7 +154,6 @@ export function AppShell() {
                 onToggleConsole={toggleConsole}
               />
             }
-            hintBar={<HintBar />}
             footer={
               <TelemetryFooter
                 consoleOpen={drawerOpen}
@@ -143,21 +164,16 @@ export function AppShell() {
               />
             }
             zoomPane={<ZoomPaneSlot capture={capture} />}
+            consolePane={consoleDrawer("column")}
+            consoleOpen={drawerOpen}
           />
         </div>
       ) : (
         <div data-testid="route-wizard">
           <Wizard capture={capture} onDone={() => setSetupDone(true)} />
+          {consoleDrawer("bottom")}
         </div>
       )}
-
-      <ConsoleDrawer
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        handles={capture.handles}
-        onStopCapture={capture.stop}
-        onRestartCapture={restartCapture}
-      />
     </main>
   );
 }

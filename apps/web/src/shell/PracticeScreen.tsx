@@ -14,7 +14,7 @@
 // isn't running yet" edge case (spec §9); once running they live in the
 // TopBar input badge / ConsoleDrawer "Inputs" section (§3), so they are
 // intentionally NOT shown while `running`.
-import { type ReactNode, useSyncExternalStore } from "react";
+import { type ReactNode, useEffect, useRef, useSyncExternalStore } from "react";
 import { useCaptureStore } from "../capture/captureStore";
 import { MANUAL_TAP_ORDER } from "../capture/controller";
 import type { Point } from "../perception/vision/homography";
@@ -162,9 +162,49 @@ function CameraPane({ capture }: { capture: CaptureHost }) {
   const targetCard = deriveTargetCard(mode, fusionSnap, exploreTarget);
   const showChips = mode === "practice" && fusionSnap.lessonId !== null;
 
+  // Size the video-stage to the live video's EXACT aspect ratio so the overlay
+  // grid and the 4-tap calibration map to ONLY the video pixels — never the
+  // letterbox. Without this the video object-fit:contains inside a taller stage
+  // while the overlay stretches to the whole stage, so the grid spills into the
+  // empty bars and calibration taps are read against the wrong rectangle.
+  const stageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const stage = stageRef.current;
+    const v = capture.video;
+    const parent = stage?.parentElement; // .camera-pane
+    if (!stage || !v || !parent) return;
+    const fit = () => {
+      const aw = v.videoWidth || 16; // 16:9 fallback before the stream resolves
+      const ah = v.videoHeight || 9;
+      const cw = parent.clientWidth;
+      const ch = parent.clientHeight;
+      if (cw <= 0 || ch <= 0) return;
+      const scale = Math.min(cw / aw, ch / ah);
+      stage.style.width = `${Math.round(aw * scale)}px`;
+      stage.style.height = `${Math.round(ah * scale)}px`;
+    };
+    fit();
+    // Guard the browser-only APIs — jsdom (tests) has neither ResizeObserver nor
+    // a full media element, and this effect must never throw on mount.
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null;
+    ro?.observe(parent);
+    if (typeof v.addEventListener === "function") {
+      v.addEventListener("loadedmetadata", fit);
+      v.addEventListener("resize", fit);
+    }
+    return () => {
+      ro?.disconnect();
+      if (typeof v.removeEventListener === "function") {
+        v.removeEventListener("loadedmetadata", fit);
+        v.removeEventListener("resize", fit);
+      }
+    };
+  }, [capture.video]);
+
   return (
     <div className="camera-pane" data-testid="camera-pane">
       <div
+        ref={stageRef}
         className="video-stage"
         data-testid="video-stage"
         onClick={onStageClick}
@@ -274,13 +314,27 @@ export interface PracticeScreenProps {
   /** ZoomPane (spec §6/T4) — falls back to a mount-point placeholder (testid
    *  `zoom-pane`) so this mounts standalone in tests. */
   zoomPane?: ReactNode;
+  /** Console (spec v2-ui) — the ConsoleDrawer docked as a third grid column to
+   *  the right of the coach. Always rendered (it hides itself via `hidden` when
+   *  closed); `consoleOpen` widens the grid to three tracks when it's open. */
+  consolePane?: ReactNode;
+  /** Whether the docked console is open — drives the 3-column grid modifier. */
+  consoleOpen?: boolean;
 }
 
-export function PracticeScreen({ capture, topBar, hintBar, footer, zoomPane }: PracticeScreenProps) {
+export function PracticeScreen({
+  capture,
+  topBar,
+  hintBar,
+  footer,
+  zoomPane,
+  consolePane,
+  consoleOpen,
+}: PracticeScreenProps) {
   return (
     <div className="practice-screen" data-testid="practice-screen">
       {topBar}
-      <div className="practice-screen-grid">
+      <div className={`practice-screen-grid${consoleOpen ? " practice-screen-grid--with-console" : ""}`}>
         <div className="practice-main">
           <CameraPane capture={capture} />
           <div className="zoom-pane-slot">
@@ -288,6 +342,7 @@ export function PracticeScreen({ capture, topBar, hintBar, footer, zoomPane }: P
           </div>
           {hintBar}
         </div>
+        {consolePane}
         <CoachColumn />
       </div>
       {footer}

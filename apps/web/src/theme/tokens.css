@@ -75,6 +75,9 @@
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
   --pane-gap: 16px;
+
+  /* Practice console docked-column width (tunable; sits +50 over the coach 320). */
+  --console-col-w: 470px;
 }
 
 [data-theme="dark"] {

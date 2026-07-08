@@ -17,3 +17,22 @@ button {
   font-family: inherit;
   font-size: inherit;
 }
+
+/* Base dark-mode-aware styling for native selects — several pickers (TopBar
+   lesson/tone, Explore chord) rendered white in dark mode with no global rule.
+   Per-select rules (padding/size/weight) still layer on top of this. The
+   max-width guard also keeps a long option label from forcing horizontal
+   scroll in the narrow docked console. */
+select {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 0.35rem);
+  font: inherit;
+  max-width: 100%;
+}
+
+select option {
+  background: var(--surface);
+  color: var(--text);
+}

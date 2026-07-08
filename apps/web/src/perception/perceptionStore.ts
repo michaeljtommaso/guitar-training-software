@@ -55,6 +55,12 @@ export interface VisionHot {
   calibConf: number;
   /** performance.now() when H was last confirmed (for decay/dimming, §7). */
   calibSeenAt: number;
+  /** True only while a live per-frame tracker re-confirms the calibration each
+   *  frame (re-stamping calibSeenAt) — then confidence is allowed to DECAY on
+   *  occlusion. False for one-shot manual/ChArUco calibration: the calibration
+   *  is STATIC and held at full confidence (no wall-clock decay). Stays false
+   *  until markerless tracking lands — see docs/plans/markerless-fretboard-tracking.md */
+  calibLive: boolean;
   strum: { dir: StrumDir; conf: number };
 }
 
@@ -64,6 +70,7 @@ export const visionHot: VisionHot = {
   H: null,
   calibConf: 0,
   calibSeenAt: 0,
+  calibLive: false,
   strum: { dir: "none", conf: 0 },
 };
 

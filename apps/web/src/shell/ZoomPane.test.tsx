@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ZoomPane } from "./ZoomPane";
+import { STRIP_W, STRIP_H } from "../perception/vision/fretboard";
 import { drawVision } from "../overlay/drawVision";
 import { getLesson } from "../fusion/lessons";
 import type { FusionTarget } from "../overlay/targetDots";
@@ -14,6 +15,7 @@ const UNCALIBRATED: VisionHot = {
   H: null,
   calibConf: 0,
   calibSeenAt: 0,
+  calibLive: false,
   strum: { dir: "none", conf: 0 },
 };
 
@@ -54,7 +56,9 @@ describe("ZoomPane — structure & fallback (never blanks, §6)", () => {
     expect(screen.getByTestId("zoom-pane")).toHaveAttribute("data-variant", "preview");
     const canvas = screen.getByTestId("zoom-pane-live") as HTMLCanvasElement;
     expect(canvas.width).toBe(480);
-    expect(canvas.height).toBe(120);
+    // Buffer aspect matches the FretboardStrip viewBox (STRIP_W:STRIP_H) so the
+    // live crop isn't stretched — preview h = round(480 * STRIP_H / STRIP_W).
+    expect(canvas.height).toBe(Math.round((480 * STRIP_H) / STRIP_W));
   });
 });
 

@@ -3,6 +3,7 @@ import {
   CALIB_HALF_LIFE_MS,
   OVERLAY_DIM_THRESHOLD,
   decayConfidence,
+  effectiveCalibConf,
   overlayOpacity,
 } from "./degradation";
 
@@ -24,6 +25,22 @@ describe("decayConfidence (held-homography decay, WP-3 §7)", () => {
       expect(c).toBeGreaterThanOrEqual(0);
       prev = c;
     }
+  });
+});
+
+describe("effectiveCalibConf", () => {
+  it("is 0 when uncalibrated", () => {
+    expect(effectiveCalibConf(false, 1, 0, false)).toBe(0);
+  });
+
+  it("holds a static (non-live) calibration at full confidence — no decay", () => {
+    expect(effectiveCalibConf(true, 1, 0, false)).toBe(1);
+    expect(effectiveCalibConf(true, 1, 60_000, false)).toBe(1);
+    expect(effectiveCalibConf(true, 0.5, 10 * CALIB_HALF_LIFE_MS, false)).toBeCloseTo(0.5, 9);
+  });
+
+  it("decays a live-tracked calibration with time", () => {
+    expect(effectiveCalibConf(true, 0.8, CALIB_HALF_LIFE_MS, true)).toBeCloseTo(0.4, 9);
   });
 });
 

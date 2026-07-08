@@ -1,6 +1,18 @@
 /* Practice screen (spec v2-ui §5) — camera pane dominant, zoom-pane + hint-bar
    slots, ~320px coach column. Tokens only. */
+/* Practice route wrapper (AppShell's route-practice div) — fills the shell so
+   the practice screen is a fixed-viewport, no-scroll layout. */
+.route-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .practice-screen {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--pane-gap);
@@ -13,8 +25,17 @@
 .practice-screen-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-rows: minmax(0, 1fr);
   gap: var(--pane-gap);
-  align-items: start;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Console docked as the middle column (left of the coach), the camera + fretboard
+   reclaim the space when it's closed (2 columns). Console is wider than the coach
+   (420 vs 320) since it holds the debug tables. */
+.practice-screen-grid--with-console {
+  grid-template-columns: minmax(0, 1fr) var(--console-col-w) 320px;
 }
 
 .practice-main {
@@ -22,17 +43,32 @@
   flex-direction: column;
   gap: var(--pane-gap);
   min-width: 0;
+  min-height: 0;
 }
 
 /* ---- camera pane ---- */
+/* Centers the aspect-correct video-stage; the leftover height/width is empty
+   bg, NOT letterbox baked into the stage (so the overlay never covers bars). */
 .camera-pane {
+  flex: 1;
+  min-height: 0;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Sized by CameraPane's JS to the live video's EXACT aspect ratio so the overlay
+   grid + calibration taps wrap ONLY the video. The rules here are the pre-stream
+   fallback (a 16:9 box that fits the pane); JS overrides width/height in px. */
 .video-stage {
   position: relative;
-  width: 100%;
   aspect-ratio: 16 / 9;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  margin: auto;
   background: var(--bg);
   border: 1px solid var(--border);
   overflow: hidden;
@@ -42,7 +78,10 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* `contain` guarantees the whole camera frame is visible (incl. the fretboard
+     at the bottom), letterboxing only if the camera's aspect != 16:9. If those
+     bars bother you we can match .video-stage's aspect-ratio to the camera. */
+  object-fit: contain;
 }
 
 .video-stage .overlay-canvas {
@@ -220,12 +259,13 @@
 
 /* ---- zoom-pane slot (T4 owns the real component) ---- */
 .zoom-pane-slot {
+  flex: 0 0 auto;
   width: 100%;
 }
 
 .zoom-pane-placeholder {
   width: 100%;
-  aspect-ratio: 4 / 1;
+  aspect-ratio: 9 / 1;
   border: 1px dashed var(--border);
   border-radius: var(--radius-md);
   background: var(--surface);

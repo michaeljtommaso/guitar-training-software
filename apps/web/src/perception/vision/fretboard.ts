@@ -22,6 +22,14 @@
 export const NUM_STRINGS = 6;
 export const MAX_FRET = 5; // MVP: nut → fret 5 (open-chord window)
 
+/** Schematic fretboard-strip / zoom content box (viewBox + canvas-buffer units).
+ *  ONE source of truth shared by the FretboardStrip viewBox, the ZoomPane live-
+ *  crop canvas buffer, and the .zoom-pane__stage aspect ratio (set inline from
+ *  these), so the three never drift. Bump STRIP_H to make the zoom pane taller;
+ *  FretboardStrip's padding + dot radii derive from it, so dots never overlap. */
+export const STRIP_W = 720;
+export const STRIP_H = 120;
+
 /** Equal-tempered fret-line position normalized to an arbitrary window
  *  [start, end] (0 at start's line, 1 at end's). Generalizes fretLineX. */
 export function fretX(n: number, start: number, end: number): number {

@@ -28,6 +28,23 @@ export function overlayOpacity(conf: number): number {
   return OPACITY_FLOOR + (1 - OPACITY_FLOOR) * clamp01(conf / OVERLAY_DIM_THRESHOLD);
 }
 
+/** Effective calibration confidence for display. A calibration only DECAYS
+ *  while it is being live-tracked (a per-frame detector re-confirms it,
+ *  re-stamping calibSeenAt). Until markerless/live tracking exists
+ *  (docs/plans/markerless-fretboard-tracking.md), calibrations are STATIC:
+ *  held at their confirmed confidence with no time decay, so the overlay +
+ *  zoom pane stay solid after a one-shot manual/ChArUco calibration. */
+export function effectiveCalibConf(
+  hasCalib: boolean,
+  calibConf: number,
+  msSinceSeen: number,
+  live: boolean,
+): number {
+  if (!hasCalib) return 0;
+  if (!live) return clamp01(calibConf);
+  return decayConfidence(calibConf, msSinceSeen);
+}
+
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
 }

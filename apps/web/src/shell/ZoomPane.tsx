@@ -13,7 +13,7 @@
 // mount, cleared on unmount. When no overlay frame loop is running (e.g. the
 // wizard preview before calibration), the renderer simply never fires and the
 // canvas stays hidden behind the schematic strip.
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { FretboardStrip } from "../explore/FretboardStrip";
 import { setZoomRenderer, type ZoomFrameInput } from "../overlay/drawVision";
 import { fingerInitial, type TargetDot } from "../overlay/targetDots";
@@ -21,7 +21,7 @@ import type { FusionTarget } from "../overlay/targetDots";
 import type { ExploreTarget } from "../explore/exploreStore";
 import type { HeardState } from "../explore/feedback";
 import { applyHomography, invertHomography, type Homography } from "../perception/vision/homography";
-import { MAX_FRET, fretLineX, stringY } from "../perception/vision/fretboard";
+import { MAX_FRET, fretLineX, stringY, STRIP_W, STRIP_H } from "../perception/vision/fretboard";
 import { OVERLAY_DIM_THRESHOLD } from "../perception/vision/degradation";
 import { perStringStatus } from "../perception/vision/demoTarget";
 import { visionHot } from "../perception/perceptionStore";
@@ -39,9 +39,11 @@ const FRAME_STRIDE = 1;
 
 type ZoomVariant = "practice" | "preview";
 
+// Both variants share the FretboardStrip aspect (STRIP_W:STRIP_H) so the live
+// crop is never stretched; tune the height in one place via STRIP_H.
 const SIZES: Record<ZoomVariant, { w: number; h: number }> = {
-  practice: { w: 720, h: 180 }, // §6 content box ≈ 720×180
-  preview: { w: 480, h: 120 }, // §7 wizard reuse at preview size
+  practice: { w: STRIP_W, h: STRIP_H },
+  preview: { w: 480, h: Math.round((480 * STRIP_H) / STRIP_W) },
 };
 
 export interface ZoomPaneProps {
@@ -54,11 +56,14 @@ export interface ZoomPaneProps {
   /** Lesson target — converted to a display voicing for the fallback strip. */
   lessonTarget?: FusionTarget | null;
   heard?: HeardState;
+  /** Optional content rendered at the right of the header row (spec: the small
+   *  inline hint that used to live in the big box below the fretboard). */
+  headerAside?: ReactNode;
 }
 
 const clamp01 = (n: number): number => Math.max(0, Math.min(1, n));
 
-export function ZoomPane({ video, variant = "practice", fallbackTarget, lessonTarget, heard }: ZoomPaneProps) {
+export function ZoomPane({ video, variant = "practice", fallbackTarget, lessonTarget, heard, headerAside }: ZoomPaneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Keep the latest video in a ref so the registered renderer always sees the
   // current element without re-registering on every render.
@@ -107,8 +112,11 @@ export function ZoomPane({ video, variant = "practice", fallbackTarget, lessonTa
       data-testid="zoom-pane"
       data-variant={variant}
     >
-      <header className="zoom-pane__header">Fretboard zoom — live overlay</header>
-      <div className="zoom-pane__stage">
+      <header className="zoom-pane__header">
+        <span className="zoom-pane__title">Fretboard zoom — live overlay</span>
+        {headerAside}
+      </header>
+      <div className="zoom-pane__stage" style={{ aspectRatio: `${STRIP_W} / ${STRIP_H}` }}>
         <FretboardStrip target={stripTarget} heard={heard} />
         <canvas
           ref={canvasRef}

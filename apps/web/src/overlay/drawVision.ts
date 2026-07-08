@@ -10,7 +10,7 @@ import { applyHomography, invertHomography, type Homography } from "../perceptio
 import { MAX_FRET, fretLineX, stringY } from "../perception/vision/fretboard";
 import { FINGERTIP_LANDMARKS } from "../perception/vision/fingerMapping";
 import { perStringStatus } from "../perception/vision/demoTarget";
-import { decayConfidence, overlayOpacity } from "../perception/vision/degradation";
+import { effectiveCalibConf, overlayOpacity } from "../perception/vision/degradation";
 import { fusionHot } from "../fusion/fusionStore";
 import { exploreHot } from "../explore/exploreStore";
 import { planTargets, exploreDots, fingerInitial, type TargetDot } from "./targetDots";
@@ -68,7 +68,7 @@ export function drawVision(
   now: number,
 ): void {
   const hasCalib = vh.H !== null;
-  const decayed = hasCalib ? decayConfidence(vh.calibConf, now - vh.calibSeenAt) : 0;
+  const decayed = effectiveCalibConf(hasCalib, vh.calibConf, now - vh.calibSeenAt, vh.calibLive);
   ctx.save();
   ctx.globalAlpha = hasCalib ? overlayOpacity(decayed) : 1;
 

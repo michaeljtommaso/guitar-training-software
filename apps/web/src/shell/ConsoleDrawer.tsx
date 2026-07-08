@@ -54,6 +54,10 @@ export interface ConsoleDrawerProps {
   /** Enable/disable the drawer's own global hotkey listener. Default true —
    *  set false if a caller wants to own key handling itself instead. */
   enableHotkey?: boolean;
+  /** Layout mode. `bottom` (default) = the fixed slide-up overlay; `column` =
+   *  a static, full-height panel docked as a practice-grid column (spec v2-ui:
+   *  console as a permanent, toggleable third column right of the coach). */
+  dock?: "bottom" | "column";
 }
 
 export function ConsoleDrawer({
@@ -63,6 +67,7 @@ export function ConsoleDrawer({
   onStopCapture,
   onRestartCapture,
   enableHotkey = true,
+  dock = "bottom",
 }: ConsoleDrawerProps) {
   useEffect(() => {
     if (!enableHotkey) return;
@@ -114,7 +119,7 @@ export function ConsoleDrawer({
   };
 
   return (
-    <div className="console-drawer" data-testid="console-drawer" data-open={open} hidden={!open}>
+    <div className="console-drawer" data-testid="console-drawer" data-dock={dock} data-open={open} hidden={!open}>
       <div className="console-drawer-header">
         <span className="console-drawer-title">CONSOLE</span>
         <button type="button" data-testid="console-drawer-close" onClick={() => onOpenChange(false)}>

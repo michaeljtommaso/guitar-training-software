@@ -143,45 +143,55 @@
 
 /* ---- HintBar ------------------------------------------------------------ */
 
+/* Compact inline status line — lives inside the zoom-pane header now (not a
+   card below the fretboard). Single row, transparent, no box. */
 .hint-bar {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-4);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   color: var(--text);
+  min-width: 0;
 }
 
 .hint-bar-text {
   margin: 0;
   font-family: var(--font-ui);
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hint-bar-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
+  flex-shrink: 0;
 }
 
 .hint-bar-subline {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .hint-bar-tip-wrong {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  line-height: 1.5;
   background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: var(--sp-1) var(--sp-2);
+  padding: 0 var(--sp-1);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -253,6 +263,29 @@
   z-index: 40;
 }
 
+/* Docked-column variant (spec v2-ui): a static, full-height panel that lives as
+   the practice grid's middle column (left of the coach), 420px wide. Sections
+   stack in one vertical column since it's still narrow. */
+.console-drawer[data-dock="column"] {
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  width: var(--console-col-w);
+  max-height: none;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  z-index: auto;
+}
+
+.console-drawer[data-dock="column"] .console-drawer-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .console-drawer-header {
   display: flex;
   align-items: center;
@@ -298,6 +331,32 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+/* INPUTS section (spec §5): the three action rows read cramped in the 420px
+   docked column. Stack each row's controls to full width with a comfortable
+   gap so device selects and the action buttons line up cleanly. */
+[data-testid="console-section-inputs"] .wizard-controls {
+  gap: var(--sp-2);
+}
+
+[data-testid="console-section-inputs"] .wizard-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  flex: 1 1 100%;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+[data-testid="console-section-inputs"] .wizard-controls select {
+  width: 100%;
+}
+
+[data-testid="console-section-inputs"] .wizard-controls button {
+  flex: 1 1 8rem;
+  min-width: 8rem;
 }
 
 /* VideoMount (T6): a zero-box wrapper that hosts the capture host's singleton
